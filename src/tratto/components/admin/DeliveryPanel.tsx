@@ -1,5 +1,6 @@
 // @ts-nocheck -- código original migrado sem alterações de lógica
 import { useState, useRef, useEffect } from 'react'
+import { getMapboxToken, MAPBOX_TOKEN_EVENT } from '../../mapboxToken'
 import { useStore } from '../../context/StoreContext'
 import { DeliveryZone } from '../../types'
 
@@ -246,6 +247,14 @@ function MapComponent({ zones, colors }: { zones: DeliveryZone[]; colors: string
   const mapRef = useRef<HTMLDivElement>(null)
   const [mapLoaded, setMapLoaded] = useState(false)
   const [useFallback, setUseFallback] = useState(false)
+  const [mapboxToken, setMapboxToken] = useState(getMapboxToken())
+
+  // Atualiza o mapa quando o token é salvo/removido no painel
+  useEffect(() => {
+    const onChange = () => { setUseFallback(false); setMapLoaded(false); setMapboxToken(getMapboxToken()) }
+    window.addEventListener(MAPBOX_TOKEN_EVENT, onChange)
+    return () => window.removeEventListener(MAPBOX_TOKEN_EVENT, onChange)
+  }, [])
 
   useEffect(() => {
     if (!mapRef.current) return
@@ -256,7 +265,7 @@ function MapComponent({ zones, colors }: { zones: DeliveryZone[]; colors: string
       try {
         const mapboxgl = await import('mapbox-gl')
         // Token MapBox configurado via variável de ambiente
-        mapboxgl.default.accessToken = import.meta.env.VITE_MAPBOX_TOKEN || ''
+        mapboxgl.default.accessToken = mapboxToken
 
         map = new mapboxgl.default.Map({
           container: mapRef.current!,
