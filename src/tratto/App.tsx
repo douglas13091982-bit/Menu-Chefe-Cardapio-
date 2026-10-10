@@ -1,5 +1,6 @@
 // @ts-nocheck -- código original migrado sem alterações de lógica
 import { useState, useEffect } from 'react'
+import { trackMenuPageView } from './marketing'
 import { StoreProvider } from './context/StoreContext'
 import MenuView from './components/MenuView'
 import AdminPanel from './components/admin/AdminPanel'
@@ -18,6 +19,11 @@ function App() {
       setIsAuthenticated(true)
     }
   }, [])
+
+  // Meta Pixel: PageView ao abrir o cardápio (só se houver Pixel ID salvo)
+  useEffect(() => {
+    if (view === 'menu') trackMenuPageView()
+  }, [view])
 
   const handleLogin = () => {
     setIsAuthenticated(true)
