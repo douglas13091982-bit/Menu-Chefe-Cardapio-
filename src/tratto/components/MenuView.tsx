@@ -78,25 +78,41 @@ function MenuView() {
         <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.4)' }}></div>
         <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ textAlign: 'center', padding: '0 16px' }}>
-            <h1 style={{ 
-              fontSize: isMobile ? '28px' : '48px', 
-              fontWeight: 'bold', 
-              color: 'white', 
-              letterSpacing: '0.05em', 
-              margin: 0,
-              lineHeight: 1.1
-            }}>
-              {config.name.toUpperCase()}
-            </h1>
-            <p style={{ 
-              color: '#fb923c', 
-              fontSize: isMobile ? '11px' : '14px', 
-              marginTop: '6px', 
-              letterSpacing: '0.15em',
-              fontWeight: 500
-            }}>
-              {config.subtitle.toUpperCase()}
-            </p>
+            {config.logoUrl ? (
+              <img
+                src={config.logoUrl}
+                alt={config.name}
+                style={{
+                  maxHeight: isMobile ? '110px' : '180px',
+                  maxWidth: '80%',
+                  objectFit: 'contain',
+                  margin: '0 auto',
+                  display: 'block'
+                }}
+              />
+            ) : (
+              <>
+                <h1 style={{
+                  fontSize: isMobile ? '28px' : '48px',
+                  fontWeight: 'bold',
+                  color: 'white',
+                  letterSpacing: '0.05em',
+                  margin: 0,
+                  lineHeight: 1.1
+                }}>
+                  {config.name.toUpperCase()}
+                </h1>
+                <p style={{
+                  color: '#fb923c',
+                  fontSize: isMobile ? '11px' : '14px',
+                  marginTop: '6px',
+                  letterSpacing: '0.15em',
+                  fontWeight: 500
+                }}>
+                  {config.subtitle.toUpperCase()}
+                </p>
+              </>
+            )}
           </div>
         </div>
       </div>
