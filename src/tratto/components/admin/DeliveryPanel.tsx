@@ -356,7 +356,7 @@ function MapComponent({ zones, colors }: { zones: DeliveryZone[]; colors: string
     return () => {
       if (map) map.remove()
     }
-  }, [])
+  }, [mapboxToken])
 
   if (useFallback) {
     return <MapFallback zones={zones} colors={colors} />
