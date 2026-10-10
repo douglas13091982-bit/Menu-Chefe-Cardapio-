@@ -1,6 +1,7 @@
 // @ts-nocheck -- código original migrado sem alterações de lógica
 import { useState } from 'react'
 import { useStore } from '../../context/StoreContext'
+import MapboxIntegration from './MapboxIntegration'
 
 function SettingsPanel() {
   const { config, setConfig } = useStore()
@@ -226,6 +227,9 @@ function SettingsPanel() {
           Salvar Configurações
         </button>
       </form>
+
+      {/* Integrações */}
+      <MapboxIntegration />
 
       {/* Security Section */}
       <div className="bg-white rounded-xl shadow-sm p-6">
