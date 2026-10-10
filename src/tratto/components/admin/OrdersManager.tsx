@@ -199,9 +199,14 @@ function OrdersManager() {
                   <div key={idx} className="flex justify-between items-center py-2 border-b last:border-0">
                     <div>
                       <p className="font-medium text-sm">{item.quantity}x {item.product.name}</p>
-                      <p className="text-xs text-gray-500">R$ {item.product.price.toFixed(2).replace('.', ',')} cada</p>
+                      {item.selectedAddOns && item.selectedAddOns.length > 0 && (
+                        <p className="text-xs text-gray-500">
+                          + {item.selectedAddOns.map(a => `${a.name} (+R$ ${a.price.toFixed(2).replace('.', ',')})`).join(', ')}
+                        </p>
+                      )}
+                      <p className="text-xs text-gray-500">R$ {(item.product.price + (item.selectedAddOns || []).reduce((s, a) => s + a.price, 0)).toFixed(2).replace('.', ',')} cada</p>
                     </div>
-                    <span className="font-semibold text-sm">R$ {(item.product.price * item.quantity).toFixed(2).replace('.', ',')}</span>
+                    <span className="font-semibold text-sm">R$ {((item.product.price + (item.selectedAddOns || []).reduce((s, a) => s + a.price, 0)) * item.quantity).toFixed(2).replace('.', ',')}</span>
                   </div>
                 ))}
               </div>

@@ -1,7 +1,7 @@
 // @ts-nocheck -- código original migrado sem alterações de lógica
 import { useState, useRef } from 'react'
 import { useStore } from '../../context/StoreContext'
-import { Product } from '../../types'
+import { Product, ProductAddOn } from '../../types'
 
 function ProductsManager() {
   const { products, categories, addProduct, updateProduct, deleteProduct } = useStore()
@@ -14,9 +14,11 @@ function ProductsManager() {
   const [formData, setFormData] = useState({
     name: '', description: '', price: '', image: '', categoryId: '', popular: false, available: true
   })
+  const [addOns, setAddOns] = useState<ProductAddOn[]>([])
 
   const resetForm = () => {
     setFormData({ name: '', description: '', price: '', image: '', categoryId: categories[0]?.id || '', popular: false, available: true })
+    setAddOns([])
     setEditingProduct(null)
     setShowForm(false)
   }
@@ -32,7 +34,20 @@ function ProductsManager() {
       popular: product.popular || false,
       available: product.available
     })
+    setAddOns(product.addOns ? [...product.addOns] : [])
     setShowForm(true)
+  }
+
+  const addAddOn = () => {
+    setAddOns(prev => [...prev, { id: Date.now().toString(), name: '', price: 0 }])
+  }
+
+  const updateAddOn = (id: string, patch: Partial<ProductAddOn>) => {
+    setAddOns(prev => prev.map(a => a.id === id ? { ...a, ...patch } : a))
+  }
+
+  const removeAddOn = (id: string) => {
+    setAddOns(prev => prev.filter(a => a.id !== id))
   }
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -48,6 +63,9 @@ function ProductsManager() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    const cleanedAddOns = addOns
+      .filter(a => a.name.trim())
+      .map(a => ({ ...a, name: a.name.trim(), price: a.price || 0 }))
     const product: Product = {
       id: editingProduct?.id || Date.now().toString(),
       name: formData.name,
@@ -56,7 +74,8 @@ function ProductsManager() {
       image: formData.image,
       categoryId: formData.categoryId,
       popular: formData.popular,
-      available: formData.available
+      available: formData.available,
+      addOns: cleanedAddOns.length > 0 ? cleanedAddOns : undefined
     }
     if (editingProduct) {
       updateProduct(product)
@@ -235,6 +254,62 @@ function ProductsManager() {
                   </label>
                 </div>
 
+                {/* Adicionais */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-sm font-medium text-gray-700">Adicionais (opcionais)</label>
+                    <button
+                      type="button"
+                      onClick={addAddOn}
+                      className="border border-green-600 text-green-700 px-3 py-1 rounded-lg text-xs font-medium hover:bg-green-50 flex items-center gap-1"
+                    >
+                      <span>+</span> Adicionar item
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-500 mb-2">
+                    Ex: Borda recheada + R$ 5,00. O cliente poderá escolher no cardápio.
+                  </p>
+                  {addOns.length === 0 ? (
+                    <div className="border border-dashed border-gray-300 rounded-lg p-3 text-center text-xs text-gray-400 bg-gray-50">
+                      Nenhum adicional cadastrado
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {addOns.map(addOn => (
+                        <div key={addOn.id} className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={addOn.name}
+                            onChange={e => updateAddOn(addOn.id, { name: e.target.value })}
+                            placeholder="Nome do adicional (ex: Borda recheada)"
+                            className="flex-1 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                          />
+                          <div className="relative">
+                            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-gray-400">R$</span>
+                            <input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              value={addOn.price || ''}
+                              onChange={e => updateAddOn(addOn.id, { price: parseFloat(e.target.value) || 0 })}
+                              placeholder="0.00"
+                              className="w-24 border rounded-lg pl-8 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeAddOn(addOn.id)}
+                            className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center hover:bg-red-100 text-xs flex-shrink-0"
+                            title="Remover adicional"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
                 <div className="flex gap-3 pt-4">
                   <button
                     type="button"
@@ -283,6 +358,11 @@ function ProductsManager() {
                     )}
                   </div>
                   <p className="text-xs text-gray-500 mt-0.5">{category?.icon} {category?.name}</p>
+                  {product.addOns && product.addOns.length > 0 && (
+                    <p className="text-[11px] text-gray-400 mt-0.5 truncate">
+                      ➕ {product.addOns.length} adicional{product.addOns.length > 1 ? 'eis' : ''} (ex: {product.addOns[0].name})
+                    </p>
+                  )}
                 </div>
                 <div className="flex items-center justify-between mt-2">
                   <span className="text-green-700 font-bold text-sm">R$ {product.price.toFixed(2).replace('.', ',')}</span>

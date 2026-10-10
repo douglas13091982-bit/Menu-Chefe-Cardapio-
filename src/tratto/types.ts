@@ -1,4 +1,10 @@
 // @ts-nocheck -- código original migrado sem alterações de lógica
+export interface ProductAddOn {
+  id: string
+  name: string
+  price: number
+}
+
 export interface Product {
   id: string
   name: string
@@ -8,6 +14,7 @@ export interface Product {
   categoryId: string
   popular?: boolean
   available: boolean
+  addOns?: ProductAddOn[]
 }
 
 export interface Category {
@@ -21,6 +28,7 @@ export interface CartItem {
   product: Product
   quantity: number
   observation?: string
+  selectedAddOns?: ProductAddOn[]
 }
 
 export interface Order {
