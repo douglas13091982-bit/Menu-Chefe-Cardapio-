@@ -1,7 +1,11 @@
 // @ts-nocheck -- código original migrado sem alterações de lógica
 import { useState, useRef, useEffect } from 'react'
 import { useStore } from '../context/StoreContext'
-import { Product, CartItem } from '../types'
+import { Product, CartItem, ProductAddOn } from '../types'
+
+// preço unitário do item do carrinho (produto + adicionais selecionados)
+const getItemUnitPrice = (item: CartItem) =>
+  item.product.price + (item.selectedAddOns || []).reduce((sum, a) => sum + a.price, 0)
 
 function MenuView() {
   const { config, products, categories, deliveryZones } = useStore()
@@ -10,6 +14,7 @@ function MenuView() {
   const [showCart, setShowCart] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [showProductModal, setShowProductModal] = useState(false)
+  const [selectedAddOns, setSelectedAddOns] = useState<string[]>([])
   const [isMobile, setIsMobile] = useState(false)
   const sectionRefs = useRef<{ [key: string]: HTMLElement | null }>({})
 
@@ -21,27 +26,32 @@ function MenuView() {
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
-  const addToCart = (product: Product) => {
+  const addToCart = (product: Product, addOnIds: string[] = []) => {
+    const chosenAddOns = (product.addOns || []).filter(a => addOnIds.includes(a.id))
     setCart(prev => {
-      const existing = prev.find(item => item.product.id === product.id)
+      const keyOf = (item: CartItem) =>
+        item.product.id + '|' + [...(item.selectedAddOns || [])].map(a => a.id).sort().join(',')
+      const key = product.id + '|' + chosenAddOns.map(a => a.id).sort().join(',')
+      const existing = prev.find(item => keyOf(item) === key)
       if (existing) {
-        return prev.map(item =>
-          item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
-        )
+        return prev.map(item => keyOf(item) === key ? { ...item, quantity: item.quantity + 1 } : item)
       }
-      return [...prev, { product, quantity: 1 }]
+      return [...prev, { product, quantity: 1, selectedAddOns: chosenAddOns }]
     })
   }
 
   const removeFromCart = (productId: string) => {
     setCart(prev => {
-      const existing = prev.find(item => item.product.id === productId)
-      if (existing && existing.quantity > 1) {
-        return prev.map(item =>
-          item.product.id === productId ? { ...item, quantity: item.quantity - 1 } : item
-        )
+      // remove o último item que contenha esse produto (com ou sem adicionais)
+      for (let i = prev.length - 1; i >= 0; i--) {
+        if (prev[i].product.id === productId) {
+          if (prev[i].quantity > 1) {
+            return prev.map((item, idx) => idx === i ? { ...item, quantity: item.quantity - 1 } : item)
+          }
+          return prev.filter((_, idx) => idx !== i)
+        }
       }
-      return prev.filter(item => item.product.id !== productId)
+      return prev
     })
   }
 
@@ -51,7 +61,7 @@ function MenuView() {
   }
 
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0)
-  const totalPrice = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0)
+  const totalPrice = cart.reduce((sum, item) => sum + getItemUnitPrice(item) * item.quantity, 0)
 
   const scrollToCategory = (categoryId: string) => {
     setActiveCategory(categoryId)
@@ -60,8 +70,22 @@ function MenuView() {
 
   const openProductModal = (product: Product) => {
     setSelectedProduct(product)
+    setSelectedAddOns([])
     setShowProductModal(true)
   }
+
+  const toggleAddOn = (addOnId: string) => {
+    setSelectedAddOns(prev =>
+      prev.includes(addOnId) ? prev.filter(id => id !== addOnId) : [...prev, addOnId]
+    )
+  }
+
+  const selectedAddOnsTotal = selectedProduct
+    ? (selectedProduct.addOns || [])
+        .filter(a => selectedAddOns.includes(a.id))
+        .reduce((sum, a) => sum + a.price, 0)
+    : 0
+  const modalItemTotal = (selectedProduct?.price || 0) + selectedAddOnsTotal
 
   const availableProducts = products.filter(p => p.available)
   const sortedCategories = [...categories].sort((a, b) => a.order - b.order)
@@ -510,7 +534,7 @@ function MenuView() {
             </div>
             <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '16px' : '20px' }}>
               {cart.map(item => (
-                <div key={item.product.id} style={{
+                <div key={item.product.id + '|' + (item.selectedAddOns || []).map(a => a.id).sort().join(',')} style={{
                   display: 'flex',
                   alignItems: 'center',
                   gap: '12px',
@@ -542,13 +566,25 @@ function MenuView() {
                     }}>
                       {item.product.name}
                     </p>
+                    {item.selectedAddOns && item.selectedAddOns.length > 0 && (
+                      <p style={{ 
+                        color: '#6b7280', 
+                        fontSize: '11px',
+                        margin: '2px 0 0 0',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}>
+                        + {item.selectedAddOns.map(a => a.name).join(', ')}
+                      </p>
+                    )}
                     <p style={{ 
                       color: '#ef4444', 
                       fontWeight: 600, 
                       fontSize: '13px',
                       margin: '2px 0 0 0'
                     }}>
-                      R$ {(item.product.price * item.quantity).toFixed(2).replace('.', ',')}
+                      R$ {(getItemUnitPrice(item) * item.quantity).toFixed(2).replace('.', ',')}
                     </p>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -771,7 +807,7 @@ function MenuView() {
                 marginTop: '20px'
               }}>
                 <span style={{ fontSize: isMobile ? '22px' : '26px', fontWeight: 'bold', color: '#1f2937' }}>
-                  R$ {selectedProduct.price.toFixed(2).replace('.', ',')}
+                  R$ {modalItemTotal.toFixed(2).replace('.', ',')}
                 </span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <button
@@ -797,7 +833,7 @@ function MenuView() {
                     {getCartQuantity(selectedProduct.id)}
                   </span>
                   <button
-                    onClick={() => addToCart(selectedProduct)}
+                    onClick={() => addToCart(selectedProduct, selectedAddOns)}
                     style={{
                       width: '38px',
                       height: '38px',
@@ -817,6 +853,57 @@ function MenuView() {
                   </button>
                 </div>
               </div>
+
+              {/* Adicionais */}
+              {selectedProduct.addOns && selectedProduct.addOns.length > 0 && (
+                <div style={{ marginTop: '20px' }}>
+                  <h4 style={{
+                    fontSize: '15px',
+                    fontWeight: 'bold',
+                    color: '#1f2937',
+                    margin: '0 0 8px 0',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}>
+                    ➕ Adicione extras
+                  </h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {selectedProduct.addOns.map(addOn => {
+                      const checked = selectedAddOns.includes(addOn.id)
+                      return (
+                        <label
+                          key={addOn.id}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '10px',
+                            padding: '10px 12px',
+                            borderRadius: '10px',
+                            border: checked ? '2px solid #ef4444' : '1.5px solid #e5e7eb',
+                            backgroundColor: checked ? '#fef2f2' : 'white',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s'
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => toggleAddOn(addOn.id)}
+                            style={{ width: '18px', height: '18px', accentColor: '#ef4444', flexShrink: 0 }}
+                          />
+                          <span style={{ flex: 1, fontSize: '14px', color: '#374151', fontWeight: 500 }}>
+                            {addOn.name}
+                          </span>
+                          <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#15803d', whiteSpace: 'nowrap' }}>
+                            + R$ {addOn.price.toFixed(2).replace('.', ',')}
+                          </span>
+                        </label>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
             <div style={{ 
               padding: isMobile ? '16px' : '20px', 
@@ -824,7 +911,7 @@ function MenuView() {
               backgroundColor: 'white'
             }}>
               <button 
-                onClick={() => { addToCart(selectedProduct); setShowProductModal(false) }}
+                onClick={() => { addToCart(selectedProduct, selectedAddOns); setShowProductModal(false) }}
                 style={{
                   width: '100%',
                   backgroundColor: '#ef4444',
@@ -843,7 +930,7 @@ function MenuView() {
                 }}
               >
                 <span style={{ fontSize: '18px' }}>+</span>
-                Adicionar • R$ {selectedProduct.price.toFixed(2).replace('.', ',')}
+                Adicionar • R$ {modalItemTotal.toFixed(2).replace('.', ',')}
               </button>
             </div>
           </div>
