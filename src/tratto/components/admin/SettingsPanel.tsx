@@ -14,6 +14,22 @@ function SettingsPanel() {
   const [passwordError, setPasswordError] = useState('')
   const [passwordSaved, setPasswordSaved] = useState(false)
 
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      alert('Por favor, selecione um arquivo de imagem (PNG, JPG...)')
+      return
+    }
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setFormData(prev => ({ ...prev, logoUrl: reader.result as string }))
+    }
+    reader.readAsDataURL(file)
+    // Reseta o input para permitir re-upload do mesmo arquivo
+    e.target.value = ''
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     setConfig(formData)
@@ -72,6 +88,42 @@ function SettingsPanel() {
           <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
             <span>🏪</span> Informações da Loja
           </h3>
+          {/* Logo / Banner */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Logo da Loja (banner)</label>
+            <p className="text-xs text-gray-400 mb-2">
+              A imagem aparecerá no lugar do nome da loja no banner do cardápio. Recomendado: PNG com fundo transparente.
+            </p>
+            <div className="flex items-center gap-4">
+              <div className="w-24 h-24 rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 flex items-center justify-center overflow-hidden shrink-0">
+                {formData.logoUrl ? (
+                  <img src={formData.logoUrl} alt="Logo da loja" className="w-full h-full object-contain" />
+                ) : (
+                  <span className="text-3xl">🖼️</span>
+                )}
+              </div>
+              <div className="flex flex-col gap-2">
+                <label className="inline-block bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer transition-all">
+                  {formData.logoUrl ? 'Trocar logo' : 'Upload logo'}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleLogoUpload}
+                    className="hidden"
+                  />
+                </label>
+                {formData.logoUrl && (
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, logoUrl: '' }))}
+                    className="text-red-500 hover:text-red-600 text-sm font-medium text-left"
+                  >
+                    Remover logo
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Nome do Restaurante *</label>
@@ -197,9 +249,17 @@ function SettingsPanel() {
           </h3>
           <div className="bg-gray-50 rounded-lg p-4">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-red-500 rounded-xl flex items-center justify-center">
-                <span className="text-white font-bold text-lg">{formData.name.charAt(0)}</span>
-              </div>
+              {formData.logoUrl ? (
+                <img
+                  src={formData.logoUrl}
+                  alt={`${formData.name} logo`}
+                  className="w-12 h-12 rounded-xl object-contain bg-gray-100"
+                />
+              ) : (
+                <div className="w-12 h-12 bg-red-500 rounded-xl flex items-center justify-center">
+                  <span className="text-white font-bold text-lg">{formData.name.charAt(0)}</span>
+                </div>
+              )}
               <div>
                 <h4 className="font-bold text-gray-800">{formData.name}</h4>
                 <p className="text-xs text-gray-500">{formData.subtitle}</p>

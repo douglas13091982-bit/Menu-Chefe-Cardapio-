@@ -39,6 +39,7 @@ export interface Order {
 export interface StoreConfig {
   name: string
   subtitle: string
+  logoUrl?: string
   phone: string
   address: string
   deliveryFee: number
