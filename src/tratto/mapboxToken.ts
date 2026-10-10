@@ -7,7 +7,7 @@ export function getMapboxToken(): string {
     const saved = localStorage.getItem(MAPBOX_TOKEN_KEY)
     if (saved) return saved
   } catch {}
-  return (import.meta.env.VITE_MAPBOX_TOKEN as string) || ''
+  return (import.meta.env['VITE_MAPBOX_TOKEN'] as string) || ''
 }
 
 export function getSavedMapboxToken(): string {
