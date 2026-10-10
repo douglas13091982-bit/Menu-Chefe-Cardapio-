@@ -8,3 +8,5 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- The migrated Tratto app lives unchanged in src/tratto/ and is rendered client-only from src/routes/index.tsx — it reads localStorage/sessionStorage on init, which would break server rendering.
