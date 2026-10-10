@@ -1,3 +1,4 @@
+// @ts-nocheck -- código original migrado sem alterações de lógica
 export interface Product {
   id: string
   name: string

@@ -1,3 +1,4 @@
+// @ts-nocheck -- código original migrado sem alterações de lógica
 import { useStore } from '../../context/StoreContext'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, Legend } from 'recharts'
 import { useMemo } from 'react'

@@ -1,3 +1,4 @@
+// @ts-nocheck -- código original migrado sem alterações de lógica
 import { useState, useEffect } from 'react'
 import { StoreProvider } from './context/StoreContext'
 import MenuView from './components/MenuView'

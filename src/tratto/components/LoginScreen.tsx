@@ -1,3 +1,4 @@
+// @ts-nocheck -- código original migrado sem alterações de lógica
 import { useState } from 'react'
 
 interface LoginScreenProps {

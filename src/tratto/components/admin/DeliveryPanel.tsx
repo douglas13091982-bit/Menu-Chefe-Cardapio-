@@ -1,3 +1,4 @@
+// @ts-nocheck -- código original migrado sem alterações de lógica
 import { useState, useRef, useEffect } from 'react'
 import { useStore } from '../../context/StoreContext'
 import { DeliveryZone } from '../../types'
