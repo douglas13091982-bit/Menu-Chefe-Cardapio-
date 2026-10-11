@@ -1,4 +1,5 @@
-import { CheckCircle2, MapPin,  useState } from 'react'
+import { useState } from 'react'
+import { CheckCircle2, MapPin } from 'lucide-react'
 import { getSavedMapboxToken, setSavedMapboxToken } from '../../mapboxToken'
 
 function MapboxIntegration() {
