@@ -706,9 +706,9 @@ function MenuView() {
                   border: 'none',
                   cursor: 'pointer',
                   transition: 'all 0.2s',
-                  backgroundColor: activeCategory === cat.id ? '#782d25' : '#f5eee7',
-                  color: activeCategory === cat.id ? '#fffaf5' : '#49372e',
-                  boxShadow: activeCategory === cat.id ? '0 4px 12px rgba(120, 45, 37, 0.2)' : 'none',
+                  backgroundColor: activeCategory === cat.id ? '#d9273f' : '#fff0f2',
+                  color: activeCategory === cat.id ? '#ffffff' : '#54111e',
+                  boxShadow: activeCategory === cat.id ? '0 4px 12px rgba(217, 39, 63, 0.2)' : 'none',
                   flexShrink: 0
                 }}
               >
@@ -842,14 +842,14 @@ function MenuView() {
               onClick={() => setShowCart(true)}
               style={{
                 width: '100%',
-                backgroundColor: '#782d25',
-                color: '#fffaf5',
+                backgroundColor: '#d9273f',
+                color: '#ffffff',
                 borderRadius: '14px',
                 padding: isMobile ? '14px 16px' : '16px 24px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                boxShadow: '0 10px 25px rgba(120, 45, 37, 0.28)',
+                boxShadow: '0 10px 25px rgba(217, 39, 63, 0.28)',
                 border: 'none',
                 cursor: 'pointer',
                 transition: 'transform 0.1s'
@@ -1948,7 +1948,7 @@ function ProductCard({ product, quantity, onAdd, onRemove, onClick, isMobile }: 
         {quantity > 0 && (
           <span style={{
             position: 'absolute', right: '8px', bottom: '8px',
-            background: '#782d25', color: '#fffaf5',
+            background: '#d9273f', color: '#ffffff',
             minWidth: '26px', height: '26px', padding: '0 6px',
             borderRadius: '999px', display: 'flex', alignItems: 'center',
             justifyContent: 'center', fontSize: '12px', fontWeight: 800,
@@ -1990,7 +1990,7 @@ function ProductCard({ product, quantity, onAdd, onRemove, onClick, isMobile }: 
           flexWrap: 'wrap',
         }}>
           <span style={{
-            color: '#782d25', fontWeight: 850,
+            color: '#d9273f', fontWeight: 850,
             fontSize: isMobile ? '15px' : '18px',
             lineHeight: 1.1, whiteSpace: 'nowrap',
             letterSpacing: '-.025em',
@@ -2007,18 +2007,18 @@ function ProductCard({ product, quantity, onAdd, onRemove, onClick, isMobile }: 
                   onClick={onRemove}
                   style={{
                     width: '30px', height: '30px', borderRadius: '50%',
-                    border: '1px solid #dfc5b6', color: '#782d25',
+                    border: '1px solid #dfc5b6', color: '#d9273f',
                     background: '#fffdfa', cursor: 'pointer',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: '18px', fontWeight: 600, padding: 0,
                   }}>−</button>
-                <span style={{ minWidth: '14px', textAlign: 'center', fontWeight: 800, fontSize: '13px', color: '#49372e' }}>{quantity}</span>
+                <span style={{ minWidth: '14px', textAlign: 'center', fontWeight: 800, fontSize: '13px', color: '#54111e' }}>{quantity}</span>
                 <button
                   type="button" aria-label={`Adicionar mais uma unidade de ${product.name}`}
                   onClick={onAdd}
                   style={{
                     width: '30px', height: '30px', borderRadius: '50%',
-                    border: 'none', color: '#fffaf5', background: '#782d25',
+                    border: 'none', color: '#ffffff', background: '#d9273f',
                     cursor: 'pointer', display: 'flex', alignItems: 'center',
                     justifyContent: 'center', fontSize: '18px', fontWeight: 600, padding: 0,
                   }}>+</button>
@@ -2029,12 +2029,12 @@ function ProductCard({ product, quantity, onAdd, onRemove, onClick, isMobile }: 
                 aria-label={`Adicionar ${product.name} ao pedido`}
                 onClick={e => { e.stopPropagation(); onAdd() }}
                 style={{
-                  border: 'none', color: '#fffaf5',
-                  background: '#782d25', borderRadius: '999px',
+                  border: 'none', color: '#ffffff',
+                  background: '#d9273f', borderRadius: '999px',
                   padding: isMobile ? '9px 12px' : '10px 15px',
                   fontSize: isMobile ? '11px' : '12px',
                   fontWeight: 750, cursor: 'pointer', whiteSpace: 'nowrap',
-                  boxShadow: '0 3px 9px rgba(120,45,37,.16)',
+                  boxShadow: '0 3px 9px rgba(217, 39, 63,.16)',
                   minHeight: '36px',
                 }}>+ Adicionar</button>
             )}
