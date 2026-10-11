@@ -755,7 +755,12 @@ function MenuView() {
                   ({categoryProducts.length})
                 </span>
               </h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '10px' : '12px' }}>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: isMobile ? 'minmax(0, 1fr)' : 'repeat(2, minmax(0, 1fr))',
+                alignItems: 'stretch',
+                gap: isMobile ? '12px' : '18px'
+              }}>
                 {categoryProducts.map(product => (
                   <ProductCard
                     key={product.id}
@@ -1828,7 +1833,18 @@ function MenuView() {
   )
 }
 
-// Product Card Component - Mobile Optimized
+// Product Card Component — catálogo visual, responsivo e acessível
+function getProductFallbackImage(categoryId: string) {
+  const images: Record<string, string> = {
+    hamburgueres: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=900&q=85',
+    combos: 'https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=900&q=85',
+    acompanhamentos: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?auto=format&fit=crop&w=900&q=85',
+    sobremesas: 'https://images.unsplash.com/photo-1563805042-7684c019e1cb?auto=format&fit=crop&w=900&q=85',
+    bebidas: 'https://images.unsplash.com/photo-1544145945-f90425340c7e?auto=format&fit=crop&w=900&q=85',
+  }
+  return images[categoryId] || images.hamburgueres
+}
+
 function ProductCard({ product, quantity, onAdd, onRemove, onClick, isMobile }: {
   product: Product
   quantity: number
@@ -1837,206 +1853,170 @@ function ProductCard({ product, quantity, onAdd, onRemove, onClick, isMobile }: 
   onClick: () => void
   isMobile: boolean
 }) {
+  const fallbackImage = getProductFallbackImage(product.categoryId)
   return (
-    <div
+    <article
+      role="button"
+      tabIndex={0}
+      aria-label={`Ver detalhes de ${product.name}`}
       onClick={onClick}
+      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick() } }}
       style={{
-        backgroundColor: 'white',
-        borderRadius: '12px',
-        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
+        backgroundColor: '#fffdfa',
+        borderRadius: '18px',
+        border: '1px solid #eee4da',
+        boxShadow: '0 5px 18px rgba(63, 37, 25, 0.055)',
         overflow: 'hidden',
         display: 'flex',
+        minWidth: 0,
+        minHeight: isMobile ? '136px' : '160px',
         cursor: 'pointer',
-        transition: 'transform 0.15s, box-shadow 0.15s',
-        border: '1px solid #f3f4f6'
+        transition: 'transform .18s ease, box-shadow .18s ease, border-color .18s ease',
       }}
-      onMouseDown={e => e.currentTarget.style.transform = 'scale(0.98)'}
-      onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
-      onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+      onMouseEnter={e => {
+        e.currentTarget.style.transform = 'translateY(-2px)'
+        e.currentTarget.style.boxShadow = '0 12px 28px rgba(63, 37, 25, 0.11)'
+        e.currentTarget.style.borderColor = '#d9b9a9'
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.transform = 'translateY(0)'
+        e.currentTarget.style.boxShadow = '0 5px 18px rgba(63, 37, 25, 0.055)'
+        e.currentTarget.style.borderColor = '#eee4da'
+      }}
     >
-      {/* Image */}
-      <div style={{ 
-        width: isMobile ? '110px' : '140px', 
+      <div style={{
+        width: isMobile ? '116px' : '142px',
+        minHeight: isMobile ? '136px' : '160px',
         flexShrink: 0,
-        position: 'relative'
+        position: 'relative',
+        overflow: 'hidden',
+        background: '#f3e7dc',
       }}>
-        {product.image ? (
-          <img 
-            src={product.image} 
-            alt={product.name}
-            style={{ width: '100%', height: '100%', objectFit: 'cover', minHeight: '110px' }}
-          />
-        ) : (
-          <div style={{
+        <img
+          src={product.image || fallbackImage}
+          alt={product.name}
+          loading="lazy"
+          onError={e => {
+            const img = e.currentTarget
+            if (img.src !== fallbackImage) img.src = fallbackImage
+            else img.onerror = null
+          }}
+          style={{
+            display: 'block',
             width: '100%',
             height: '100%',
-            minHeight: '110px',
-            background: 'linear-gradient(135deg, #fed7aa, #fecaca)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}>
-            <span style={{ fontSize: '36px' }}>🍔</span>
-          </div>
+            minHeight: isMobile ? '136px' : '160px',
+            objectFit: 'cover',
+            transition: 'transform .35s ease',
+          }}
+        />
+        {product.popular && (
+          <span style={{
+            position: 'absolute', top: '9px', left: '9px',
+            background: '#fff8ef', color: '#8a3b26',
+            border: '1px solid rgba(138,59,38,.12)',
+            borderRadius: '999px', padding: '4px 7px',
+            fontSize: '10px', lineHeight: 1, fontWeight: 800,
+            boxShadow: '0 2px 8px rgba(0,0,0,.08)',
+          }}>★ MAIS PEDIDO</span>
         )}
         {quantity > 0 && (
-          <div style={{
-            position: 'absolute',
-            top: '8px',
-            left: '8px',
-            backgroundColor: '#ef4444',
-            color: 'white',
-            fontSize: '11px',
-            fontWeight: 'bold',
-            padding: '3px 8px',
-            borderRadius: '10px',
-            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)'
-          }}>
-            {quantity}x
-          </div>
+          <span style={{
+            position: 'absolute', right: '8px', bottom: '8px',
+            background: '#782d25', color: '#fffaf5',
+            minWidth: '26px', height: '26px', padding: '0 6px',
+            borderRadius: '999px', display: 'flex', alignItems: 'center',
+            justifyContent: 'center', fontSize: '12px', fontWeight: 800,
+            boxShadow: '0 2px 8px rgba(0,0,0,.16)',
+          }}>{quantity}x</span>
         )}
       </div>
 
-      {/* Content */}
-      <div style={{ 
-        flex: 1, 
-        padding: isMobile ? '10px 12px' : '14px 16px',
+      <div style={{
+        flex: 1,
+        minWidth: 0,
+        padding: isMobile ? '11px 11px 10px 12px' : '15px 15px 13px',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
-        minWidth: 0
+        gap: '8px',
       }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', flexWrap: 'wrap' }}>
-            <h4 style={{ 
-              fontWeight: 600, 
-              color: '#1f2937', 
-              fontSize: isMobile ? '13px' : '15px',
-              margin: 0,
-              lineHeight: 1.3,
-              flex: 1
-            }}>
-              {product.name}
-            </h4>
-            {product.popular && (
-              <span style={{
-                backgroundColor: '#fff7ed',
-                color: '#ea580c',
-                fontSize: '10px',
-                fontWeight: 600,
-                padding: '2px 6px',
-                borderRadius: '8px',
-                whiteSpace: 'nowrap',
-                flexShrink: 0
+          <h4 style={{
+            fontWeight: 750, color: '#30231e',
+            fontSize: isMobile ? '13px' : '15px',
+            lineHeight: 1.3, margin: 0,
+            letterSpacing: '-.015em',
+          }}>{product.name}</h4>
+          <p style={{
+            color: '#776960',
+            fontSize: isMobile ? '11px' : '12px',
+            lineHeight: 1.45,
+            margin: '5px 0 0',
+            display: '-webkit-box',
+            WebkitLineClamp: isMobile ? 3 : 2,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+          }}>{product.description}</p>
+        </div>
+        <div style={{
+          display: 'flex', alignItems: 'flex-end',
+          justifyContent: 'space-between', gap: '8px',
+          flexWrap: 'wrap',
+        }}>
+          <span style={{
+            color: '#782d25', fontWeight: 850,
+            fontSize: isMobile ? '15px' : '18px',
+            lineHeight: 1.1, whiteSpace: 'nowrap',
+            letterSpacing: '-.025em',
+          }}>{fmt(product.price)}</span>
+          <div onClick={e => e.stopPropagation()} style={{ flexShrink: 0 }}>
+            {quantity > 0 ? (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: '7px',
+                background: '#f8eee7', padding: '4px',
+                borderRadius: '999px', border: '1px solid #ead8cc',
               }}>
-                🔥
-              </span>
+                <button
+                  type="button" aria-label={`Remover uma unidade de ${product.name}`}
+                  onClick={onRemove}
+                  style={{
+                    width: '30px', height: '30px', borderRadius: '50%',
+                    border: '1px solid #dfc5b6', color: '#782d25',
+                    background: '#fffdfa', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: '18px', fontWeight: 600, padding: 0,
+                  }}>−</button>
+                <span style={{ minWidth: '14px', textAlign: 'center', fontWeight: 800, fontSize: '13px', color: '#49372e' }}>{quantity}</span>
+                <button
+                  type="button" aria-label={`Adicionar mais uma unidade de ${product.name}`}
+                  onClick={onAdd}
+                  style={{
+                    width: '30px', height: '30px', borderRadius: '50%',
+                    border: 'none', color: '#fffaf5', background: '#782d25',
+                    cursor: 'pointer', display: 'flex', alignItems: 'center',
+                    justifyContent: 'center', fontSize: '18px', fontWeight: 600, padding: 0,
+                  }}>+</button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                aria-label={`Adicionar ${product.name} ao pedido`}
+                onClick={e => { e.stopPropagation(); onAdd() }}
+                style={{
+                  border: 'none', color: '#fffaf5',
+                  background: '#782d25', borderRadius: '999px',
+                  padding: isMobile ? '9px 12px' : '10px 15px',
+                  fontSize: isMobile ? '11px' : '12px',
+                  fontWeight: 750, cursor: 'pointer', whiteSpace: 'nowrap',
+                  boxShadow: '0 3px 9px rgba(120,45,37,.16)',
+                  minHeight: '36px',
+                }}>+ Adicionar</button>
             )}
           </div>
-          <p style={{ 
-            color: '#6b7280', 
-            fontSize: isMobile ? '11px' : '12px',
-            marginTop: '4px',
-            lineHeight: 1.4,
-            margin: '4px 0 0 0',
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden'
-          }}>
-            {product.description}
-          </p>
-        </div>
-        <div style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'space-between', 
-          marginTop: '8px',
-          gap: '8px'
-        }}>
-          <span style={{ 
-            color: '#15803d', 
-            fontWeight: 'bold', 
-            fontSize: isMobile ? '14px' : '16px',
-            whiteSpace: 'nowrap'
-          }}>
-            R$ {product.price.toFixed(2).replace('.', ',')}
-          </span>
-          {quantity > 0 ? (
-            <div 
-              style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-              onClick={e => e.stopPropagation()}
-            >
-              <button
-                onClick={onRemove}
-                style={{
-                  width: '28px',
-                  height: '28px',
-                  borderRadius: '50%',
-                  border: '1.5px solid #ef4444',
-                  color: '#ef4444',
-                  backgroundColor: 'white',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '12px',
-                  fontWeight: 'bold',
-                  padding: 0
-                }}
-              >
-                −
-              </button>
-              <span style={{ 
-                width: '20px', 
-                textAlign: 'center', 
-                fontWeight: 'bold', 
-                fontSize: '14px'
-              }}>
-                {quantity}
-              </span>
-              <button
-                onClick={onAdd}
-                style={{
-                  width: '28px',
-                  height: '28px',
-                  borderRadius: '50%',
-                  border: 'none',
-                  backgroundColor: '#ef4444',
-                  color: 'white',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '12px',
-                  fontWeight: 'bold',
-                  padding: 0
-                }}
-              >
-                +
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={e => { e.stopPropagation(); onAdd() }}
-              style={{
-                border: '1.5px solid #ef4444',
-                color: '#ef4444',
-                borderRadius: '8px',
-                padding: isMobile ? '6px 12px' : '8px 14px',
-                fontSize: isMobile ? '11px' : '12px',
-                fontWeight: 600,
-                backgroundColor: 'white',
-                cursor: 'pointer',
-                whiteSpace: 'nowrap'
-              }}
-            >
-              Adicionar
-            </button>
-          )}
         </div>
       </div>
-    </div>
+    </article>
   )
 }
 
