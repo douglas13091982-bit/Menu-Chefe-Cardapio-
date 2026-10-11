@@ -1,5 +1,6 @@
 // @ts-nocheck -- código original migrado sem alterações de lógica
 import { useState, useRef } from 'react'
+import { Pencil, Trash2, X } from 'lucide-react'
 import { useStore } from '../../context/StoreContext'
 import { Product, ProductAddOn } from '../../types'
 
@@ -137,7 +138,7 @@ function ProductsManager() {
                 <h3 className="text-xl font-bold text-gray-800">
                   {editingProduct ? 'Editar Produto' : 'Novo Produto'}
                 </h3>
-                <button onClick={resetForm} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200"></button>
+                <button onClick={resetForm} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200"><X size={16} /></button>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -302,7 +303,7 @@ function ProductsManager() {
                             className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center hover:bg-red-100 text-xs flex-shrink-0"
                             title="Remover adicional"
                           >
-                            Remover
+                            <Trash2 size={13} />
                           </button>
                         </div>
                       ))}
@@ -372,14 +373,14 @@ function ProductsManager() {
                       className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-100 text-xs"
                       title="Editar"
                     >
-                      Editar
+                      <Pencil size={14} />
                     </button>
                     <button
                       onClick={() => { if (confirm('Excluir produto?')) deleteProduct(product.id) }}
                       className="w-7 h-7 rounded-lg bg-red-50 text-red-600 flex items-center justify-center hover:bg-red-100 text-xs"
                       title="Excluir"
                     >
-                      
+                      <Trash2 size={14} />
                     </button>
                   </div>
                 </div>
