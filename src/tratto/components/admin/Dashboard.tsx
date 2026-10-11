@@ -2,6 +2,7 @@
 import { useStore } from '../../context/StoreContext'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, Legend } from 'recharts'
 import { useMemo } from 'react'
+import { Wallet, CheckCircle2, Clock3, TrendingUp } from 'lucide-react'
 
 function Dashboard() {
   const { orders, products, categories } = useStore()
@@ -69,10 +70,10 @@ function Dashboard() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard title="Faturamento Total" value={`R$ ${stats.totalRevenue.toFixed(2).replace('.', ',')}`} color="green" />
-        <StatCard title="Pedidos Completos" value={stats.completedOrders.toString()} color="blue" />
-        <StatCard title="Pedidos Pendentes" value={stats.pendingOrders.toString()} color="orange" />
-        <StatCard title="Ticket Médio" value={`R$ ${stats.avgTicket.toFixed(2).replace('.', ',')}`} color="purple" />
+        <StatCard title="Faturamento Total" value={`R$ ${stats.totalRevenue.toFixed(2).replace('.', ',')}`} icon={Wallet} color="green" />
+        <StatCard title="Pedidos Completos" value={stats.completedOrders.toString()} icon={CheckCircle2} color="blue" />
+        <StatCard title="Pedidos Pendentes" value={stats.pendingOrders.toString()} icon={Clock3} color="orange" />
+        <StatCard title="Ticket Médio" value={`R$ ${stats.avgTicket.toFixed(2).replace('.', ',')}`} icon={TrendingUp} color="purple" />
       </div>
 
       {/* Charts Row */}
@@ -86,7 +87,7 @@ function Dashboard() {
               <XAxis dataKey="date" tick={{ fontSize: 12 }} />
               <YAxis tick={{ fontSize: 12 }} />
               <Tooltip formatter={(value: number) => [`R$ ${value.toFixed(2).replace('.', ',')}`, 'Vendas']} />
-              <Bar dataKey="vendas" fill="#782d25" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="vendas" fill="#d9273f" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -100,7 +101,7 @@ function Dashboard() {
               <XAxis dataKey="date" tick={{ fontSize: 12 }} />
               <YAxis tick={{ fontSize: 12 }} />
               <Tooltip />
-              <Line type="monotone" dataKey="pedidos" stroke="#a75b3f" strokeWidth={3} dot={{ fill: '#a75b3f', r: 4 }} />
+              <Line type="monotone" dataKey="pedidos" stroke="#d9273f" strokeWidth={3} dot={{ fill: '#d9273f', r: 4 }} />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -190,7 +191,7 @@ function Dashboard() {
   )
 }
 
-function StatCard({ title, value, color }: { title: string; value: string; color: string }) {
+function StatCard({ title, value, icon: Icon, color }: { title: string; value: string; icon: any; color: string }) {
   const colorClasses: { [key: string]: string } = {
     green: 'bg-white border-[#eee4da]',
     blue: 'bg-white border-[#eee4da]',
@@ -200,6 +201,7 @@ function StatCard({ title, value, color }: { title: string; value: string; color
   return (
     <div className={`rounded-2xl border p-5 shadow-sm transition-shadow hover:shadow-md ${colorClasses[color] || 'bg-white border-[#eee4da]'}`}>
       
+      <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#fff0f2] text-[#d9273f]"><Icon size={20} strokeWidth={1.8} /></span>
       <p className="text-xl md:text-2xl font-bold tracking-tight text-[#30231e] mt-4">{value}</p>
       <p className="text-xs text-[#89796f] mt-1">{title}</p>
     </div>
