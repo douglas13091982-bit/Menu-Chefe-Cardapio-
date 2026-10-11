@@ -549,7 +549,7 @@ function MenuView() {
                   ★ 4.8
                 </span>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', backgroundColor: '#f3f4f6', color: '#374151', padding: '3px 8px', borderRadius: '14px', fontSize: '11px', fontWeight: 500 }}>
-                  🛵 40-50 min
+                  40–50 min
                 </span>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', backgroundColor: '#f3f4f6', color: '#374151', padding: '3px 8px', borderRadius: '14px', fontSize: '11px', fontWeight: 500 }}>
                   2.5 km
@@ -606,7 +606,7 @@ function MenuView() {
               fontSize: '12px',
               fontWeight: 500
             }}>
-              🛵 40-50 min
+              40–50 min
             </span>
             <span style={{
               display: 'inline-flex',
@@ -1110,7 +1110,7 @@ function MenuView() {
                 </span>
               </div>
               <p style={{ color: '#9ca3af', fontSize: '11px', margin: '0 0 10px 0', textAlign: 'center' }}>
-                🛵 Entrega ou retirada e forma de pagamento você escolhe a seguir
+                Entrega ou retirada e forma de pagamento você escolhe a seguir
               </p>
               <button
                 onClick={openCheckout}
@@ -1338,14 +1338,14 @@ function MenuView() {
                       color: freight.status === 'ok' ? '#15803d' : freight.status === 'loading' ? '#6b7280' : freight.status === 'out' ? '#dc2626' : '#b45309'
                     }}>
                       {freight.status === 'loading' && 'Calculando frete...'}
-                      {freight.status === 'ok' && `🛵 Distância: ${freight.km.toFixed(1).replace('.', ',')} km • Frete: ${fmt(freight.fee)}`}
+                      {freight.status === 'ok' && `Distância: ${freight.km.toFixed(1).replace('.', ',')} km • Frete: ${fmt(freight.fee)}`}
                       {freight.status === 'out' && `Endereço fora da área de entrega (máximo ${maxKm} km).`}
                       {freight.status === 'error' && `Não foi possível calcular a distância. Será cobrada a taxa base de ${fmt(config.deliveryFee)}.`}
                     </p>
                   )}
                   {matchedZone && (
                     <p style={{ fontSize: '13px', fontWeight: 600, margin: '0 0 8px 0', color: '#15803d' }}>
-                      {`🛵 Bairro ${matchedZone.name} • Taxa fixa: ${fmt(matchedZone.price)}`}
+                      {`Bairro ${matchedZone.name} • Taxa fixa: ${fmt(matchedZone.price)}`}
                     </p>
                   )}
                   {fixedOnlyNoMatch && (
@@ -1396,7 +1396,7 @@ function MenuView() {
               )}
               {paymentMethod === 'pix' && (
                 <p style={{ fontSize: '12px', color: '#6b7280', backgroundColor: '#f9fafb', padding: '10px 12px', borderRadius: '10px', margin: '0 0 18px 0' }}>
-                  📱 Você receberá a chave PIX pelo WhatsApp ({config.phone || 'telefone da loja'}) após finalizar o pedido.
+                  Você receberá a chave PIX pelo WhatsApp ({config.phone || 'telefone da loja'}) após finalizar o pedido.
                 </p>
               )}
               {paymentMethod === 'cash' && (
@@ -1514,7 +1514,7 @@ function MenuView() {
             </p>
             <div style={{ backgroundColor: '#f9fafb', borderRadius: '12px', padding: '14px', textAlign: 'left', marginBottom: '18px' }}>
               <p style={{ fontSize: '13px', color: '#374151', margin: '0 0 6px' }}>
-                {orderPlaced.deliveryType === 'delivery' ? '🛵 Entrega' : '🏪 Retirada no local'}
+                {orderPlaced.deliveryType === 'delivery' ? 'Entrega' : 'Retirada no local'}
                 {orderPlaced.deliveryType === 'delivery' ? `: ${orderPlaced.customerAddress}` : ''}
               </p>
               <p style={{ fontSize: '13px', color: '#374151', margin: '0 0 6px' }}>
