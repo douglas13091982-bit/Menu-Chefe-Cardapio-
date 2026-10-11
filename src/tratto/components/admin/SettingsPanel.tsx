@@ -137,7 +137,7 @@ function SettingsPanel() {
 
       {saved && (
         <div className="bg-green-50 border border-green-200 text-green-700 rounded-lg p-3 flex items-center gap-2">
-          <span>✅</span>
+          <span></span>
           <span className="text-sm font-medium">Configurações salvas com sucesso!</span>
         </div>
       )}
@@ -146,7 +146,7 @@ function SettingsPanel() {
         {/* Store Info */}
         <div className="bg-white rounded-xl shadow-sm p-6">
           <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
-            <span>🏪</span> Informações da Loja
+            <span></span> Informações da Loja
           </h3>
           {/* Logo / Banner */}
           <div className="mb-4">
@@ -159,7 +159,7 @@ function SettingsPanel() {
                 {formData.logoUrl ? (
                   <img src={formData.logoUrl} alt="Logo da loja" className="w-full h-full object-contain" />
                 ) : (
-                  <span className="text-3xl">🖼️</span>
+                  <span className="text-3xl"></span>
                 )}
               </div>
               <div className="flex flex-col gap-2">
@@ -268,7 +268,7 @@ function SettingsPanel() {
         {/* Operating Hours */}
         <div className="bg-white rounded-xl shadow-sm p-6">
           <h3 className="font-bold text-gray-800 mb-1 flex items-center gap-2">
-            <span>🕐</span> Horário de Funcionamento
+            <span></span> Horário de Funcionamento
           </h3>
           <p className="text-xs text-gray-500 mb-4">
             Defina os dias e horários em que a loja atende. Para fechar depois da meia-noite, use um fechamento menor que a abertura (ex.: 18:00 às 02:00).
@@ -329,7 +329,7 @@ function SettingsPanel() {
               />
               <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
               <span className="ml-3 text-sm font-medium text-gray-700">
-                {formData.isOpen ? '🟢 Loja funcionando no horário acima' : '🔴 Loja fechada agora (ignora o horário)'}
+                {formData.isOpen ? ' Loja funcionando no horário acima' : ' Loja fechada agora (ignora o horário)'}
               </span>
             </label>
             <p className="text-xs text-gray-500 mt-1">Desligue para fechar a loja na hora, mesmo dentro do horário (feriado, imprevisto).</p>
@@ -339,7 +339,7 @@ function SettingsPanel() {
         {/* Delivery Settings */}
         <div className="bg-white rounded-xl shadow-sm p-6">
           <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
-            <span>🛵</span> Configurações de Entrega
+            <span></span> Configurações de Entrega
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -395,7 +395,7 @@ function SettingsPanel() {
         {/* Preview */}
         <div className="bg-white rounded-xl shadow-sm p-6">
           <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
-            <span>👁️</span> Pré-visualização
+            <span></span> Pré-visualização
           </h3>
           <div className="bg-gray-50 rounded-lg p-4">
             <div className="flex items-center gap-3">
@@ -416,14 +416,14 @@ function SettingsPanel() {
               </div>
             </div>
             <div className="mt-3 flex flex-wrap gap-3 text-xs text-gray-600">
-              <span>📍 {formData.address}</span>
-              <span>📞 {formData.phone}</span>
+              <span> {formData.address}</span>
+              <span> {formData.phone}</span>
               <span className={previewStatus.open ? 'text-green-600' : 'text-red-600'}>
                 ● {previewStatus.text}
               </span>
             </div>
             <div className="mt-2 flex gap-4 text-xs">
-              <span className="text-green-700 font-medium">🏷️ Entrega: R$ {formData.deliveryFee.toFixed(2).replace('.', ',')}</span>
+              <span className="text-green-700 font-medium"> Entrega: R$ {formData.deliveryFee.toFixed(2).replace('.', ',')}</span>
               <span className="text-gray-500">Pedido mín: R$ {formData.minOrder.toFixed(2).replace('.', ',')}</span>
             </div>
           </div>
@@ -443,7 +443,7 @@ function SettingsPanel() {
       {/* Security Section */}
       <div className="bg-white rounded-xl shadow-sm p-6">
         <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
-          <span>🔐</span> Segurança - Senha de Acesso
+          <span></span> Segurança - Senha de Acesso
         </h3>
         <p className="text-sm text-gray-500 mb-4">
           Altere a senha usada para acessar o painel administrativo.
@@ -461,13 +461,13 @@ function SettingsPanel() {
           <form onSubmit={handleChangePassword} className="space-y-4">
             {passwordSaved && (
               <div className="bg-green-50 border border-green-200 text-green-700 rounded-lg p-3 flex items-center gap-2">
-                <span>✅</span>
+                <span></span>
                 <span className="text-sm font-medium">Senha alterada com sucesso!</span>
               </div>
             )}
             {passwordError && (
               <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 flex items-center gap-2">
-                <span>⚠️</span>
+                <span></span>
                 <span className="text-sm font-medium">{passwordError}</span>
               </div>
             )}
