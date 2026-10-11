@@ -17,6 +17,8 @@ function MenuView() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [showProductModal, setShowProductModal] = useState(false)
   const [selectedAddOns, setSelectedAddOns] = useState<string[]>([])
+  // quando editando uma linha do carrinho, o modal salva as alterações na própria linha
+  const [editingCartKey, setEditingCartKey] = useState<string | null>(null)
   const [isMobile, setIsMobile] = useState(false)
   // Checkout (aparece após "Finalizar pedido" no carrinho)
   const [showCheckout, setShowCheckout] = useState(false)
@@ -73,6 +75,38 @@ function MenuView() {
   const getCartQuantity = (productId: string) => {
     const item = cart.find(item => item.product.id === productId)
     return item ? item.quantity : 0
+  }
+
+  const itemKeyOf = (item: CartItem) =>
+    item.product.id + '|' + [...(item.selectedAddOns || [])].map(a => a.id).sort().join(',')
+
+  // abre o modal do produto para editar os extras de uma linha específica do carrinho
+  const openEditExtras = (item: CartItem) => {
+    setSelectedProduct(item.product)
+    setSelectedAddOns((item.selectedAddOns || []).map(a => a.id))
+    setEditingCartKey(itemKeyOf(item))
+    setShowProductModal(true)
+  }
+
+  // salva as seleções do modal na própria linha do carrinho (preço e quantidade atualizados)
+  const updateCartItemAddOns = () => {
+    if (!selectedProduct || !editingCartKey) return
+    const chosenAddOns = (selectedProduct.addOns || []).filter(a => selectedAddOns.includes(a.id))
+    const newKey = selectedProduct.id + '|' + chosenAddOns.map(a => a.id).sort().join(',')
+    setCart(prev => {
+      const idx = prev.findIndex(i => itemKeyOf(i) === editingCartKey)
+      if (idx === -1) return prev.filter(i => itemKeyOf(i) !== newKey)
+      const edited = { ...prev[idx], selectedAddOns: chosenAddOns }
+      // se já existir outra linha idêntica à nova, soma as quantidades e remove a editada
+      const dupIdx = prev.findIndex((i, j) => j !== idx && itemKeyOf(i) === newKey)
+      if (dupIdx !== -1) {
+        const merged = { ...prev[dupIdx], quantity: prev[dupIdx].quantity + prev[idx].quantity }
+        return prev.map((i, j) => (j === dupIdx ? merged : i)).filter((_, j) => j !== idx)
+      }
+      return prev.map((i, j) => (j === idx ? edited : i))
+    })
+    setEditingCartKey(null)
+    setShowProductModal(false)
   }
 
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0)
@@ -417,9 +451,9 @@ function MenuView() {
                     product={product}
                     quantity={getCartQuantity(product.id)}
                     onAdd={() => {
-                      // produtos com adicionais sempre abrem o modal para escolher os extras
-                      if ((product.addOns || []).length > 0) openProductModal(product)
-                      else addToCart(product, [], true)
+                      // "Adicionar" entra direto no carrinho sem abrir nova página;
+                      // os extras podem ser escolhidos depois pelo link na linha do carrinho
+                      addToCart(product, [], true)
                     }}
                     onRemove={() => removeFromCart(product.id)}
                     onClick={() => openProductModal(product)}
@@ -632,17 +666,38 @@ function MenuView() {
                     }}>
                       {item.product.name}
                     </p>
-                    {item.selectedAddOns && item.selectedAddOns.length > 0 && (
-                      <p style={{ 
-                        color: '#6b7280', 
-                        fontSize: '11px',
-                        margin: '2px 0 0 0',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap'
-                      }}>
-                        + {item.selectedAddOns.map(a => a.name).join(', ')}
+                    {item.selectedAddOns && item.selectedAddOns.length > 0 ? (
+                      <p
+                        onClick={() => openEditExtras(item)}
+                        title="Editar adicionais"
+                        style={{
+                          color: '#ef4444',
+                          fontSize: '11px',
+                          margin: '2px 0 0 0',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          cursor: 'pointer',
+                          textDecoration: 'underline',
+                        }}
+                      >
+                        + {item.selectedAddOns.map(a => a.name).join(', ')} · editar
                       </p>
+                    ) : (
+                      (item.product.addOns || []).length > 0 && (
+                        <p
+                          onClick={() => openEditExtras(item)}
+                          style={{
+                            color: '#ef4444',
+                            fontSize: '11px',
+                            margin: '2px 0 0 0',
+                            cursor: 'pointer',
+                            fontWeight: 600,
+                          }}
+                        >
+                          ➕ Adicionar extras
+                        </p>
+                      )
                     )}
                     <p style={{ 
                       color: '#ef4444', 
@@ -1066,7 +1121,7 @@ function MenuView() {
         }}>
           <div 
             style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
-            onClick={() => setShowProductModal(false)}
+            onClick={() => { setShowProductModal(false); setEditingCartKey(null) }}
           ></div>
           <div style={{
             position: 'relative',
@@ -1119,7 +1174,7 @@ function MenuView() {
                 </div>
               )}
               <button 
-                onClick={() => setShowProductModal(false)}
+                onClick={() => { setShowProductModal(false); setEditingCartKey(null) }}
                 style={{
                   position: 'absolute',
                   top: '12px',
@@ -1286,7 +1341,11 @@ function MenuView() {
               backgroundColor: 'white'
             }}>
               <button 
-                onClick={() => { addToCart(selectedProduct, selectedAddOns); setShowProductModal(false) }}
+                onClick={() => {
+                  if (editingCartKey) { updateCartItemAddOns(); return }
+                  addToCart(selectedProduct, selectedAddOns)
+                  setShowProductModal(false)
+                }}
                 style={{
                   width: '100%',
                   backgroundColor: '#ef4444',
@@ -1304,8 +1363,12 @@ function MenuView() {
                   boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)'
                 }}
               >
-                <span style={{ fontSize: '18px' }}>+</span>
-                Adicionar • R$ {modalItemTotal.toFixed(2).replace('.', ',')}
+                {editingCartKey ? 'Salvar alterações' : (
+                  <>
+                    <span style={{ fontSize: '18px' }}>+</span>
+                    Adicionar • R$ {modalItemTotal.toFixed(2).replace('.', ',')}
+                  </>
+                )}
               </button>
             </div>
           </div>
