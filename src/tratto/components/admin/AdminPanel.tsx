@@ -33,21 +33,21 @@ function AdminPanel() {
       {/* Mobile menu button */}
       <button
         onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="fixed bottom-4 right-4 z-40 md:hidden w-12 h-12 bg-[#782d25] text-white rounded-full shadow-lg flex items-center justify-center" aria-label={sidebarOpen ? 'Fechar menu' : 'Abrir menu'}
+        className="fixed bottom-4 right-4 z-40 md:hidden w-12 h-12 bg-[#d9273f] text-white rounded-full shadow-lg flex items-center justify-center" aria-label={sidebarOpen ? 'Fechar menu' : 'Abrir menu'}
       >
         {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
       </button>
 
       {/* Sidebar */}
       <aside className={`
-        fixed md:static inset-y-0 left-0 z-30 w-64 bg-[#fffdfa] border-r border-[#eee4da] shadow-lg md:shadow-none
+        fixed md:static inset-y-0 left-0 z-30 w-64 bg-white border-r border-[#f4d6db] shadow-lg md:shadow-none
         transform transition-transform duration-200 md:translate-x-0
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
         pt-14 md:pt-0
       `}>
         <div className="p-4">
-          <h2 className="text-lg font-bold text-[#30231e] mb-1">Painel Admin</h2>
-          <p className="text-xs text-[#89796f] mb-6">Gerencie seu restaurante</p>
+          <h2 className="text-lg font-bold text-[#2f241f] mb-1">Painel Admin</h2>
+          <p className="text-xs text-[#75636a] mb-6">Gerencie seu restaurante</p>
           <nav className="space-y-1">
             {tabs.map(tab => (
               <button
@@ -55,11 +55,11 @@ function AdminPanel() {
                 onClick={() => { setActiveTab(tab.id); setSidebarOpen(false) }}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
                   activeTab === tab.id
-                    ? 'bg-[#f7ece6] text-[#782d25] border border-[#e8d0c3] shadow-sm'
-                    : 'text-[#65564e] hover:bg-[#f8f0e9] hover:text-[#782d25]'
+                    ? 'bg-[#fff0f2] text-[#d9273f] border border-[#ffc6cf] shadow-sm'
+                    : 'text-[#51444a] hover:bg-[#fff0f2] hover:text-[#d9273f]'
                 }`}
               >
-                <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${activeTab === tab.id ? "bg-[#782d25] text-white" : "bg-[#f5eee7] text-[#80695d]"}`}><tab.icon size={17} strokeWidth={1.8} /></span>
+                <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${activeTab === tab.id ? "bg-[#d9273f] text-white" : "bg-[#ffe1e5] text-[#b91e34]"}`}><tab.icon size={17} strokeWidth={1.8} /></span>
                 <span>{tab.label}</span>
               </button>
             ))}
