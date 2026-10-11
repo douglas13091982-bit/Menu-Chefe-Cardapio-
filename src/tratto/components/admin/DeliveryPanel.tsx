@@ -157,7 +157,7 @@ function DeliveryPanel() {
         </h3>
         <div className="bg-gray-50 rounded-lg p-4 space-y-2 text-sm">
           <div className="flex items-center gap-2">
-            <span className="text-green-500"></span>
+            <span className="text-green-500"><CheckCircle2 size={16} /></span>
             <span className="text-gray-700">MapBox GL JS integrado</span>
           </div>
           <div className="flex items-center gap-2">
