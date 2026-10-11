@@ -50,6 +50,12 @@ export interface Order {
   updatedAt: string
 }
 
+export interface DayHours {
+  open: boolean
+  openTime: string
+  closeTime: string
+}
+
 export interface StoreConfig {
   name: string
   subtitle: string
@@ -64,6 +70,7 @@ export interface StoreConfig {
   minOrder: number
   openTime: string
   closeTime: string
+  weeklyHours?: DayHours[]
   isOpen: boolean
 }
 

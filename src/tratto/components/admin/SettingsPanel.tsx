@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { useStore } from '../../context/StoreContext'
 import { supabase } from '@/integrations/supabase/client'
+import { DAY_LABELS, DAY_ORDER, getWeeklyHours, getStoreStatus } from '../../hours'
 import MapboxIntegration from './MapboxIntegration'
 
 function SettingsPanel() {
@@ -31,9 +32,21 @@ function SettingsPanel() {
     e.target.value = ''
   }
 
+  const weekly = getWeeklyHours(formData)
+  const previewStatus = getStoreStatus(formData)
+  const updateDay = (index: number, patch: Partial<{ open: boolean; openTime: string; closeTime: string }>) => {
+    setFormData(prev => ({ ...prev, weeklyHours: getWeeklyHours(prev).map((d, i) => (i === index ? { ...d, ...patch } : d)) }))
+  }
+  const copyMondayToAll = () => {
+    setFormData(prev => {
+      const monday = getWeeklyHours(prev)[1]
+      return { ...prev, weeklyHours: getWeeklyHours(prev).map(() => ({ ...monday })) }
+    })
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    setConfig(formData)
+    setConfig({ ...formData, weeklyHours: getWeeklyHours(formData) })
     setSaved(true)
     setTimeout(() => setSaved(false), 3000)
   }
@@ -183,45 +196,72 @@ function SettingsPanel() {
 
         {/* Operating Hours */}
         <div className="bg-white rounded-xl shadow-sm p-6">
-          <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
+          <h3 className="font-bold text-gray-800 mb-1 flex items-center gap-2">
             <span>🕐</span> Horário de Funcionamento
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Abertura</label>
+          <p className="text-xs text-gray-500 mb-4">
+            Defina os dias e horários em que a loja atende. Para fechar depois da meia-noite, use um fechamento menor que a abertura (ex.: 18:00 às 02:00).
+          </p>
+          <div className="space-y-2">
+            {DAY_ORDER.map(i => {
+              const d = weekly[i]
+              return (
+                <div key={i} className="flex flex-wrap items-center gap-3 border rounded-lg px-3 py-2">
+                  <label className="flex items-center gap-2 w-40 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={d.open}
+                      onChange={e => updateDay(i, { open: e.target.checked })}
+                      className="w-4 h-4"
+                      style={{ accentColor: '#ef4444' }}
+                    />
+                    <span className="text-sm font-medium text-gray-700">{DAY_LABELS[i]}</span>
+                  </label>
+                  {d.open ? (
+                    <div className="flex items-center gap-2 text-sm">
+                      <input
+                        type="time"
+                        value={d.openTime}
+                        onChange={e => updateDay(i, { openTime: e.target.value })}
+                        className="border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                      />
+                      <span className="text-gray-500">às</span>
+                      <input
+                        type="time"
+                        value={d.closeTime}
+                        onChange={e => updateDay(i, { closeTime: e.target.value })}
+                        className="border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                      />
+                    </div>
+                  ) : (
+                    <span className="text-sm text-gray-400">Fechado</span>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+          <button
+            type="button"
+            onClick={copyMondayToAll}
+            className="mt-3 border border-red-500 text-red-500 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-red-50 transition-all"
+          >
+            Copiar o horário de segunda para todos os dias
+          </button>
+
+          <div className="mt-5 pt-4 border-t">
+            <label className="relative inline-flex items-center cursor-pointer">
               <input
-                type="time"
-                value={formData.openTime}
-                onChange={e => setFormData(prev => ({ ...prev, openTime: e.target.value }))}
-                className="w-full border rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                type="checkbox"
+                checked={formData.isOpen}
+                onChange={e => setFormData(prev => ({ ...prev, isOpen: e.target.checked }))}
+                className="sr-only peer"
               />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Fechamento</label>
-              <input
-                type="time"
-                value={formData.closeTime}
-                onChange={e => setFormData(prev => ({ ...prev, closeTime: e.target.value }))}
-                className="w-full border rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-              <div className="flex items-center gap-3 h-[42px]">
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formData.isOpen}
-                    onChange={e => setFormData(prev => ({ ...prev, isOpen: e.target.checked }))}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
-                  <span className="ml-3 text-sm font-medium text-gray-700">
-                    {formData.isOpen ? '🟢 Aberto' : '🔴 Fechado'}
-                  </span>
-                </label>
-              </div>
-            </div>
+              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
+              <span className="ml-3 text-sm font-medium text-gray-700">
+                {formData.isOpen ? '🟢 Loja funcionando no horário acima' : '🔴 Loja fechada agora (ignora o horário)'}
+              </span>
+            </label>
+            <p className="text-xs text-gray-500 mt-1">Desligue para fechar a loja na hora, mesmo dentro do horário (feriado, imprevisto).</p>
           </div>
         </div>
 
@@ -307,9 +347,8 @@ function SettingsPanel() {
             <div className="mt-3 flex flex-wrap gap-3 text-xs text-gray-600">
               <span>📍 {formData.address}</span>
               <span>📞 {formData.phone}</span>
-              <span>🕐 {formData.openTime} - {formData.closeTime}</span>
-              <span className={formData.isOpen ? 'text-green-600' : 'text-red-600'}>
-                {formData.isOpen ? '● Aberto' : '● Fechado'}
+              <span className={previewStatus.open ? 'text-green-600' : 'text-red-600'}>
+                ● {previewStatus.text}
               </span>
             </div>
             <div className="mt-2 flex gap-4 text-xs">

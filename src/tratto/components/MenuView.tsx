@@ -4,6 +4,7 @@ import { useStore } from '../context/StoreContext'
 import { Product, CartItem, ProductAddOn, Order, DeliveryType, PaymentMethod } from '../types'
 import { getMapboxToken } from '../mapboxToken'
 import { buildWhatsAppUrl } from '../whatsapp'
+import { getStoreStatus } from '../hours'
 import { geocodeAddress, drivingDistanceKm, roundMoney } from '../freight'
 
 const fmt = (v: number) => `R$ ${v.toFixed(2).replace('.', ',')}`
@@ -57,6 +58,14 @@ function MenuView() {
     status: 'idle', km: 0, fee: 0
   })
   const freightRequestRef = useRef(0)
+
+  // Status da loja (aberto/fechado) pelo horário do dia; atualiza a cada minuto
+  const [, setClockTick] = useState(0)
+  useEffect(() => {
+    const id = setInterval(() => setClockTick(t => t + 1), 60000)
+    return () => clearInterval(id)
+  }, [])
+  const storeStatus = getStoreStatus(config)
 
   useEffect(() => {
     const requestId = ++freightRequestRef.current
@@ -552,7 +561,7 @@ function MenuView() {
               display: 'flex', 
               alignItems: 'center', 
               gap: '4px',
-              color: config.isOpen ? '#16a34a' : '#dc2626',
+              color: storeStatus.open ? '#16a34a' : '#dc2626',
               fontSize: '13px',
               fontWeight: 500
             }}>
@@ -560,10 +569,10 @@ function MenuView() {
                 width: '8px', 
                 height: '8px', 
                 borderRadius: '50%', 
-                backgroundColor: config.isOpen ? '#22c55e' : '#ef4444',
+                backgroundColor: storeStatus.open ? '#22c55e' : '#ef4444',
                 display: 'inline-block'
               }}></span>
-              {config.isOpen ? 'Aberto agora' : 'Fechado'}
+              {storeStatus.text}
             </span>
           </div>
         </div>
