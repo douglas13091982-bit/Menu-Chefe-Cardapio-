@@ -34,14 +34,6 @@ function OrdersManager() {
     cancelled: 'bg-red-100 text-red-700 border-red-300'
   }
 
-  const statusIcons: { [key: string]: string } = {
-    pending: '⏳',
-    preparing: '👨‍🍳',
-    delivering: '🛵',
-    completed: '✅',
-    cancelled: '❌'
-  }
-
   const counts = {
     pending: orders.filter(o => o.status === 'pending').length,
     preparing: orders.filter(o => o.status === 'preparing').length,
@@ -67,7 +59,7 @@ function OrdersManager() {
               filterStatus === status ? 'ring-2 ring-red-500 border-red-300' : 'border-gray-200'
             } bg-white hover:shadow-sm`}
           >
-            <span className="text-xl">{statusIcons[status]}</span>
+            <span className="mx-auto mb-1 block h-1 w-8 rounded-full bg-[#d9273f]" />
             <p className="text-lg font-bold text-gray-800 mt-1">{count}</p>
             <p className="text-xs text-gray-500">{statusLabels[status]}</p>
           </button>
@@ -106,7 +98,7 @@ function OrdersManager() {
                 <div className="flex items-center gap-3 mb-2">
                   <span className="font-bold text-gray-800">{order.id}</span>
                   <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${statusColors[order.status]}`}>
-                    {statusIcons[order.status]} {statusLabels[order.status]}
+                    {statusLabels[order.status]}
                   </span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm">
@@ -127,12 +119,12 @@ function OrdersManager() {
                   <div className="mt-2 flex flex-wrap gap-2 text-xs">
                     {order.deliveryType && (
                       <span className={`px-2 py-1 rounded-full font-medium ${order.deliveryType === 'pickup' ? 'bg-blue-50 text-blue-700' : 'bg-amber-50 text-amber-700'}`}>
-                        {order.deliveryType === 'pickup' ? '🏪 Retirada no local' : '🛵 Entrega'}
+                        {order.deliveryType === 'pickup' ? 'Retirada no local' : 'Entrega'}
                       </span>
                     )}
                     {order.paymentMethod && (
                       <span className="px-2 py-1 rounded-full font-medium bg-emerald-50 text-emerald-700">
-                        {order.paymentMethod === 'card' ? '💳 Cartão' : order.paymentMethod === 'pix' ? '📱 PIX' : '💵 Dinheiro'}
+                        {order.paymentMethod === 'card' ? 'Cartão' : order.paymentMethod === 'pix' ? 'PIX' : 'Dinheiro'}
                         {order.changeFor ? ` (troco p/ R$ ${order.changeFor.toFixed(2).replace('.', ',')})` : ''}
                       </span>
                     )}
@@ -176,7 +168,7 @@ function OrdersManager() {
 
       {filteredOrders.length === 0 && (
         <div className="text-center py-12 text-gray-400">
-          <span className="text-4xl block mb-2">📋</span>
+          
           <p>Nenhum pedido encontrado</p>
         </div>
       )}
@@ -193,7 +185,7 @@ function OrdersManager() {
               </div>
 
               <div className={`inline-block px-3 py-1 rounded-full text-sm font-medium border mb-4 ${statusColors[selectedOrder.status]}`}>
-                {statusIcons[selectedOrder.status]} {statusLabels[selectedOrder.status]}
+                {statusLabels[selectedOrder.status]}
               </div>
 
               <div className="space-y-3 mb-4">
@@ -205,7 +197,7 @@ function OrdersManager() {
                 <div className="bg-gray-50 rounded-lg p-3">
                   <p className="text-xs text-gray-500">{selectedOrder.deliveryType === 'pickup' ? 'Retirada' : 'Endereço de entrega'}</p>
                   {selectedOrder.deliveryType === 'pickup' ? (
-                    <p className="font-medium text-sm">🏪 Cliente retira no local</p>
+                    <p className="font-medium text-sm">Cliente retira no local</p>
                   ) : (
                     <p className="font-medium text-sm">{selectedOrder.customerAddress}</p>
                   )}
@@ -214,9 +206,9 @@ function OrdersManager() {
                   <div className="bg-gray-50 rounded-lg p-3">
                     <p className="text-xs text-gray-500">Pagamento</p>
                     <p className="font-medium text-sm">
-                      {selectedOrder.paymentMethod === 'card' ? '💳 Cartão' :
-                       selectedOrder.paymentMethod === 'pix' ? '📱 PIX' :
-                       selectedOrder.paymentMethod === 'cash' ? '💵 Dinheiro' : 'Não informado'}
+                      {selectedOrder.paymentMethod === 'card' ? 'Cartão' :
+                       selectedOrder.paymentMethod === 'pix' ? 'PIX' :
+                       selectedOrder.paymentMethod === 'cash' ? 'Dinheiro' : 'Não informado'}
                       {selectedOrder.changeFor ? ` — troco para R$ ${selectedOrder.changeFor.toFixed(2).replace('.', ',')}` : ''}
                     </p>
                   </div>
