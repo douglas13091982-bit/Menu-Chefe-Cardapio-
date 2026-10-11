@@ -1,5 +1,6 @@
 // @ts-nocheck -- código original migrado sem alterações de lógica
 import { useState } from 'react'
+import { LayoutDashboard, ClipboardList, UtensilsCrossed, FolderOpen, MapPinned, TicketPercent, Megaphone, Settings, Menu, X } from 'lucide-react'
 import { useStore } from '../../context/StoreContext'
 import Dashboard from './Dashboard'
 import ProductsManager from './ProductsManager'
@@ -12,15 +13,15 @@ import CouponsManager from './CouponsManager'
 
 type AdminTab = 'dashboard' | 'orders' | 'products' | 'categories' | 'delivery' | 'marketing' | 'coupons' | 'settings'
 
-const tabs: { id: AdminTab; label: string; icon: string }[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: '📊' },
-  { id: 'orders', label: 'Pedidos', icon: '📋' },
-  { id: 'products', label: 'Produtos', icon: '🍔' },
-  { id: 'categories', label: 'Categorias', icon: '📁' },
-  { id: 'delivery', label: 'Entrega', icon: '🗺️' },
-  { id: 'coupons', label: 'Cupons', icon: '🏷️' },
-  { id: 'marketing', label: 'Marketing', icon: '📣' },
-  { id: 'settings', label: 'Configurações', icon: '⚙️' },
+const tabs = [
+  { id: 'dashboard' as const, label: 'Dashboard', icon: LayoutDashboard },
+  { id: 'orders' as const, label: 'Pedidos', icon: ClipboardList },
+  { id: 'products' as const, label: 'Produtos', icon: UtensilsCrossed },
+  { id: 'categories' as const, label: 'Categorias', icon: FolderOpen },
+  { id: 'delivery' as const, label: 'Entrega', icon: MapPinned },
+  { id: 'coupons' as const, label: 'Cupons', icon: TicketPercent },
+  { id: 'marketing' as const, label: 'Marketing', icon: Megaphone },
+  { id: 'settings' as const, label: 'Configurações', icon: Settings },
 ]
 
 function AdminPanel() {
@@ -32,21 +33,21 @@ function AdminPanel() {
       {/* Mobile menu button */}
       <button
         onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="fixed bottom-4 right-4 z-40 md:hidden w-12 h-12 bg-red-500 text-white rounded-full shadow-lg flex items-center justify-center"
+        className="fixed bottom-4 right-4 z-40 md:hidden w-12 h-12 bg-[#782d25] text-white rounded-full shadow-lg flex items-center justify-center" aria-label={sidebarOpen ? 'Fechar menu' : 'Abrir menu'}
       >
-        {sidebarOpen ? '✕' : '☰'}
+        {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
       </button>
 
       {/* Sidebar */}
       <aside className={`
-        fixed md:static inset-y-0 left-0 z-30 w-64 bg-white shadow-lg md:shadow-sm
+        fixed md:static inset-y-0 left-0 z-30 w-64 bg-[#fffdfa] border-r border-[#eee4da] shadow-lg md:shadow-none
         transform transition-transform duration-200 md:translate-x-0
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
         pt-14 md:pt-0
       `}>
         <div className="p-4">
-          <h2 className="text-lg font-bold text-gray-800 mb-1">Painel Admin</h2>
-          <p className="text-xs text-gray-500 mb-6">Gerencie seu restaurante</p>
+          <h2 className="text-lg font-bold text-[#30231e] mb-1">Painel Admin</h2>
+          <p className="text-xs text-[#89796f] mb-6">Gerencie seu restaurante</p>
           <nav className="space-y-1">
             {tabs.map(tab => (
               <button
@@ -54,11 +55,11 @@ function AdminPanel() {
                 onClick={() => { setActiveTab(tab.id); setSidebarOpen(false) }}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
                   activeTab === tab.id
-                    ? 'bg-red-50 text-red-600 border border-red-200'
-                    : 'text-gray-600 hover:bg-gray-100'
+                    ? 'bg-[#f7ece6] text-[#782d25] border border-[#e8d0c3] shadow-sm'
+                    : 'text-[#65564e] hover:bg-[#f8f0e9] hover:text-[#782d25]'
                 }`}
               >
-                <span className="text-lg">{tab.icon}</span>
+                <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${activeTab === tab.id ? "bg-[#782d25] text-white" : "bg-[#f5eee7] text-[#80695d]"}`}><tab.icon size={17} strokeWidth={1.8} /></span>
                 <span>{tab.label}</span>
               </button>
             ))}
