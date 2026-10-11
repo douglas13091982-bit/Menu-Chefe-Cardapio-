@@ -39,6 +39,8 @@ const defaultConfig: StoreConfig = {
   deliveryFee: 5.99,
   deliveryPerKm: 1.5,
   maxDeliveryKm: 10,
+  fixedZoneFeesEnabled: false,
+  mapboxFreightEnabled: true,
   minOrder: 20,
   openTime: '18:00',
   closeTime: '23:00',

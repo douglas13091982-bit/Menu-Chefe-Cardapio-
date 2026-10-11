@@ -43,7 +43,15 @@ function MenuView() {
   // ---- Frete por distância (taxa base + valor por km, distância pela rota do Mapbox) ----
   const perKm = Number(config.deliveryPerKm) || 0
   const maxKm = Number(config.maxDeliveryKm) || 0
-  const useDistanceFreight = deliveryType === 'delivery' && perKm > 0
+  // Chaves do painel (Entrega): taxas fixas por bairro e/ou cálculo automático pelo Mapbox
+  const mapboxEnabled = config.mapboxFreightEnabled !== false
+  const fixedEnabled = config.fixedZoneFeesEnabled === true
+  const normText = (t: string) => (t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim()
+  const matchedZone = deliveryType === 'delivery' && fixedEnabled && addrNeighborhood.trim()
+    ? deliveryZones.find(z => normText(z.name) === normText(addrNeighborhood)) || null
+    : null
+  const fixedOnlyNoMatch = deliveryType === 'delivery' && fixedEnabled && !mapboxEnabled && !matchedZone
+  const useDistanceFreight = deliveryType === 'delivery' && mapboxEnabled && !matchedZone
   const [freight, setFreight] = useState<{ status: 'idle' | 'loading' | 'ok' | 'error' | 'out'; km: number; fee: number }>({
     status: 'idle', km: 0, fee: 0
   })
@@ -199,9 +207,11 @@ function MenuView() {
   // ---- Checkout helpers ----
   const checkoutDeliveryFee =
     deliveryType === 'delivery'
-      ? (useDistanceFreight && freight.status === 'ok' ? freight.fee : config.deliveryFee)
+      ? (matchedZone ? matchedZone.price : (useDistanceFreight && freight.status === 'ok' ? freight.fee : config.deliveryFee))
       : 0
-  const deliveryFeeLabel = !useDistanceFreight
+  const deliveryFeeLabel = matchedZone ? fmt(matchedZone.price)
+    : fixedOnlyNoMatch ? (addrNeighborhood.trim() ? 'Fora da área' : 'Informe o bairro')
+    : !useDistanceFreight
     ? fmt(config.deliveryFee)
     : freight.status === 'ok' ? fmt(freight.fee)
     : freight.status === 'loading' ? 'Calculando...'
@@ -310,7 +320,8 @@ function MenuView() {
     customerPhone.trim() !== '' &&
     paymentMethod !== '' &&
     (deliveryType === 'pickup' || (addrStreet.trim() !== '' && customerNumber.trim() !== '')) &&
-    !(useDistanceFreight && (freight.status === 'idle' || freight.status === 'loading' || freight.status === 'out'))
+    !(useDistanceFreight && (freight.status === 'idle' || freight.status === 'loading' || freight.status === 'out')) &&
+    !fixedOnlyNoMatch
 
   const openCheckout = () => {
     setShowCart(false)
@@ -525,7 +536,7 @@ function MenuView() {
               fontSize: '13px', 
               fontWeight: 600 
             }}>
-              {'🏷️'} Entrega: {perKm > 0 ? 'a partir de ' : ''}{fmt(config.deliveryFee)}
+              {'🏷️'} Entrega: {fixedEnabled && !mapboxEnabled ? 'taxa por bairro' : <>{mapboxEnabled && perKm > 0 ? 'a partir de ' : ''}{fmt(config.deliveryFee)}</>}
             </span>
             <span style={{ 
               display: 'flex', 
@@ -660,7 +671,7 @@ function MenuView() {
         })}
 
         {/* Delivery Zones Info */}
-        {deliveryZones.length > 0 && (
+        {fixedEnabled && deliveryZones.length > 0 && (
           <section style={{ marginBottom: '24px' }}>
             <h3 style={{
               fontSize: isMobile ? '18px' : '22px',
@@ -1068,7 +1079,7 @@ function MenuView() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '14px' }}>
                 {[
                   { value: 'pickup' as DeliveryType, icon: '🏪', title: 'Retirar no local', desc: config.address || 'No endereço da loja' },
-                  { value: 'delivery' as DeliveryType, icon: '🛵', title: 'Entrega', desc: perKm > 0 ? `${fmt(config.deliveryFee)} + ${fmt(perKm)}/km` : `${fmt(config.deliveryFee)} taxa` },
+                  { value: 'delivery' as DeliveryType, icon: '🛵', title: 'Entrega', desc: fixedEnabled && !mapboxEnabled ? 'Taxa por bairro' : (mapboxEnabled && perKm > 0 ? `${fmt(config.deliveryFee)} + ${fmt(perKm)}/km` : `${fmt(config.deliveryFee)} taxa`) },
                 ].map(opt => (
                   <button
                     key={opt.value}
@@ -1138,7 +1149,7 @@ function MenuView() {
                     }}
                   />
                   <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '4px' }}>
-                    Bairro{locked.neighborhood ? ' (preenchido pelo CEP)' : ''}
+                    Bairro{fixedEnabled ? ' *' : ''}{locked.neighborhood ? ' (preenchido pelo CEP)' : ''}
                   </label>
                   <input
                     value={addrNeighborhood}
@@ -1193,7 +1204,17 @@ function MenuView() {
                       {freight.status === 'error' && `Não foi possível calcular a distância. Será cobrada a taxa base de ${fmt(config.deliveryFee)}.`}
                     </p>
                   )}
-                  {deliveryZones.length > 0 && (
+                  {matchedZone && (
+                    <p style={{ fontSize: '13px', fontWeight: 600, margin: '0 0 8px 0', color: '#15803d' }}>
+                      {`🛵 Bairro ${matchedZone.name} • Taxa fixa: ${fmt(matchedZone.price)}`}
+                    </p>
+                  )}
+                  {fixedOnlyNoMatch && (
+                    <p style={{ fontSize: '13px', fontWeight: 600, margin: '0 0 8px 0', color: '#dc2626' }}>
+                      {addrNeighborhood.trim() ? `Não entregamos no bairro "${addrNeighborhood.trim()}".` : 'Informe o bairro para calcular a taxa de entrega.'}
+                    </p>
+                  )}
+                  {fixedEnabled && deliveryZones.length > 0 && (
                     <p style={{ fontSize: '11px', color: '#9ca3af', margin: 0 }}>
                       Bairros atendidos: {deliveryZones.map(z => z.name).join(', ')}
                     </p>

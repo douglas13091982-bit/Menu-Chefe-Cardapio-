@@ -59,6 +59,8 @@ export interface StoreConfig {
   deliveryFee: number
   deliveryPerKm?: number
   maxDeliveryKm?: number
+  fixedZoneFeesEnabled?: boolean
+  mapboxFreightEnabled?: boolean
   minOrder: number
   openTime: string
   closeTime: string

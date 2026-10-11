@@ -8,7 +8,9 @@ import { DeliveryZone } from '../../types'
 const DEFAULT_CENTER = { lat: -26.30, lng: -48.85 }
 
 function DeliveryPanel() {
-  const { deliveryZones, addDeliveryZone, updateDeliveryZone, deleteDeliveryZone } = useStore()
+  const { config, setConfig, deliveryZones, addDeliveryZone, updateDeliveryZone, deleteDeliveryZone } = useStore()
+  const fixedEnabled = config.fixedZoneFeesEnabled === true
+  const mapboxEnabled = config.mapboxFreightEnabled !== false
   const [showForm, setShowForm] = useState(false)
   const [editingZone, setEditingZone] = useState<DeliveryZone | null>(null)
   const [formData, setFormData] = useState({ name: '', price: '', estimatedTime: '' })
@@ -70,6 +72,55 @@ function DeliveryPanel() {
         >
           <span>+</span> Nova Zona
         </button>
+      </div>
+
+      {/* Como cobrar a entrega */}
+      <div className="bg-white rounded-xl shadow-sm p-6 space-y-5">
+        <div>
+          <h3 className="font-bold text-gray-800 flex items-center gap-2">
+            <span>💰</span> Como cobrar a entrega
+          </h3>
+          <p className="text-xs text-gray-500 mt-1">Ligue ou desligue cada forma de cobrança. Vale para os pedidos de entrega do cardápio.</p>
+        </div>
+
+        <label className="flex items-start justify-between gap-4 cursor-pointer">
+          <div>
+            <p className="text-sm font-medium text-gray-800">Taxas fixas por bairro</p>
+            <p className="text-xs text-gray-500 mt-0.5">Cobra a taxa da zona cujo nome é igual ao bairro do cliente (zonas abaixo).</p>
+          </div>
+          <span className="relative inline-flex items-center flex-shrink-0">
+            <input
+              type="checkbox"
+              checked={fixedEnabled}
+              onChange={e => setConfig({ ...config, fixedZoneFeesEnabled: e.target.checked })}
+              className="sr-only peer"
+            />
+            <span className="w-11 h-6 bg-gray-200 peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></span>
+          </span>
+        </label>
+
+        <label className="flex items-start justify-between gap-4 cursor-pointer">
+          <div>
+            <p className="text-sm font-medium text-gray-800">Cálculo automático pelo Mapbox</p>
+            <p className="text-xs text-gray-500 mt-0.5">Calcula o frete pela distância da rota (taxa base + valor por km, definidos em Configurações).</p>
+          </div>
+          <span className="relative inline-flex items-center flex-shrink-0">
+            <input
+              type="checkbox"
+              checked={mapboxEnabled}
+              onChange={e => setConfig({ ...config, mapboxFreightEnabled: e.target.checked })}
+              className="sr-only peer"
+            />
+            <span className="w-11 h-6 bg-gray-200 peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></span>
+          </span>
+        </label>
+
+        <p className="text-xs text-gray-600 bg-gray-50 rounded-lg p-3">
+          {fixedEnabled && mapboxEnabled && 'Se o bairro do cliente estiver nas zonas abaixo, vale a taxa fixa da zona. Se não estiver, o frete é calculado pelo Mapbox.'}
+          {fixedEnabled && !mapboxEnabled && 'Só vale a taxa fixa por bairro. Clientes de bairros que não estão nas zonas abaixo não conseguem pedir entrega.'}
+          {!fixedEnabled && mapboxEnabled && 'O frete é calculado pela distância da rota. As taxas das zonas abaixo não são cobradas.'}
+          {!fixedEnabled && !mapboxEnabled && `Frete único: taxa base de R$ ${Number(config.deliveryFee || 0).toFixed(2).replace('.', ',')} para qualquer endereço (altere em Configurações).`}
+        </p>
       </div>
 
       {/* MapBox Map */}

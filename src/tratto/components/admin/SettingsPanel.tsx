@@ -251,7 +251,7 @@ function SettingsPanel() {
                 onChange={e => setFormData(prev => ({ ...prev, deliveryPerKm: parseFloat(e.target.value) || 0 }))}
                 className="w-full border rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
               />
-              <p className="text-xs text-gray-500 mt-1">Use 0 para cobrar só a taxa base (frete fixo).</p>
+              <p className="text-xs text-gray-500 mt-1">Use 0 para não cobrar por km (só a taxa base). O cálculo pelo Mapbox é ligado ou desligado na aba Entrega.</p>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Distância máxima de entrega (km)</label>
