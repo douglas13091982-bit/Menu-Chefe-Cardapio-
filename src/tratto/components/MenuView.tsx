@@ -552,7 +552,7 @@ function MenuView() {
                   🛵 40-50 min
                 </span>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', backgroundColor: '#f3f4f6', color: '#374151', padding: '3px 8px', borderRadius: '14px', fontSize: '11px', fontWeight: 500 }}>
-                  📍 2.5 km
+                  2.5 km
                 </span>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', backgroundColor: '#f0fdf4', color: '#15803d', padding: '3px 8px', borderRadius: '14px', fontSize: '11px', fontWeight: 600 }}>
                   {'🏷️'} {fixedEnabled && !mapboxEnabled ? 'Taxa por bairro' : `Entrega ${mapboxEnabled && perKm > 0 ? 'desde ' : ''}${fmt(config.deliveryFee)}`}
@@ -619,7 +619,7 @@ function MenuView() {
               fontSize: '12px',
               fontWeight: 500
             }}>
-              📍 2.5 km
+              2.5 km
             </span>
           </div>
 
@@ -791,7 +791,7 @@ function MenuView() {
               alignItems: 'center',
               gap: '8px'
             }}>
-              <span style={{ fontSize: isMobile ? '20px' : '24px' }}>📍</span>
+              
               Áreas de Entrega
             </h3>
             <div style={{
@@ -1217,8 +1217,8 @@ function MenuView() {
               </p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '14px' }}>
                 {[
-                  { value: 'pickup' as DeliveryType, icon: '🏪', title: 'Retirar no local', desc: config.address || 'No endereço da loja' },
-                  { value: 'delivery' as DeliveryType, icon: '🛵', title: 'Entrega', desc: fixedEnabled && !mapboxEnabled ? 'Taxa por bairro' : (mapboxEnabled && perKm > 0 ? `${fmt(config.deliveryFee)} + ${fmt(perKm)}/km` : `${fmt(config.deliveryFee)} taxa`) },
+                  { value: 'pickup' as DeliveryType, title: 'Retirar no local', desc: config.address || 'No endereço da loja' },
+                  { value: 'delivery' as DeliveryType, title: 'Entrega', desc: fixedEnabled && !mapboxEnabled ? 'Taxa por bairro' : (mapboxEnabled && perKm > 0 ? `${fmt(config.deliveryFee)} + ${fmt(perKm)}/km` : `${fmt(config.deliveryFee)} taxa`) },
                 ].map(opt => (
                   <button
                     key={opt.value}
@@ -1233,7 +1233,7 @@ function MenuView() {
                       textAlign: 'center'
                     }}
                   >
-                    <span style={{ fontSize: '24px', display: 'block', marginBottom: '6px' }}>{opt.icon}</span>
+                    
                     <span style={{ fontWeight: 600, fontSize: '14px', color: '#1f2937', display: 'block' }}>{opt.title}</span>
                     <span style={{ fontSize: '11px', color: '#6b7280' }}>{opt.desc}</span>
                   </button>
@@ -1242,7 +1242,7 @@ function MenuView() {
 
               {deliveryType === 'pickup' && (
                 <p style={{ fontSize: '12px', color: '#6b7280', backgroundColor: '#f9fafb', padding: '10px 12px', borderRadius: '10px', margin: '0 0 18px 0' }}>
-                  📍 Retirada na loja: <strong>{config.address || 'consulte o endereço'}</strong>
+                  Retirada na loja: <strong>{config.address || 'consulte o endereço'}</strong>
                 </p>
               )}
               {deliveryType === 'delivery' && (
@@ -1367,9 +1367,9 @@ function MenuView() {
               </p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '14px' }}>
                 {([
-                  { value: 'card' as PaymentMethod, icon: '💳', title: 'Cartão' },
-                  { value: 'pix' as PaymentMethod, icon: '📱', title: 'PIX' },
-                  { value: 'cash' as PaymentMethod, icon: '💵', title: 'Dinheiro' },
+                  { value: 'card' as PaymentMethod, title: 'Cartão' },
+                  { value: 'pix' as PaymentMethod, title: 'PIX' },
+                  { value: 'cash' as PaymentMethod, title: 'Dinheiro' },
                 ]).map(opt => (
                   <button
                     key={opt.value}
@@ -1384,14 +1384,14 @@ function MenuView() {
                       textAlign: 'center'
                     }}
                   >
-                    <span style={{ fontSize: '20px', display: 'block', marginBottom: '4px' }}>{opt.icon}</span>
+                    
                     <span style={{ fontWeight: 600, fontSize: '13px', color: '#1f2937' }}>{opt.title}</span>
                   </button>
                 ))}
               </div>
               {paymentMethod === 'card' && (
                 <p style={{ fontSize: '12px', color: '#6b7280', backgroundColor: '#f9fafb', padding: '10px 12px', borderRadius: '10px', margin: '0 0 18px 0' }}>
-                  💳 O cartão é passado na entrega{deliveryType === 'pickup' ? ' na retirada' : ''} pela nossa equipe.
+                  O cartão é passado na entrega{deliveryType === 'pickup' ? ' na retirada' : ''} pela nossa equipe.
                 </p>
               )}
               {paymentMethod === 'pix' && (
@@ -1623,7 +1623,7 @@ function MenuView() {
                   alignItems: 'center',
                   justifyContent: 'center'
                 }}>
-                  <span style={{ fontSize: '64px' }}>🍔</span>
+                  
                 </div>
               )}
               <button 
@@ -1670,7 +1670,7 @@ function MenuView() {
                     borderRadius: '12px',
                     whiteSpace: 'nowrap'
                   }}>
-                    🔥 Popular
+                    Popular
                   </span>
                 )}
               </div>
