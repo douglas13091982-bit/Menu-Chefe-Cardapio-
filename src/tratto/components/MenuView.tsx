@@ -5,6 +5,7 @@ import { Product, CartItem, ProductAddOn, Order, DeliveryType, PaymentMethod } f
 import { getMapboxToken } from '../mapboxToken'
 import { buildWhatsAppUrl } from '../whatsapp'
 import { getStoreStatus } from '../hours'
+import { extractLogoBackground } from '../logoColor'
 import { geocodeAddress, drivingDistanceKm, roundMoney } from '../freight'
 
 const fmt = (v: number) => `R$ ${v.toFixed(2).replace('.', ',')}`
@@ -66,6 +67,15 @@ function MenuView() {
     return () => clearInterval(id)
   }, [])
   const storeStatus = getStoreStatus(config)
+
+  // Cor do banner = cor de fundo do logo enviado (o logo se funde ao banner)
+  const [logoBg, setLogoBg] = useState<string | null>(null)
+  useEffect(() => {
+    let active = true
+    if (!config.logoUrl) { setLogoBg(null); return }
+    extractLogoBackground(config.logoUrl).then(color => { if (active) setLogoBg(color) })
+    return () => { active = false }
+  }, [config.logoUrl])
 
   useEffect(() => {
     const requestId = ++freightRequestRef.current
@@ -416,10 +426,13 @@ function MenuView() {
       <div style={{
         position: 'relative',
         height: isMobile ? '160px' : '240px',
-        background: 'linear-gradient(135deg, #1f2937 0%, #111827 50%, #1f2937 100%)',
+        background: config.logoUrl && logoBg ? logoBg : 'linear-gradient(135deg, #1f2937 0%, #111827 50%, #1f2937 100%)',
+        transition: 'background 0.3s ease',
         overflow: 'hidden'
       }}>
-        <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.4)' }}></div>
+        {!(config.logoUrl && logoBg) && (
+          <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.4)' }}></div>
+        )}
         <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ textAlign: 'center', padding: '0 16px' }}>
             {config.logoUrl ? (
