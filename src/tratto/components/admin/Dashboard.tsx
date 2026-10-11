@@ -2,7 +2,6 @@
 import { useStore } from '../../context/StoreContext'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, Legend } from 'recharts'
 import { useMemo } from 'react'
-import { Wallet, CheckCircle2, Clock3, TrendingUp } from 'lucide-react'
 
 function Dashboard() {
   const { orders, products, categories } = useStore()
@@ -38,7 +37,7 @@ function Dashboard() {
           return itemSum
         }, 0)
       }, 0)
-      return { name: cat.name, value: parseFloat(catRevenue.toFixed(2)), icon: cat.icon }
+      return { name: cat.name, value: parseFloat(catRevenue.toFixed(2)) }
     }).filter(c => c.value > 0)
 
     // Top products
@@ -70,10 +69,10 @@ function Dashboard() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard title="Faturamento Total" value={`R$ ${stats.totalRevenue.toFixed(2).replace('.', ',')}`} icon={Wallet} color="green" />
-        <StatCard title="Pedidos Completos" value={stats.completedOrders.toString()} icon={CheckCircle2} color="blue" />
-        <StatCard title="Pedidos Pendentes" value={stats.pendingOrders.toString()} icon={Clock3} color="orange" />
-        <StatCard title="Ticket Médio" value={`R$ ${stats.avgTicket.toFixed(2).replace('.', ',')}`} icon={TrendingUp} color="purple" />
+        <StatCard title="Faturamento Total" value={`R$ ${stats.totalRevenue.toFixed(2).replace('.', ',')}`} color="green" />
+        <StatCard title="Pedidos Completos" value={stats.completedOrders.toString()} color="blue" />
+        <StatCard title="Pedidos Pendentes" value={stats.pendingOrders.toString()} color="orange" />
+        <StatCard title="Ticket Médio" value={`R$ ${stats.avgTicket.toFixed(2).replace('.', ',')}`} color="purple" />
       </div>
 
       {/* Charts Row */}
@@ -115,7 +114,7 @@ function Dashboard() {
           {stats.categorySales.length > 0 ? (
             <ResponsiveContainer width="100%" height={250}>
               <PieChart>
-                <Pie data={stats.categorySales} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label={({ name, icon }) => `${icon} ${name}`}>
+                <Pie data={stats.categorySales} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label={({ name }) => name}>
                   {stats.categorySales.map((_, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
@@ -191,7 +190,7 @@ function Dashboard() {
   )
 }
 
-function StatCard({ title, value, icon: Icon, color }: { title: string; value: string; icon: any; color: string }) {
+function StatCard({ title, value, color }: { title: string; value: string; color: string }) {
   const colorClasses: { [key: string]: string } = {
     green: 'bg-white border-[#eee4da]',
     blue: 'bg-white border-[#eee4da]',
@@ -200,9 +199,7 @@ function StatCard({ title, value, icon: Icon, color }: { title: string; value: s
   }
   return (
     <div className={`rounded-2xl border p-5 shadow-sm transition-shadow hover:shadow-md ${colorClasses[color] || 'bg-white border-[#eee4da]'}`}>
-      <div className="flex items-center justify-between">
-        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#f7ece6] text-[#782d25]"><Icon size={20} strokeWidth={1.8} /></span>
-      </div>
+      
       <p className="text-xl md:text-2xl font-bold tracking-tight text-[#30231e] mt-4">{value}</p>
       <p className="text-xs text-[#89796f] mt-1">{title}</p>
     </div>
