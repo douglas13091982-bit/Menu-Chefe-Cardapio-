@@ -690,22 +690,22 @@ function MenuView() {
                     </p>
                     {(item.product.addOns || []).length > 0 && (
                       <div style={{ margin: '6px 0 2px 0', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <p style={{ margin: 0, fontSize: '11px', fontWeight: 600, color: '#6b7280' }}>Adicionais:</p>
+                        <p style={{ margin: 0, fontSize: '12px', fontWeight: 600, color: '#6b7280' }}>Adicionais:</p>
                         {item.product.addOns.map(addOn => {
                           const checked = (item.selectedAddOns || []).some(a => a.id === addOn.id)
                           return (
                             <label
                               key={addOn.id}
-                              style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: '#374151', cursor: 'pointer' }}
+                              style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#374151', cursor: 'pointer', padding: '3px 0' }}
                             >
                               <input
                                 type="checkbox"
                                 checked={checked}
                                 onChange={() => toggleCartItemAddOn(item, addOn.id)}
-                                style={{ accentColor: '#ef4444', width: '16px', height: '16px', cursor: 'pointer', flexShrink: 0 }}
+                                style={{ accentColor: '#ef4444', width: '20px', height: '20px', cursor: 'pointer', flexShrink: 0 }}
                               />
-                              <span style={{ flex: 1 }}>{addOn.name}</span>
-                              <span style={{ color: '#15803d', fontWeight: 600, whiteSpace: 'nowrap' }}>+ {fmt(addOn.price)}</span>
+                              <span>{addOn.name}</span>
+                              <span style={{ color: '#15803d', fontWeight: 700, fontSize: '15px', whiteSpace: 'nowrap' }}>+ {fmt(addOn.price)}</span>
                             </label>
                           )
                         })}
