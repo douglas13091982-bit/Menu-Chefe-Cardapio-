@@ -1,6 +1,5 @@
 // @ts-nocheck -- código original migrado sem alterações de lógica
 import { useState } from 'react'
-import { LayoutDashboard, ClipboardList, UtensilsCrossed, FolderOpen, MapPinned, TicketPercent, Megaphone, Settings, Menu, X } from 'lucide-react'
 import { useStore } from '../../context/StoreContext'
 import Dashboard from './Dashboard'
 import ProductsManager from './ProductsManager'
@@ -14,14 +13,14 @@ import CouponsManager from './CouponsManager'
 type AdminTab = 'dashboard' | 'orders' | 'products' | 'categories' | 'delivery' | 'marketing' | 'coupons' | 'settings'
 
 const tabs = [
-  { id: 'dashboard' as const, label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'orders' as const, label: 'Pedidos', icon: ClipboardList },
-  { id: 'products' as const, label: 'Produtos', icon: UtensilsCrossed },
-  { id: 'categories' as const, label: 'Categorias', icon: FolderOpen },
-  { id: 'delivery' as const, label: 'Entrega', icon: MapPinned },
-  { id: 'coupons' as const, label: 'Cupons', icon: TicketPercent },
-  { id: 'marketing' as const, label: 'Marketing', icon: Megaphone },
-  { id: 'settings' as const, label: 'Configurações', icon: Settings },
+  { id: 'dashboard' as const, label: 'Dashboard' },
+  { id: 'orders' as const, label: 'Pedidos' },
+  { id: 'products' as const, label: 'Produtos' },
+  { id: 'categories' as const, label: 'Categorias' },
+  { id: 'delivery' as const, label: 'Entrega' },
+  { id: 'coupons' as const, label: 'Cupons' },
+  { id: 'marketing' as const, label: 'Marketing' },
+  { id: 'settings' as const, label: 'Configurações' },
 ]
 
 function AdminPanel() {
@@ -35,7 +34,7 @@ function AdminPanel() {
         onClick={() => setSidebarOpen(!sidebarOpen)}
         className="fixed bottom-4 right-4 z-40 md:hidden w-12 h-12 bg-[#d9273f] text-white rounded-full shadow-lg flex items-center justify-center" aria-label={sidebarOpen ? 'Fechar menu' : 'Abrir menu'}
       >
-        {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
+        <span className="text-xs font-semibold tracking-wide">{sidebarOpen ? 'FECHAR' : 'MENU'}</span>
       </button>
 
       {/* Sidebar */}
@@ -59,7 +58,7 @@ function AdminPanel() {
                     : 'text-[#51444a] hover:bg-[#fff0f2] hover:text-[#d9273f]'
                 }`}
               >
-                <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${activeTab === tab.id ? "bg-[#d9273f] text-white" : "bg-[#ffe1e5] text-[#b91e34]"}`}><tab.icon size={17} strokeWidth={1.8} /></span>
+                <span className={`h-5 w-1 shrink-0 rounded-full ${activeTab === tab.id ? 'bg-[#d9273f]' : 'bg-transparent'}`} />
                 <span>{tab.label}</span>
               </button>
             ))}
