@@ -60,6 +60,7 @@ export interface StoreConfig {
   name: string
   subtitle: string
   logoUrl?: string
+  bannerImage?: string
   phone: string
   address: string
   deliveryFee: number

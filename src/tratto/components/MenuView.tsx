@@ -426,11 +426,13 @@ function MenuView() {
       <div style={{
         position: 'relative',
         height: isMobile ? '160px' : '240px',
-        background: config.logoUrl && logoBg ? logoBg : 'linear-gradient(135deg, #1f2937 0%, #111827 50%, #1f2937 100%)',
+        background: config.bannerImage
+          ? `#111827 url("${config.bannerImage}") center / cover no-repeat`
+          : (config.logoUrl && logoBg ? logoBg : 'linear-gradient(135deg, #1f2937 0%, #111827 50%, #1f2937 100%)'),
         transition: 'background 0.3s ease',
         overflow: 'hidden'
       }}>
-        {!(config.logoUrl && logoBg) && (
+        {(config.bannerImage || !(config.logoUrl && logoBg)) && (
           <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.4)' }}></div>
         )}
         <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -444,7 +446,8 @@ function MenuView() {
                   maxWidth: '80%',
                   objectFit: 'contain',
                   margin: '0 auto',
-                  display: 'block'
+                  display: 'block',
+                  borderRadius: config.bannerImage ? '12px' : 0
                 }}
               />
             ) : (

@@ -32,6 +32,41 @@ function SettingsPanel() {
     e.target.value = ''
   }
 
+  // Imagem do banner: reduz para no máximo 1600 px de largura e comprime (fica leve para carregar no celular)
+  const handleBannerUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      alert('Por favor, selecione um arquivo de imagem (PNG, JPG...)')
+      return
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      alert('A imagem deve ter no máximo 10 MB.')
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = () => {
+      const img = new Image()
+      img.onload = () => {
+        const scale = Math.min(1, 1600 / img.width)
+        const canvas = document.createElement('canvas')
+        canvas.width = Math.round(img.width * scale)
+        canvas.height = Math.round(img.height * scale)
+        const ctx = canvas.getContext('2d')
+        if (!ctx) { alert('Não foi possível processar a imagem.'); return }
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+        let dataUrl = canvas.toDataURL('image/webp', 0.8)
+        if (!dataUrl.startsWith('data:image/webp')) dataUrl = canvas.toDataURL('image/jpeg', 0.8)
+        setFormData(prev => ({ ...prev, bannerImage: dataUrl }))
+      }
+      img.onerror = () => alert('Não foi possível ler a imagem.')
+      img.src = reader.result as string
+    }
+    reader.onerror = () => alert('Não foi possível ler o arquivo.')
+    reader.readAsDataURL(file)
+  }
+
   const weekly = getWeeklyHours(formData)
   const previewStatus = getStoreStatus(formData)
   const updateDay = (index: number, patch: Partial<{ open: boolean; openTime: string; closeTime: string }>) => {
@@ -115,9 +150,9 @@ function SettingsPanel() {
           </h3>
           {/* Logo / Banner */}
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Logo da Loja (banner)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Logo da Loja</label>
             <p className="text-xs text-gray-400 mb-2">
-              A imagem aparecerá no lugar do nome da loja no banner do cardápio. Recomendado: PNG com fundo transparente.
+              O logo aparece no centro do banner, no lugar do nome da loja. Recomendado: PNG com fundo transparente ou com fundo sólido (o banner adota a cor do fundo do logo).
             </p>
             <div className="flex items-center gap-4">
               <div className="w-24 h-24 rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 flex items-center justify-center overflow-hidden shrink-0">
@@ -146,6 +181,42 @@ function SettingsPanel() {
                     Remover logo
                   </button>
                 )}
+              </div>
+            </div>
+          </div>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Imagem do Banner (foto de fundo)</label>
+            <p className="text-xs text-gray-400 mb-2">
+              Foto ou arte que ocupa todo o banner no topo do cardápio. O logo (se houver) fica por cima, no centro. Recomendado: imagem horizontal, ex.: 1600 x 500 px.
+            </p>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+              <div className="w-full sm:w-64 h-24 rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 flex items-center justify-center overflow-hidden shrink-0">
+                {formData.bannerImage ? (
+                  <img src={formData.bannerImage} alt="Imagem do banner" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-sm text-gray-400">Nenhuma imagem</span>
+                )}
+              </div>
+              <div className="flex flex-col gap-2">
+                <label className="inline-block bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer transition-all text-center">
+                  {formData.bannerImage ? 'Trocar imagem do banner' : 'Enviar imagem do banner'}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleBannerUpload}
+                    className="hidden"
+                  />
+                </label>
+                {formData.bannerImage && (
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, bannerImage: '' }))}
+                    className="text-red-500 hover:text-red-600 text-sm font-medium text-left"
+                  >
+                    Remover imagem do banner
+                  </button>
+                )}
+                <span className="text-xs text-gray-400">Clique em "Salvar Configurações" para publicar.</span>
               </div>
             </div>
           </div>
