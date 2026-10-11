@@ -1,6 +1,10 @@
 // @ts-nocheck -- código original migrado sem alterações de lógica
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { Product, Category, Order, StoreConfig, DeliveryZone } from '../types'
+import { supabase } from '@/integrations/supabase/client'
+import { setDbMapboxToken } from '../mapboxToken'
+
+export { isCurrentUserAdmin }
 
 interface StoreContextType {
   // Config
@@ -220,42 +224,148 @@ function generateDemoOrders(): Order[] {
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined)
 
-function loadFromStorage<T>(key: string, defaultValue: T): T {
-  try {
-    const stored = localStorage.getItem(key)
-    return stored ? JSON.parse(stored) : defaultValue
-  } catch {
-    return defaultValue
-  }
+async function isCurrentUserAdmin(): Promise<boolean> {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return false
+  const { data, error } = await supabase.rpc('has_role', { _user_id: user.id, _role: 'admin' })
+  if (error) { console.error('Erro ao verificar papel admin:', error); return false }
+  return data === true
+}
+
+function logError(action: string, error: any) {
+  if (error) console.error(`Erro ao ${action}:`, error)
 }
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const [config, setConfigState] = useState<StoreConfig>(() => ({ ...defaultConfig, ...loadFromStorage('store_config', defaultConfig) }))
-  const [products, setProducts] = useState<Product[]>(() => loadFromStorage('store_products', defaultProducts))
-  const [categories, setCategories] = useState<Category[]>(() => loadFromStorage('store_categories', defaultCategories))
-  const [orders, setOrders] = useState<Order[]>(() => loadFromStorage('store_orders', generateDemoOrders()))
-  const [deliveryZones, setDeliveryZones] = useState<DeliveryZone[]>(() => loadFromStorage('store_delivery_zones', defaultDeliveryZones))
+  // Começa com os dados padrão: se o banco falhar, o cardápio continua abrindo
+  const [config, setConfigState] = useState<StoreConfig>(defaultConfig)
+  const [products, setProducts] = useState<Product[]>(defaultProducts)
+  const [categories, setCategories] = useState<Category[]>(defaultCategories)
+  const [orders, setOrders] = useState<Order[]>([])
+  const [deliveryZones, setDeliveryZones] = useState<DeliveryZone[]>(defaultDeliveryZones)
+  const [isAdmin, setIsAdmin] = useState(false)
 
-  useEffect(() => { localStorage.setItem('store_config', JSON.stringify(config)) }, [config])
-  useEffect(() => { localStorage.setItem('store_products', JSON.stringify(products)) }, [products])
-  useEffect(() => { localStorage.setItem('store_categories', JSON.stringify(categories)) }, [categories])
-  useEffect(() => { localStorage.setItem('store_orders', JSON.stringify(orders)) }, [orders])
-  useEffect(() => { localStorage.setItem('store_delivery_zones', JSON.stringify(deliveryZones)) }, [deliveryZones])
+  // Leitura pública (cardápio)
+  useEffect(() => {
+    let cancelled = false
+    const loadPublic = async () => {
+      try {
+        const [settingsRes, catRes, prodRes, zoneRes] = await Promise.all([
+          supabase.from('store_settings').select('config, mapbox_public_token').eq('id', 'main').maybeSingle(),
+          supabase.from('categories').select('data, sort_order').order('sort_order'),
+          supabase.from('products').select('data, sort_order').order('sort_order'),
+          supabase.from('delivery_zones').select('data'),
+        ])
+        if (cancelled) return
+        if (settingsRes.data) {
+          setConfigState({ ...defaultConfig, ...(settingsRes.data.config || {}) })
+          setDbMapboxToken(settingsRes.data.mapbox_public_token || '')
+        }
+        if (catRes.data && catRes.data.length > 0) setCategories(catRes.data.map(r => r.data))
+        if (prodRes.data && prodRes.data.length > 0) setProducts(prodRes.data.map(r => r.data))
+        if (zoneRes.data && zoneRes.data.length > 0) setDeliveryZones(zoneRes.data.map(r => r.data))
+        ;[settingsRes, catRes, prodRes, zoneRes].forEach(r => logError('carregar dados do cardápio', r.error))
+      } catch (err) {
+        console.error('Falha ao conectar ao banco; usando dados padrão.', err)
+      }
+    }
+    loadPublic()
+    return () => { cancelled = true }
+  }, [])
 
-  const setConfig = (c: StoreConfig) => setConfigState(c)
-  const addProduct = (p: Product) => setProducts(prev => [...prev, p])
-  const updateProduct = (p: Product) => setProducts(prev => prev.map(item => item.id === p.id ? p : item))
-  const deleteProduct = (id: string) => setProducts(prev => prev.filter(item => item.id !== id))
-  const addCategory = (c: Category) => setCategories(prev => [...prev, c])
-  const updateCategory = (c: Category) => setCategories(prev => prev.map(item => item.id === c.id ? c : item))
-  const deleteCategory = (id: string) => setCategories(prev => prev.filter(item => item.id !== id))
-  const addOrder = (o: Order) => setOrders(prev => [o, ...prev])
-  const updateOrderStatus = (id: string, status: Order['status']) => {
-    setOrders(prev => prev.map(o => o.id === id ? { ...o, status, updatedAt: new Date().toISOString() } : o))
+  // Sessão do admin
+  useEffect(() => {
+    const check = () => { isCurrentUserAdmin().then(setIsAdmin).catch(() => setIsAdmin(false)) }
+    check()
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'USER_UPDATED') check()
+    })
+    return () => subscription.unsubscribe()
+  }, [])
+
+  // Admin: carrega pedidos e popula tabelas vazias com os dados padrão
+  useEffect(() => {
+    if (!isAdmin) { setOrders([]); return }
+    const loadAdmin = async () => {
+      const [settingsRes, catRes, prodRes, zoneRes] = await Promise.all([
+        supabase.from('store_settings').select('id').eq('id', 'main').maybeSingle(),
+        supabase.from('categories').select('id', { count: 'exact', head: true }),
+        supabase.from('products').select('id', { count: 'exact', head: true }),
+        supabase.from('delivery_zones').select('id', { count: 'exact', head: true }),
+      ])
+      if (!settingsRes.error && !settingsRes.data) {
+        logError('popular configurações', (await supabase.from('store_settings').insert({ id: 'main', config: defaultConfig })).error)
+      }
+      if (!catRes.error && catRes.count === 0) {
+        logError('popular categorias', (await supabase.from('categories').insert(defaultCategories.map((c, i) => ({ id: c.id, data: c, sort_order: c.order ?? i })))).error)
+      }
+      if (!prodRes.error && prodRes.count === 0) {
+        logError('popular produtos', (await supabase.from('products').insert(defaultProducts.map((p, i) => ({ id: p.id, data: p, sort_order: i })))).error)
+      }
+      if (!zoneRes.error && zoneRes.count === 0) {
+        logError('popular zonas', (await supabase.from('delivery_zones').insert(defaultDeliveryZones.map(z => ({ id: z.id, data: z })))).error)
+      }
+      const { data, error } = await supabase.from('orders').select('data, status').order('created_at', { ascending: false })
+      logError('carregar pedidos', error)
+      if (data) setOrders(data.map(r => ({ ...r.data, status: r.status })))
+    }
+    loadAdmin().catch(err => console.error('Erro no carregamento do admin:', err))
+  }, [isAdmin])
+
+  const setConfig = (c: StoreConfig) => {
+    setConfigState(c)
+    supabase.from('store_settings').upsert({ id: 'main', config: c, updated_at: new Date().toISOString() })
+      .then(({ error }) => logError('salvar configurações', error))
   }
-  const addDeliveryZone = (z: DeliveryZone) => setDeliveryZones(prev => [...prev, z])
-  const updateDeliveryZone = (z: DeliveryZone) => setDeliveryZones(prev => prev.map(item => item.id === z.id ? z : item))
-  const deleteDeliveryZone = (id: string) => setDeliveryZones(prev => prev.filter(item => item.id !== id))
+  const saveProduct = (p: Product, sortOrder?: number) => {
+    const row: any = { id: p.id, data: p }
+    if (sortOrder !== undefined) row.sort_order = sortOrder
+    supabase.from('products').upsert(row).then(({ error }) => logError('salvar produto', error))
+  }
+  const addProduct = (p: Product) => { setProducts(prev => { saveProduct(p, prev.length); return [...prev, p] }) }
+  const updateProduct = (p: Product) => { setProducts(prev => prev.map(item => item.id === p.id ? p : item)); saveProduct(p) }
+  const deleteProduct = (id: string) => {
+    setProducts(prev => prev.filter(item => item.id !== id))
+    supabase.from('products').delete().eq('id', id).then(({ error }) => logError('apagar produto', error))
+  }
+  const saveCategory = (c: Category) => {
+    supabase.from('categories').upsert({ id: c.id, data: c, sort_order: c.order ?? 0 }).then(({ error }) => logError('salvar categoria', error))
+  }
+  const addCategory = (c: Category) => { setCategories(prev => [...prev, c]); saveCategory(c) }
+  const updateCategory = (c: Category) => { setCategories(prev => prev.map(item => item.id === c.id ? c : item)); saveCategory(c) }
+  const deleteCategory = (id: string) => {
+    setCategories(prev => prev.filter(item => item.id !== id))
+    supabase.from('categories').delete().eq('id', id).then(({ error }) => logError('apagar categoria', error))
+  }
+  const addOrder = (o: Order) => {
+    setOrders(prev => [o, ...prev])
+    // O cliente só insere o pedido (sem .select(), pois não pode ler pedidos)
+    supabase.from('orders').insert({ id: o.id, data: o, status: 'pending' })
+      .then(({ error }) => logError('enviar pedido', error))
+  }
+  const updateOrderStatus = (id: string, status: Order['status']) => {
+    const updatedAt = new Date().toISOString()
+    let updated: Order | undefined
+    setOrders(prev => prev.map(o => {
+      if (o.id !== id) return o
+      updated = { ...o, status, updatedAt }
+      return updated
+    }))
+    const current = orders.find(o => o.id === id)
+    const data = updated || (current ? { ...current, status, updatedAt } : undefined)
+    if (!data) return
+    supabase.from('orders').update({ data, status, updated_at: updatedAt }).eq('id', id)
+      .then(({ error }) => logError('atualizar pedido', error))
+  }
+  const saveZone = (z: DeliveryZone) => {
+    supabase.from('delivery_zones').upsert({ id: z.id, data: z }).then(({ error }) => logError('salvar zona', error))
+  }
+  const addDeliveryZone = (z: DeliveryZone) => { setDeliveryZones(prev => [...prev, z]); saveZone(z) }
+  const updateDeliveryZone = (z: DeliveryZone) => { setDeliveryZones(prev => prev.map(item => item.id === z.id ? z : item)); saveZone(z) }
+  const deleteDeliveryZone = (id: string) => {
+    setDeliveryZones(prev => prev.filter(item => item.id !== id))
+    supabase.from('delivery_zones').delete().eq('id', id).then(({ error }) => logError('apagar zona', error))
+  }
 
   return (
     <StoreContext.Provider value={{
