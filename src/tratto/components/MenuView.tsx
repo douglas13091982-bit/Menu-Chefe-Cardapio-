@@ -109,6 +109,28 @@ function MenuView() {
     setShowProductModal(false)
   }
 
+  // marca/desmarca um adicional direto na linha do carrinho (sem abrir a página/modal do produto)
+  const toggleCartItemAddOn = (item: CartItem, addOnId: string) => {
+    const currentIds = (item.selectedAddOns || []).map(a => a.id)
+    const nextIds = currentIds.includes(addOnId)
+      ? currentIds.filter(id => id !== addOnId)
+      : [...currentIds, addOnId]
+    const chosenAddOns = (item.product.addOns || []).filter(a => nextIds.includes(a.id))
+    const oldKey = itemKeyOf(item)
+    const newKey = item.product.id + '|' + chosenAddOns.map(a => a.id).sort().join(',')
+    setCart(prev => {
+      const idx = prev.findIndex(i => itemKeyOf(i) === oldKey)
+      if (idx === -1) return prev
+      // se já existir outra linha idêntica à nova, soma as quantidades e remove a editada
+      const dupIdx = prev.findIndex((i, j) => j !== idx && itemKeyOf(i) === newKey)
+      if (dupIdx !== -1) {
+        const merged = { ...prev[dupIdx], quantity: prev[dupIdx].quantity + prev[idx].quantity }
+        return prev.map((i, j) => (j === dupIdx ? merged : i)).filter((_, j) => j !== idx)
+      }
+      return prev.map((i, j) => (j === idx ? { ...i, selectedAddOns: chosenAddOns } : i))
+    })
+  }
+
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0)
   const totalPrice = cart.reduce((sum, item) => sum + getItemUnitPrice(item) * item.quantity, 0)
 
@@ -666,38 +688,28 @@ function MenuView() {
                     }}>
                       {item.product.name}
                     </p>
-                    {item.selectedAddOns && item.selectedAddOns.length > 0 ? (
-                      <p
-                        onClick={() => openEditExtras(item)}
-                        title="Editar adicionais"
-                        style={{
-                          color: '#ef4444',
-                          fontSize: '11px',
-                          margin: '2px 0 0 0',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                          cursor: 'pointer',
-                          textDecoration: 'underline',
-                        }}
-                      >
-                        + {item.selectedAddOns.map(a => a.name).join(', ')} · editar
-                      </p>
-                    ) : (
-                      (item.product.addOns || []).length > 0 && (
-                        <p
-                          onClick={() => openEditExtras(item)}
-                          style={{
-                            color: '#ef4444',
-                            fontSize: '11px',
-                            margin: '2px 0 0 0',
-                            cursor: 'pointer',
-                            fontWeight: 600,
-                          }}
-                        >
-                          ➕ Adicionar extras
-                        </p>
-                      )
+                    {(item.product.addOns || []).length > 0 && (
+                      <div style={{ margin: '6px 0 2px 0', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <p style={{ margin: 0, fontSize: '11px', fontWeight: 600, color: '#6b7280' }}>Adicionais:</p>
+                        {item.product.addOns.map(addOn => {
+                          const checked = (item.selectedAddOns || []).some(a => a.id === addOn.id)
+                          return (
+                            <label
+                              key={addOn.id}
+                              style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: '#374151', cursor: 'pointer' }}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={() => toggleCartItemAddOn(item, addOn.id)}
+                                style={{ accentColor: '#ef4444', width: '16px', height: '16px', cursor: 'pointer', flexShrink: 0 }}
+                              />
+                              <span style={{ flex: 1 }}>{addOn.name}</span>
+                              <span style={{ color: '#15803d', fontWeight: 600, whiteSpace: 'nowrap' }}>+ {fmt(addOn.price)}</span>
+                            </label>
+                          )
+                        })}
+                      </div>
                     )}
                     <p style={{ 
                       color: '#ef4444', 
