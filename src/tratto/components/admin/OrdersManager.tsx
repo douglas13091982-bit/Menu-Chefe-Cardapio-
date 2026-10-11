@@ -123,6 +123,21 @@ function OrdersManager() {
                     <p className="font-bold text-green-700">R$ {(order.total + order.deliveryFee).toFixed(2).replace('.', ',')}</p>
                   </div>
                 </div>
+                {(order.deliveryType || order.paymentMethod) && (
+                  <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                    {order.deliveryType && (
+                      <span className={`px-2 py-1 rounded-full font-medium ${order.deliveryType === 'pickup' ? 'bg-blue-50 text-blue-700' : 'bg-amber-50 text-amber-700'}`}>
+                        {order.deliveryType === 'pickup' ? '🏪 Retirada no local' : '🛵 Entrega'}
+                      </span>
+                    )}
+                    {order.paymentMethod && (
+                      <span className="px-2 py-1 rounded-full font-medium bg-emerald-50 text-emerald-700">
+                        {order.paymentMethod === 'card' ? '💳 Cartão' : order.paymentMethod === 'pix' ? '📱 PIX' : '💵 Dinheiro'}
+                        {order.changeFor ? ` (troco p/ R$ ${order.changeFor.toFixed(2).replace('.', ',')})` : ''}
+                      </span>
+                    )}
+                  </div>
+                )}
                 <div className="mt-2">
                   <p className="text-gray-500 text-xs">Itens: {order.items.map(i => `${i.quantity}x ${i.product.name}`).join(', ')}</p>
                 </div>
@@ -188,9 +203,24 @@ function OrdersManager() {
                   <p className="text-sm text-gray-600">{selectedOrder.customerPhone}</p>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-3">
-                  <p className="text-xs text-gray-500">Endereço de entrega</p>
-                  <p className="font-medium text-sm">{selectedOrder.customerAddress}</p>
+                  <p className="text-xs text-gray-500">{selectedOrder.deliveryType === 'pickup' ? 'Retirada' : 'Endereço de entrega'}</p>
+                  {selectedOrder.deliveryType === 'pickup' ? (
+                    <p className="font-medium text-sm">🏪 Cliente retira no local</p>
+                  ) : (
+                    <p className="font-medium text-sm">{selectedOrder.customerAddress}</p>
+                  )}
                 </div>
+                {(selectedOrder.paymentMethod || selectedOrder.deliveryType) && (
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <p className="text-xs text-gray-500">Pagamento</p>
+                    <p className="font-medium text-sm">
+                      {selectedOrder.paymentMethod === 'card' ? '💳 Cartão' :
+                       selectedOrder.paymentMethod === 'pix' ? '📱 PIX' :
+                       selectedOrder.paymentMethod === 'cash' ? '💵 Dinheiro' : 'Não informado'}
+                      {selectedOrder.changeFor ? ` — troco para R$ ${selectedOrder.changeFor.toFixed(2).replace('.', ',')}` : ''}
+                    </p>
+                  </div>
+                )}
               </div>
 
               <h4 className="font-semibold text-gray-800 mb-2">Itens do pedido</h4>

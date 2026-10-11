@@ -1,14 +1,16 @@
 // @ts-nocheck -- código original migrado sem alterações de lógica
 import { useState, useRef, useEffect } from 'react'
 import { useStore } from '../context/StoreContext'
-import { Product, CartItem, ProductAddOn } from '../types'
+import { Product, CartItem, ProductAddOn, Order, DeliveryType, PaymentMethod } from '../types'
+
+const fmt = (v: number) => `R$ ${v.toFixed(2).replace('.', ',')}`
 
 // preço unitário do item do carrinho (produto + adicionais selecionados)
 const getItemUnitPrice = (item: CartItem) =>
   item.product.price + (item.selectedAddOns || []).reduce((sum, a) => sum + a.price, 0)
 
 function MenuView() {
-  const { config, products, categories, deliveryZones } = useStore()
+  const { config, products, categories, deliveryZones, addOrder } = useStore()
   const [activeCategory, setActiveCategory] = useState(categories[0]?.id || '')
   const [cart, setCart] = useState<CartItem[]>([])
   const [showCart, setShowCart] = useState(false)
@@ -16,6 +18,15 @@ function MenuView() {
   const [showProductModal, setShowProductModal] = useState(false)
   const [selectedAddOns, setSelectedAddOns] = useState<string[]>([])
   const [isMobile, setIsMobile] = useState(false)
+  // Checkout (aparece após "Finalizar pedido" no carrinho)
+  const [showCheckout, setShowCheckout] = useState(false)
+  const [deliveryType, setDeliveryType] = useState<DeliveryType>('pickup')
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | ''>('')
+  const [customerName, setCustomerName] = useState('')
+  const [customerPhone, setCustomerPhone] = useState('')
+  const [customerAddress, setCustomerAddress] = useState('')
+  const [changeFor, setChangeFor] = useState('')
+  const [orderPlaced, setOrderPlaced] = useState<Order | null>(null)
   const sectionRefs = useRef<{ [key: string]: HTMLElement | null }>({})
 
   // Detect mobile
@@ -66,6 +77,53 @@ function MenuView() {
 
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0)
   const totalPrice = cart.reduce((sum, item) => sum + getItemUnitPrice(item) * item.quantity, 0)
+
+  // ---- Checkout helpers ----
+  const checkoutDeliveryFee = deliveryType === 'delivery' ? config.deliveryFee : 0
+  const checkoutTotal = totalPrice + checkoutDeliveryFee
+  const changeValue = parseFloat((changeFor || '').replace(',', '.')) || 0
+  const paymentLabels: Record<PaymentMethod, string> = {
+    card: 'Cartão',
+    pix: 'PIX',
+    cash: 'Dinheiro',
+  }
+  const canPlaceOrder =
+    customerName.trim() !== '' &&
+    customerPhone.trim() !== '' &&
+    paymentMethod !== '' &&
+    (deliveryType === 'pickup' || customerAddress.trim() !== '')
+
+  const openCheckout = () => {
+    setShowCart(false)
+    setShowCheckout(true)
+  }
+
+  const placeOrder = () => {
+    if (!canPlaceOrder) return
+    const now = new Date().toISOString()
+    const order: Order = {
+      id: '#' + Math.floor(1000 + Math.random() * 9000),
+      items: cart,
+      total: totalPrice,
+      deliveryFee: checkoutDeliveryFee,
+      status: 'pending',
+      customerName: customerName.trim(),
+      customerPhone: customerPhone.trim(),
+      customerAddress: deliveryType === 'delivery' ? customerAddress.trim() : '',
+      deliveryType,
+      paymentMethod: paymentMethod as PaymentMethod,
+      changeFor: paymentMethod === 'cash' && changeValue > checkoutTotal ? changeValue : undefined,
+      createdAt: now,
+      updatedAt: now,
+    }
+    addOrder(order)
+    setOrderPlaced(order)
+    setShowCheckout(false)
+    setCart([])
+    setPaymentMethod('')
+    setChangeFor('')
+    setCustomerAddress('')
+  }
 
   const scrollToCategory = (categoryId: string) => {
     setActiveCategory(categoryId)
@@ -239,7 +297,7 @@ function MenuView() {
               fontSize: '13px', 
               fontWeight: 600 
             }}>
-              🏷️ Entrega: R$ {config.deliveryFee.toFixed(2).replace('.', ',')}
+              {'🏷️'} Entrega: {fmt(config.deliveryFee)}
             </span>
             <span style={{ 
               display: 'flex', 
@@ -648,13 +706,7 @@ function MenuView() {
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
                 <span style={{ color: '#6b7280', fontSize: '13px' }}>Subtotal</span>
-                <span style={{ fontWeight: 600, fontSize: '13px' }}>R$ {totalPrice.toFixed(2).replace('.', ',')}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-                <span style={{ color: '#6b7280', fontSize: '13px' }}>Taxa de entrega</span>
-                <span style={{ fontWeight: 600, fontSize: '13px', color: '#16a34a' }}>
-                  R$ {config.deliveryFee.toFixed(2).replace('.', ',')}
-                </span>
+                <span style={{ fontWeight: 600, fontSize: '13px' }}>{fmt(totalPrice)}</span>
               </div>
               <div style={{ 
                 display: 'flex', 
@@ -665,24 +717,339 @@ function MenuView() {
               }}>
                 <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#1f2937' }}>Total</span>
                 <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#1f2937' }}>
-                  R$ {(totalPrice + config.deliveryFee).toFixed(2).replace('.', ',')}
+                  {fmt(totalPrice)}
                 </span>
               </div>
-              <button style={{
-                width: '100%',
-                backgroundColor: '#ef4444',
-                color: 'white',
-                borderRadius: '12px',
-                padding: '14px',
-                fontWeight: 'bold',
-                fontSize: '15px',
-                border: 'none',
-                cursor: 'pointer',
-                boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)'
-              }}>
+              <p style={{ color: '#9ca3af', fontSize: '11px', margin: '0 0 10px 0', textAlign: 'center' }}>
+                🛵 Entrega ou retirada e forma de pagamento você escolhe a seguir
+              </p>
+              <button
+                onClick={openCheckout}
+                disabled={cart.length === 0}
+                style={{
+                  width: '100%',
+                  backgroundColor: cart.length === 0 ? '#d1d5db' : '#ef4444',
+                  color: 'white',
+                  borderRadius: '12px',
+                  padding: '14px',
+                  fontWeight: 'bold',
+                  fontSize: '15px',
+                  border: 'none',
+                  cursor: cart.length === 0 ? 'not-allowed' : 'pointer',
+                  boxShadow: cart.length === 0 ? 'none' : '0 4px 12px rgba(239, 68, 68, 0.3)'
+                }}
+              >
                 Finalizar pedido
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Checkout Modal - aparece após "Finalizar pedido" */}
+      {showCheckout && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 50,
+          display: 'flex',
+          alignItems: isMobile ? 'flex-end' : 'center',
+          justifyContent: 'center'
+        }}>
+          <div
+            style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
+            onClick={() => setShowCheckout(false)}
+          ></div>
+          <div style={{
+            position: 'relative',
+            backgroundColor: 'white',
+            borderRadius: isMobile ? '20px 20px 0 0' : '20px',
+            width: '100%',
+            maxWidth: '500px',
+            maxHeight: '92vh',
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
+            animation: 'slideUp 0.3s ease-out'
+          }}>
+            {isMobile && (
+              <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 4px' }}>
+                <div style={{ width: '40px', height: '4px', backgroundColor: '#e5e7eb', borderRadius: '2px' }}></div>
+              </div>
+            )}
+            <div style={{ padding: isMobile ? '12px 16px' : '20px', borderBottom: '1px solid #f3f4f6' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#1f2937', margin: 0 }}>
+                  Finalizar pedido
+                </h3>
+                <button
+                  onClick={() => setShowCheckout(false)}
+                  style={{
+                    width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#f3f4f6',
+                    border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center',
+                    justifyContent: 'center', fontSize: '16px'
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+            <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '16px' : '20px' }}>
+              {/* Nome e telefone */}
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '4px' }}>
+                Seu nome *
+              </label>
+              <input
+                value={customerName}
+                onChange={e => setCustomerName(e.target.value)}
+                placeholder="Como podemos te chamar?"
+                style={{
+                  width: '100%', boxSizing: 'border-box', padding: '12px', borderRadius: '10px',
+                  border: '1px solid #e5e7eb', fontSize: '14px', marginBottom: '14px', outline: 'none'
+                }}
+              />
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '4px' }}>
+                Telefone / WhatsApp *
+              </label>
+              <input
+                value={customerPhone}
+                onChange={e => setCustomerPhone(e.target.value)}
+                placeholder="(00) 00000-0000"
+                inputMode="tel"
+                style={{
+                  width: '100%', boxSizing: 'border-box', padding: '12px', borderRadius: '10px',
+                  border: '1px solid #e5e7eb', fontSize: '14px', marginBottom: '18px', outline: 'none'
+                }}
+              />
+
+              {/* Retirada ou entrega */}
+              <p style={{ fontSize: '13px', fontWeight: 600, color: '#374151', margin: '0 0 8px 0' }}>
+                Como deseja receber seu pedido? *
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '14px' }}>
+                {[
+                  { value: 'pickup' as DeliveryType, icon: '🏪', title: 'Retirar no local', desc: config.address || 'No endereço da loja' },
+                  { value: 'delivery' as DeliveryType, icon: '🛵', title: 'Entrega', desc: `${fmt(config.deliveryFee)} taxa` },
+                ].map(opt => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setDeliveryType(opt.value)}
+                    style={{
+                      padding: '14px 10px',
+                      borderRadius: '12px',
+                      border: deliveryType === opt.value ? '2px solid #ef4444' : '1px solid #e5e7eb',
+                      backgroundColor: deliveryType === opt.value ? '#fef2f2' : 'white',
+                      cursor: 'pointer',
+                      textAlign: 'center'
+                    }}
+                  >
+                    <span style={{ fontSize: '24px', display: 'block', marginBottom: '6px' }}>{opt.icon}</span>
+                    <span style={{ fontWeight: 600, fontSize: '14px', color: '#1f2937', display: 'block' }}>{opt.title}</span>
+                    <span style={{ fontSize: '11px', color: '#6b7280' }}>{opt.desc}</span>
+                  </button>
+                ))}
+              </div>
+
+              {deliveryType === 'pickup' && (
+                <p style={{ fontSize: '12px', color: '#6b7280', backgroundColor: '#f9fafb', padding: '10px 12px', borderRadius: '10px', margin: '0 0 18px 0' }}>
+                  📍 Retirada na loja: <strong>{config.address || 'consulte o endereço'}</strong>
+                </p>
+              )}
+              {deliveryType === 'delivery' && (
+                <div style={{ marginBottom: '18px' }}>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '4px' }}>
+                    Endereço de entrega *
+                  </label>
+                  <input
+                    value={customerAddress}
+                    onChange={e => setCustomerAddress(e.target.value)}
+                    placeholder="Rua, número, bairro"
+                    style={{
+                      width: '100%', boxSizing: 'border-box', padding: '12px', borderRadius: '10px',
+                      border: '1px solid #e5e7eb', fontSize: '14px', marginBottom: '8px', outline: 'none'
+                    }}
+                  />
+                  {deliveryZones.length > 0 && (
+                    <p style={{ fontSize: '11px', color: '#9ca3af', margin: 0 }}>
+                      Bairros atendidos: {deliveryZones.map(z => z.name).join(', ')}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Forma de pagamento */}
+              <p style={{ fontSize: '13px', fontWeight: 600, color: '#374151', margin: '0 0 8px 0' }}>
+                Forma de pagamento *
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '14px' }}>
+                {([
+                  { value: 'card' as PaymentMethod, icon: '💳', title: 'Cartão' },
+                  { value: 'pix' as PaymentMethod, icon: '📱', title: 'PIX' },
+                  { value: 'cash' as PaymentMethod, icon: '💵', title: 'Dinheiro' },
+                ]).map(opt => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setPaymentMethod(opt.value)}
+                    style={{
+                      padding: '12px 8px',
+                      borderRadius: '12px',
+                      border: paymentMethod === opt.value ? '2px solid #ef4444' : '1px solid #e5e7eb',
+                      backgroundColor: paymentMethod === opt.value ? '#fef2f2' : 'white',
+                      cursor: 'pointer',
+                      textAlign: 'center'
+                    }}
+                  >
+                    <span style={{ fontSize: '20px', display: 'block', marginBottom: '4px' }}>{opt.icon}</span>
+                    <span style={{ fontWeight: 600, fontSize: '13px', color: '#1f2937' }}>{opt.title}</span>
+                  </button>
+                ))}
+              </div>
+              {paymentMethod === 'card' && (
+                <p style={{ fontSize: '12px', color: '#6b7280', backgroundColor: '#f9fafb', padding: '10px 12px', borderRadius: '10px', margin: '0 0 18px 0' }}>
+                  💳 O cartão é passado na entrega{deliveryType === 'pickup' ? ' na retirada' : ''} pela nossa equipe.
+                </p>
+              )}
+              {paymentMethod === 'pix' && (
+                <p style={{ fontSize: '12px', color: '#6b7280', backgroundColor: '#f9fafb', padding: '10px 12px', borderRadius: '10px', margin: '0 0 18px 0' }}>
+                  📱 Você receberá a chave PIX pelo WhatsApp ({config.phone || 'telefone da loja'}) após finalizar o pedido.
+                </p>
+              )}
+              {paymentMethod === 'cash' && (
+                <div style={{ marginBottom: '18px' }}>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '4px' }}>
+                    Precisa de troco para quanto? (opcional)
+                  </label>
+                  <input
+                    value={changeFor}
+                    onChange={e => setChangeFor(e.target.value)}
+                    placeholder={`Ex.: ${fmt(Math.ceil(checkoutTotal / 10) * 10)}`}
+                    inputMode="decimal"
+                    style={{
+                      width: '100%', boxSizing: 'border-box', padding: '12px', borderRadius: '10px',
+                      border: '1px solid #e5e7eb', fontSize: '14px', outline: 'none'
+                    }}
+                  />
+                  {changeValue > checkoutTotal && (
+                    <p style={{ fontSize: '12px', color: '#16a34a', marginTop: '6px' }}>
+                      Troco de {fmt(changeValue - checkoutTotal)}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Resumo + confirmar */}
+            <div style={{
+              padding: isMobile ? '16px' : '20px',
+              borderTop: '1px solid #f3f4f6',
+              backgroundColor: '#fafafa'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                <span style={{ color: '#6b7280', fontSize: '13px' }}>Subtotal</span>
+                <span style={{ fontWeight: 600, fontSize: '13px' }}>{fmt(totalPrice)}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                <span style={{ color: '#6b7280', fontSize: '13px' }}>
+                  {deliveryType === 'delivery' ? 'Taxa de entrega' : 'Retirada no local'}
+                </span>
+                <span style={{ fontWeight: 600, fontSize: '13px', color: '#16a34a' }}>
+                  {deliveryType === 'delivery' ? fmt(config.deliveryFee) : 'Grátis'}
+                </span>
+              </div>
+              <div style={{
+                display: 'flex', justifyContent: 'space-between', paddingTop: '12px',
+                borderTop: '1px solid #e5e7eb', marginBottom: '12px'
+              }}>
+                <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#1f2937' }}>Total</span>
+                <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#1f2937' }}>{fmt(checkoutTotal)}</span>
+              </div>
+              {!canPlaceOrder && (
+                <p style={{ fontSize: '11px', color: '#9ca3af', textAlign: 'center', margin: '0 0 8px 0' }}>
+                  Preencha nome, telefone{deliveryType === 'delivery' ? ', endereço' : ''} e forma de pagamento
+                </p>
+              )}
+              <button
+                onClick={placeOrder}
+                disabled={!canPlaceOrder}
+                style={{
+                  width: '100%',
+                  backgroundColor: canPlaceOrder ? '#16a34a' : '#d1d5db',
+                  color: 'white',
+                  borderRadius: '12px',
+                  padding: '14px',
+                  fontWeight: 'bold',
+                  fontSize: '15px',
+                  border: 'none',
+                  cursor: canPlaceOrder ? 'pointer' : 'not-allowed',
+                  boxShadow: canPlaceOrder ? '0 4px 12px rgba(22, 163, 74, 0.3)' : 'none'
+                }}
+              >
+                Confirmar pedido • {fmt(checkoutTotal)}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmação de pedido */}
+      {orderPlaced && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 60,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '16px'
+        }}>
+          <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.5)' }}></div>
+          <div style={{
+            position: 'relative',
+            backgroundColor: 'white',
+            borderRadius: '20px',
+            width: '100%',
+            maxWidth: '400px',
+            padding: '28px 20px',
+            textAlign: 'center',
+            animation: 'slideUp 0.3s ease-out'
+          }}>
+            <div style={{
+              width: '64px', height: '64px', borderRadius: '50%', backgroundColor: '#dcfce7',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              margin: '0 auto 14px', fontSize: '30px'
+            }}>
+              ✅
+            </div>
+            <h3 style={{ fontSize: '20px', fontWeight: 'bold', color: '#1f2937', margin: '0 0 6px' }}>
+              Pedido enviado!
+            </h3>
+            <p style={{ color: '#6b7280', fontSize: '14px', margin: '0 0 16px' }}>
+              Seu pedido <strong>{orderPlaced.id}</strong> foi recebido com sucesso.
+            </p>
+            <div style={{ backgroundColor: '#f9fafb', borderRadius: '12px', padding: '14px', textAlign: 'left', marginBottom: '18px' }}>
+              <p style={{ fontSize: '13px', color: '#374151', margin: '0 0 6px' }}>
+                {orderPlaced.deliveryType === 'delivery' ? '🛵 Entrega' : '🏪 Retirada no local'}
+                {orderPlaced.deliveryType === 'delivery' ? `: ${orderPlaced.customerAddress}` : ''}
+              </p>
+              <p style={{ fontSize: '13px', color: '#374151', margin: '0 0 6px' }}>
+                💰 Pagamento: {paymentLabels[orderPlaced.paymentMethod]}
+                {orderPlaced.changeFor ? ` (troco para ${fmt(orderPlaced.changeFor)})` : ''}
+              </p>
+              <p style={{ fontSize: '13px', color: '#374151', margin: 0 }}>
+                🧾 Total: <strong>{fmt(orderPlaced.total + orderPlaced.deliveryFee)}</strong>
+              </p>
+            </div>
+            <button
+              onClick={() => setOrderPlaced(null)}
+              style={{
+                width: '100%', backgroundColor: '#ef4444', color: 'white', borderRadius: '12px',
+                padding: '14px', fontWeight: 'bold', fontSize: '15px', border: 'none', cursor: 'pointer'
+              }}
+            >
+              Voltar ao cardápio
+            </button>
           </div>
         </div>
       )}

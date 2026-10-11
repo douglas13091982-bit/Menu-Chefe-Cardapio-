@@ -31,6 +31,9 @@ export interface CartItem {
   selectedAddOns?: ProductAddOn[]
 }
 
+export type DeliveryType = 'pickup' | 'delivery'
+export type PaymentMethod = 'card' | 'pix' | 'cash'
+
 export interface Order {
   id: string
   items: CartItem[]
@@ -40,6 +43,9 @@ export interface Order {
   customerName: string
   customerPhone: string
   customerAddress: string
+  deliveryType?: DeliveryType
+  paymentMethod?: PaymentMethod
+  changeFor?: number
   createdAt: string
   updatedAt: string
 }
