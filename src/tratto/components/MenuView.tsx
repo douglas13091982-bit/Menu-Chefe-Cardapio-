@@ -27,14 +27,17 @@ function MenuView() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | ''>('')
   const [customerName, setCustomerName] = useState('')
   const [customerPhone, setCustomerPhone] = useState('')
-  const [customerAddress, setCustomerAddress] = useState('')
+  const [addrStreet, setAddrStreet] = useState('')
+  const [addrNeighborhood, setAddrNeighborhood] = useState('')
+  const [addrCity, setAddrCity] = useState('')
   const [customerNumber, setCustomerNumber] = useState('')
   const [cep, setCep] = useState('')
   const [cepStatus, setCepStatus] = useState<'idle' | 'loading' | 'ok' | 'error'>('idle')
   const [cepMessage, setCepMessage] = useState('')
   const cepRequestRef = useRef(0)
   // true quando a rua veio do CEP: o endereço fica preenchido e travado, só falta o número
-  const [addressLocked, setAddressLocked] = useState(false)
+  const [locked, setLocked] = useState({ street: false, neighborhood: false, city: false })
+  const customerAddress = [addrStreet.trim(), addrNeighborhood.trim(), addrCity.trim()].filter(Boolean).join(', ')
   const numberInputRef = useRef<HTMLInputElement | null>(null)
   const [changeFor, setChangeFor] = useState('')
   const [orderPlaced, setOrderPlaced] = useState<Order | null>(null)
@@ -152,63 +155,81 @@ function MenuView() {
     pix: 'PIX',
     cash: 'Dinheiro',
   }
-  // Busca o endereço pelo CEP usando a Geocoding API do Mapbox (token configurado no painel admin)
+  const applyAddress = (street: string, neighborhood: string, city: string) => {
+    setAddrStreet(street)
+    setAddrNeighborhood(neighborhood)
+    setAddrCity(city)
+    setLocked({ street: !!street, neighborhood: !!neighborhood, city: !!city })
+  }
+
+  // Busca o endereço pelo CEP: ViaCEP traz rua/bairro/cidade; se falhar, tenta o Mapbox (cidade/bairro)
   const lookupCep = async (digits: string) => {
     const requestId = ++cepRequestRef.current
-    const token = getMapboxToken()
-    if (!token) {
-      setCepStatus('error')
-      setAddressLocked(false)
-      setCepMessage('Busca por CEP indisponível no momento. Preencha o endereço manualmente.')
-      return
-    }
+    const stale = () => requestId !== cepRequestRef.current
     setCepStatus('loading')
     setCepMessage('Buscando endereço...')
-    setAddressLocked(false)
+    applyAddress('', '', '')
+
+    // 1) ViaCEP
     try {
-      const formatted = digits.slice(0, 5) + '-' + digits.slice(5)
-      const url =
-        'https://api.mapbox.com/search/geocode/v6/forward' +
-        `?q=${encodeURIComponent(formatted)}&country=br&language=pt&limit=1&types=postcode,street,address` +
-        `&access_token=${encodeURIComponent(token)}`
-      const res = await fetch(url)
-      if (requestId !== cepRequestRef.current) return
-      if (!res.ok) throw new Error('http ' + res.status)
-      const data = await res.json()
-      if (requestId !== cepRequestRef.current) return
-      const feature = data?.features?.[0]
-      const ctx = feature?.properties?.context || {}
-      const type = feature?.properties?.feature_type
-      const street =
-        ctx.address?.street_name ||
-        ctx.street?.name ||
-        (type === 'street' ? feature?.properties?.name : '') ||
-        ''
-      const neighborhood = ctx.neighborhood?.name || ctx.locality?.name || ''
-      const city = ctx.place?.name || ctx.district?.name || ''
-      const uf = ctx.region?.region_code || ''
-      if (!feature || (!street && !neighborhood && !city)) {
-        setCepStatus('error')
-      setAddressLocked(false)
-        setCepMessage('Não encontramos esse CEP. Preencha o endereço manualmente.')
-        return
+      const res = await fetch(`https://viacep.com.br/ws/${digits}/json/`)
+      if (res.ok) {
+        const data = await res.json()
+        if (stale()) return
+        if (data && !data.erro) {
+          const street = (data.logradouro || '').trim()
+          const neighborhood = (data.bairro || '').trim()
+          const city = data.localidade && data.uf ? `${data.localidade} - ${data.uf}` : (data.localidade || '')
+          applyAddress(street, neighborhood, city)
+          setCepStatus('ok')
+          if (street) {
+            setCepMessage('Endereço encontrado! Informe o número e o complemento.')
+            setTimeout(() => numberInputRef.current?.focus(), 50)
+          } else {
+            setCepMessage('CEP localizado. Informe a rua e o número.')
+          }
+          return
+        }
       }
-      const cityUf = city && uf ? `${city} - ${uf}` : city
-      setCustomerAddress([street, neighborhood, cityUf].filter(Boolean).join(', '))
-      setCepStatus('ok')
-      setAddressLocked(!!street)
-      setCepMessage(
-        street
-          ? 'Endereço encontrado! Informe o número e o complemento.'
-          : 'CEP localizado. Complete a rua e informe o número.'
-      )
-      if (street) setTimeout(() => numberInputRef.current?.focus(), 50)
     } catch {
-      if (requestId !== cepRequestRef.current) return
-      setCepStatus('error')
-      setAddressLocked(false)
-      setCepMessage('Não foi possível buscar o CEP agora. Preencha o endereço manualmente.')
+      if (stale()) return
     }
+
+    // 2) Reserva: Mapbox (só cidade/bairro para CEPs do Brasil)
+    const token = getMapboxToken()
+    if (token) {
+      try {
+        const formatted = digits.slice(0, 5) + '-' + digits.slice(5)
+        const url =
+          'https://api.mapbox.com/search/geocode/v6/forward' +
+          `?q=${encodeURIComponent(formatted)}&country=br&language=pt&limit=1&types=postcode,street,address` +
+          `&access_token=${encodeURIComponent(token)}`
+        const res = await fetch(url)
+        if (stale()) return
+        if (res.ok) {
+          const data = await res.json()
+          if (stale()) return
+          const feature = data?.features?.[0]
+          const ctx = feature?.properties?.context || {}
+          const street = ctx.address?.street_name || ctx.street?.name || ''
+          const neighborhood = ctx.neighborhood?.name || ctx.locality?.name || ''
+          const cityName = ctx.place?.name || ctx.district?.name || ''
+          const uf = ctx.region?.region_code || ''
+          const city = cityName && uf ? `${cityName} - ${uf}` : cityName
+          if (street || neighborhood || city) {
+            applyAddress(street, neighborhood, city)
+            setCepStatus('ok')
+            setCepMessage('CEP localizado só em parte. Complete a rua e informe o número.')
+            return
+          }
+        }
+      } catch {
+        if (stale()) return
+      }
+    }
+
+    setCepStatus('error')
+    setCepMessage('Não encontramos esse CEP. Preencha o endereço manualmente.')
   }
 
   const handleCepChange = (value: string) => {
@@ -220,7 +241,7 @@ function MenuView() {
       cepRequestRef.current++
       setCepStatus('idle')
       setCepMessage('')
-      setAddressLocked(false)
+      setLocked({ street: false, neighborhood: false, city: false })
     }
   }
 
@@ -228,7 +249,7 @@ function MenuView() {
     customerName.trim() !== '' &&
     customerPhone.trim() !== '' &&
     paymentMethod !== '' &&
-    (deliveryType === 'pickup' || (customerAddress.trim() !== '' && customerNumber.trim() !== ''))
+    (deliveryType === 'pickup' || (addrStreet.trim() !== '' && customerNumber.trim() !== ''))
 
   const openCheckout = () => {
     setShowCart(false)
@@ -261,12 +282,14 @@ function MenuView() {
     setCart([])
     setPaymentMethod('')
     setChangeFor('')
-    setCustomerAddress('')
+    setAddrStreet('')
+    setAddrNeighborhood('')
+    setAddrCity('')
     setCustomerNumber('')
     setCep('')
     setCepStatus('idle')
     setCepMessage('')
-    setAddressLocked(false)
+    setLocked({ street: false, neighborhood: false, city: false })
   }
 
   const scrollToCategory = (categoryId: string) => {
@@ -1036,20 +1059,53 @@ function MenuView() {
                       {cepMessage}
                     </p>
                   )}
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '4px', marginTop: cepMessage ? 0 : '10px' }}>
-                    Endereço de entrega *{addressLocked ? ' (preenchido pelo CEP)' : ''}
+                  <div style={{ height: cepMessage ? 0 : '6px' }} />
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '4px' }}>
+                    Rua *{locked.street ? ' (preenchida pelo CEP)' : ''}
                   </label>
                   <input
-                    value={customerAddress}
-                    onChange={e => setCustomerAddress(e.target.value)}
-                    readOnly={addressLocked}
-                    placeholder="Rua, bairro, cidade"
+                    value={addrStreet}
+                    onChange={e => setAddrStreet(e.target.value)}
+                    readOnly={locked.street}
+                    placeholder="Nome da rua"
                     style={{
                       width: '100%', boxSizing: 'border-box', padding: '12px', borderRadius: '10px',
                       border: '1px solid #e5e7eb', fontSize: '14px', marginBottom: '10px', outline: 'none',
-                      backgroundColor: addressLocked ? '#f3f4f6' : 'white',
-                      color: addressLocked ? '#4b5563' : '#111827',
-                      cursor: addressLocked ? 'not-allowed' : 'text'
+                      backgroundColor: locked.street ? '#f3f4f6' : 'white',
+                      color: locked.street ? '#4b5563' : '#111827',
+                      cursor: locked.street ? 'not-allowed' : 'text'
+                    }}
+                  />
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '4px' }}>
+                    Bairro{locked.neighborhood ? ' (preenchido pelo CEP)' : ''}
+                  </label>
+                  <input
+                    value={addrNeighborhood}
+                    onChange={e => setAddrNeighborhood(e.target.value)}
+                    readOnly={locked.neighborhood}
+                    placeholder="Bairro"
+                    style={{
+                      width: '100%', boxSizing: 'border-box', padding: '12px', borderRadius: '10px',
+                      border: '1px solid #e5e7eb', fontSize: '14px', marginBottom: '10px', outline: 'none',
+                      backgroundColor: locked.neighborhood ? '#f3f4f6' : 'white',
+                      color: locked.neighborhood ? '#4b5563' : '#111827',
+                      cursor: locked.neighborhood ? 'not-allowed' : 'text'
+                    }}
+                  />
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '4px' }}>
+                    Cidade / UF{locked.city ? ' (preenchida pelo CEP)' : ''}
+                  </label>
+                  <input
+                    value={addrCity}
+                    onChange={e => setAddrCity(e.target.value)}
+                    readOnly={locked.city}
+                    placeholder="Ex.: Joinville - SC"
+                    style={{
+                      width: '100%', boxSizing: 'border-box', padding: '12px', borderRadius: '10px',
+                      border: '1px solid #e5e7eb', fontSize: '14px', marginBottom: '10px', outline: 'none',
+                      backgroundColor: locked.city ? '#f3f4f6' : 'white',
+                      color: locked.city ? '#4b5563' : '#111827',
+                      cursor: locked.city ? 'not-allowed' : 'text'
                     }}
                   />
                   <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '4px' }}>
