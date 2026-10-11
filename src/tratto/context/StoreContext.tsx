@@ -59,106 +59,106 @@ const defaultProducts: Product[] = [
   {
     id: '1', name: 'Tratto Duplo Cheddar',
     description: 'Dois blend de carne 120g, cheddar derretido, cebola caramelizada, alface, tomate e molho especial da casa no pão brioche.',
-    price: 34.90, image: 'https://image.qwenlm.ai/generated-images/b62ff599-15a5-4145-8c58-c65f82e68458/_result.png',
+    price: 34.90, image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=900&q=85',
     categoryId: 'hamburgueres', popular: true, available: true
   },
   {
     id: '2', name: 'Smash Bacon Crispy',
     description: 'Dois smash de 90g, bacon crocante, queijo prato derretido, picles e molho barbecue defumado no pão potato.',
-    price: 32.90, image: 'https://image.qwenlm.ai/generated-images/bcef539b-80ef-4b18-b919-6dfe7b1b0fbb/_result.png',
+    price: 32.90, image: 'https://images.unsplash.com/photo-1553979459-d2229ba7433a?auto=format&fit=crop&w=900&q=85',
     categoryId: 'hamburgueres', popular: true, available: true
   },
   {
     id: '3', name: 'Smash Tratto',
     description: 'Dois smash de 90g com queijo americano derretido nas bordas, picles, cebola roxa e molho smash especial.',
-    price: 29.90, image: 'https://image.qwenlm.ai/generated-images/5439d0eb-4b3e-4d8b-ae55-67688ab6dbb4/_result.png',
+    price: 29.90, image: 'https://images.unsplash.com/photo-1561758033-d89a9ad46330?auto=format&fit=crop&w=900&q=85',
     categoryId: 'hamburgueres', popular: true, available: true
   },
   {
     id: '4', name: 'Chicken Crispy Burger',
     description: 'Filé de frango empanado crocante, coleslaw, maionese de ervas e picles no pão brioche com gergelim.',
-    price: 28.90, image: 'https://image.qwenlm.ai/generated-images/50704ef9-c654-4381-9ba7-795a0f6d07c4/_result.png',
+    price: 28.90, image: 'https://images.unsplash.com/photo-1606755962773-d324e0a13086?auto=format&fit=crop&w=900&q=85',
     categoryId: 'hamburgueres', available: true
   },
   {
     id: '5', name: 'X-Burger Clássico',
     description: 'Blend de carne 150g, queijo prato, alface, tomate, cebola e maionese no pão australiano.',
-    price: 26.90, image: 'https://image.qwenlm.ai/generated-images/b62ff599-15a5-4145-8c58-c65f82e68458/_result.png',
+    price: 26.90, image: 'https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=900&q=85',
     categoryId: 'hamburgueres', available: true
   },
   {
     id: '6', name: 'Combo Tratto Duplo',
     description: 'Tratto Duplo Cheddar + Batata frita média + Refrigerante lata.',
-    price: 44.90, image: 'https://image.qwenlm.ai/generated-images/b62ff599-15a5-4145-8c58-c65f82e68458/_result.png',
+    price: 44.90, image: 'https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=900&q=85',
     categoryId: 'combos', popular: true, available: true
   },
   {
     id: '7', name: 'Combo Smash Bacon',
     description: 'Smash Bacon Crispy + Onion rings + Refrigerante lata.',
-    price: 42.90, image: 'https://image.qwenlm.ai/generated-images/bcef539b-80ef-4b18-b919-6dfe7b1b0fbb/_result.png',
+    price: 42.90, image: 'https://images.unsplash.com/photo-1553979459-d2229ba7433a?auto=format&fit=crop&w=900&q=85',
     categoryId: 'combos', available: true
   },
   {
     id: '8', name: 'Combo Família (4 pessoas)',
     description: '4 Tratto Duplo Cheddar + 2 Batatas fritas grandes + 4 Refrigerantes lata.',
-    price: 149.90, image: 'https://image.qwenlm.ai/generated-images/5439d0eb-4b3e-4d8b-ae55-67688ab6dbb4/_result.png',
+    price: 149.90, image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=900&q=85',
     categoryId: 'combos', available: true
   },
   {
     id: '9', name: 'Batata Frita Média',
     description: 'Porção de batatas fritas crocantes por fora e macias por dentro, com sal e tempero especial.',
-    price: 16.90, image: 'https://image.qwenlm.ai/generated-images/f28df88c-a58f-4ee0-8237-746588c8fab5/_result.png',
+    price: 16.90, image: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?auto=format&fit=crop&w=900&q=85',
     categoryId: 'acompanhamentos', popular: true, available: true
   },
   {
     id: '10', name: 'Batata com Cheddar e Bacon',
     description: 'Batatas fritas cobertas com cheddar cremoso e bacon crocante picado.',
-    price: 24.90, image: 'https://image.qwenlm.ai/generated-images/f28df88c-a58f-4ee0-8237-746588c8fab5/_result.png',
+    price: 24.90, image: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?auto=format&fit=crop&w=900&q=85',
     categoryId: 'acompanhamentos', available: true
   },
   {
     id: '11', name: 'Onion Rings',
     description: 'Anéis de cebola empanados e fritos, crocantes e dourados. Acompanha molho ranch.',
-    price: 18.90, image: 'https://image.qwenlm.ai/generated-images/f28df88c-a58f-4ee0-8237-746588c8fab5/_result.png',
+    price: 18.90, image: 'https://images.unsplash.com/photo-1639024471283-03518883512d?auto=format&fit=crop&w=900&q=85',
     categoryId: 'acompanhamentos', available: true
   },
   {
     id: '12', name: 'Nuggets (10 un)',
     description: '10 nuggets de frango crocantes com molho barbecue e molho ranch.',
-    price: 19.90, image: 'https://image.qwenlm.ai/generated-images/f28df88c-a58f-4ee0-8237-746588c8fab5/_result.png',
+    price: 19.90, image: 'https://images.unsplash.com/photo-1562967914-608f82629710?auto=format&fit=crop&w=900&q=85',
     categoryId: 'acompanhamentos', available: true
   },
   {
     id: '13', name: 'Brownie com Sorvete',
     description: 'Brownie de chocolate belga quentinho com bola de sorvete de creme e calda de chocolate.',
-    price: 22.90, image: 'https://image.qwenlm.ai/generated-images/aaa3d1bf-c470-4b44-9309-afd633cd4a53/_result.png',
+    price: 22.90, image: 'https://images.unsplash.com/photo-1563805042-7684c019e1cb?auto=format&fit=crop&w=900&q=85',
     categoryId: 'sobremesas', popular: true, available: true
   },
   {
     id: '14', name: 'Milkshake Ovomaltine',
     description: 'Milkshake cremoso de Ovomaltine com chantilly e calda de chocolate.',
-    price: 19.90, image: 'https://image.qwenlm.ai/generated-images/aaa3d1bf-c470-4b44-9309-afd633cd4a53/_result.png',
+    price: 19.90, image: 'https://images.unsplash.com/photo-1572490122747-3968b75cc699?auto=format&fit=crop&w=900&q=85',
     categoryId: 'sobremesas', available: true
   },
   {
     id: '15', name: 'Coca-Cola Lata 350ml',
     description: 'Coca-Cola lata gelada 350ml.',
-    price: 7.90, image: '', categoryId: 'bebidas', available: true
+    price: 7.90, image: 'https://images.unsplash.com/photo-1544145945-f90425340c7e?auto=format&fit=crop&w=900&q=85', categoryId: 'bebidas', available: true
   },
   {
     id: '16', name: 'Guaraná Antarctica Lata 350ml',
     description: 'Guaraná Antarctica lata gelada 350ml.',
-    price: 7.90, image: '', categoryId: 'bebidas', available: true
+    price: 7.90, image: 'https://images.unsplash.com/photo-1629203851122-3726ecdf080e?auto=format&fit=crop&w=900&q=85', categoryId: 'bebidas', available: true
   },
   {
     id: '17', name: 'Suco Natural 500ml',
     description: 'Suco natural da fruta. Sabores: Laranja, Limão, Maracujá ou Abacaxi.',
-    price: 12.90, image: '', categoryId: 'bebidas', available: true
+    price: 12.90, image: 'https://images.unsplash.com/photo-1600271886742-f049cd451bba?auto=format&fit=crop&w=900&q=85', categoryId: 'bebidas', available: true
   },
   {
     id: '18', name: 'Água Mineral 500ml',
     description: 'Água mineral sem gás 500ml.',
-    price: 4.90, image: '', categoryId: 'bebidas', available: true
+    price: 4.90, image: 'https://images.unsplash.com/photo-1564419320461-6870880221ad?auto=format&fit=crop&w=900&q=85', categoryId: 'bebidas', available: true
   }
 ]
 
