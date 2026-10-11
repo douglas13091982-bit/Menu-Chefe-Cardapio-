@@ -1,5 +1,6 @@
 // @ts-nocheck -- código original migrado sem alterações de lógica
 import { useState } from 'react'
+import { LayoutDashboard, ClipboardList, UtensilsCrossed, FolderOpen, MapPinned, TicketPercent, Megaphone, Settings } from 'lucide-react'
 import { useStore } from '../../context/StoreContext'
 import Dashboard from './Dashboard'
 import ProductsManager from './ProductsManager'
@@ -13,14 +14,14 @@ import CouponsManager from './CouponsManager'
 type AdminTab = 'dashboard' | 'orders' | 'products' | 'categories' | 'delivery' | 'marketing' | 'coupons' | 'settings'
 
 const tabs = [
-  { id: 'dashboard' as const, label: 'Dashboard' },
-  { id: 'orders' as const, label: 'Pedidos' },
-  { id: 'products' as const, label: 'Produtos' },
-  { id: 'categories' as const, label: 'Categorias' },
-  { id: 'delivery' as const, label: 'Entrega' },
-  { id: 'coupons' as const, label: 'Cupons' },
-  { id: 'marketing' as const, label: 'Marketing' },
-  { id: 'settings' as const, label: 'Configurações' },
+  { id: 'dashboard' as const, label: 'Dashboard', icon: LayoutDashboard },
+  { id: 'orders' as const, label: 'Pedidos', icon: ClipboardList },
+  { id: 'products' as const, label: 'Produtos', icon: UtensilsCrossed },
+  { id: 'categories' as const, label: 'Categorias', icon: FolderOpen },
+  { id: 'delivery' as const, label: 'Entrega', icon: MapPinned },
+  { id: 'coupons' as const, label: 'Cupons', icon: TicketPercent },
+  { id: 'marketing' as const, label: 'Marketing', icon: Megaphone },
+  { id: 'settings' as const, label: 'Configurações', icon: Settings },
 ]
 
 function AdminPanel() {
@@ -52,13 +53,13 @@ function AdminPanel() {
               <button
                 key={tab.id}
                 onClick={() => { setActiveTab(tab.id); setSidebarOpen(false) }}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                className={`group w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all ${
                   activeTab === tab.id
                     ? 'bg-[#fff0f2] text-[#d9273f] border border-[#ffc6cf] shadow-sm'
                     : 'text-[#51444a] hover:bg-[#fff0f2] hover:text-[#d9273f]'
                 }`}
               >
-                <span className={`h-5 w-1 shrink-0 rounded-full ${activeTab === tab.id ? 'bg-[#d9273f]' : 'bg-transparent'}`} />
+                <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors ${activeTab === tab.id ? "bg-[#d9273f] text-white" : "text-[#6b6265] group-hover:bg-[#fff0f2] group-hover:text-[#d9273f]"}`}><tab.icon size={19} strokeWidth={1.8} /></span>
                 <span>{tab.label}</span>
               </button>
             ))}
