@@ -7,17 +7,17 @@ function CategoriesManager() {
   const { categories, products, addCategory, updateCategory, deleteCategory } = useStore()
   const [showForm, setShowForm] = useState(false)
   const [editingCategory, setEditingCategory] = useState<Category | null>(null)
-  const [formData, setFormData] = useState({ name: '', icon: '🍔', order: 0 })
+  const [formData, setFormData] = useState({ name: '', icon: '', order: 0 })
 
   const resetForm = () => {
-    setFormData({ name: '', icon: '🍔', order: categories.length + 1 })
+    setFormData({ name: '', icon: '', order: categories.length + 1 })
     setEditingCategory(null)
     setShowForm(false)
   }
 
   const openEditForm = (category: Category) => {
     setEditingCategory(category)
-    setFormData({ name: category.name, icon: category.icon, order: category.order })
+    setFormData({ name: category.name, order: category.order })
     setShowForm(true)
   }
 
@@ -26,7 +26,6 @@ function CategoriesManager() {
     const category: Category = {
       id: editingCategory?.id || Date.now().toString(),
       name: formData.name,
-      icon: formData.icon,
       order: formData.order || categories.length + 1
     }
     if (editingCategory) {
@@ -69,7 +68,7 @@ function CategoriesManager() {
                 <h3 className="text-xl font-bold text-gray-800">
                   {editingCategory ? 'Editar Categoria' : 'Nova Categoria'}
                 </h3>
-                <button onClick={resetForm} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">✕</button>
+                <button onClick={resetForm} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200"></button>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
