@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useStore } from '../context/StoreContext'
 import { Product, CartItem, ProductAddOn, Order, DeliveryType, PaymentMethod } from '../types'
 import { getMapboxToken } from '../mapboxToken'
+import { buildWhatsAppUrl } from '../whatsapp'
 import { geocodeAddress, drivingDistanceKm, roundMoney } from '../freight'
 
 const fmt = (v: number) => `R$ ${v.toFixed(2).replace('.', ',')}`
@@ -99,6 +100,15 @@ function MenuView() {
   const numberInputRef = useRef<HTMLInputElement | null>(null)
   const [changeFor, setChangeFor] = useState('')
   const [orderPlaced, setOrderPlaced] = useState<Order | null>(null)
+  const whatsappUrl = orderPlaced ? buildWhatsAppUrl(orderPlaced, config) : ''
+
+  // Abre o WhatsApp da loja com o pedido pronto e volta ao cardápio
+  const sendOrderToWhatsApp = () => {
+    if (!whatsappUrl) return
+    const win = window.open(whatsappUrl, '_blank', 'noopener,noreferrer')
+    if (!win) window.location.href = whatsappUrl
+    setOrderPlaced(null)
+  }
   const sectionRefs = useRef<{ [key: string]: HTMLElement | null }>({})
 
   // Detect mobile
@@ -1370,7 +1380,8 @@ function MenuView() {
               Pedido enviado!
             </h3>
             <p style={{ color: '#6b7280', fontSize: '14px', margin: '0 0 16px' }}>
-              Seu pedido <strong>{orderPlaced.id}</strong> foi recebido com sucesso.
+              Seu pedido <strong>{orderPlaced.id}</strong> foi registrado.
+              {whatsappUrl ? ' Toque no botão abaixo para enviá-lo à loja pelo WhatsApp.' : ''}
             </p>
             <div style={{ backgroundColor: '#f9fafb', borderRadius: '12px', padding: '14px', textAlign: 'left', marginBottom: '18px' }}>
               <p style={{ fontSize: '13px', color: '#374151', margin: '0 0 6px' }}>
@@ -1385,15 +1396,39 @@ function MenuView() {
                 🧾 Total: <strong>{fmt(orderPlaced.total + orderPlaced.deliveryFee)}</strong>
               </p>
             </div>
-            <button
-              onClick={() => setOrderPlaced(null)}
-              style={{
-                width: '100%', backgroundColor: '#ef4444', color: 'white', borderRadius: '12px',
-                padding: '14px', fontWeight: 'bold', fontSize: '15px', border: 'none', cursor: 'pointer'
-              }}
-            >
-              Voltar ao cardápio
-            </button>
+            {whatsappUrl ? (
+              <>
+                <button
+                  onClick={sendOrderToWhatsApp}
+                  style={{
+                    width: '100%', backgroundColor: '#16a34a', color: 'white', borderRadius: '12px',
+                    padding: '14px', fontWeight: 'bold', fontSize: '15px', border: 'none', cursor: 'pointer',
+                    boxShadow: '0 4px 12px rgba(22, 163, 74, 0.3)'
+                  }}
+                >
+                  Enviar pedido pelo WhatsApp
+                </button>
+                <button
+                  onClick={() => setOrderPlaced(null)}
+                  style={{
+                    width: '100%', backgroundColor: 'transparent', color: '#6b7280', borderRadius: '12px',
+                    padding: '10px', fontWeight: 600, fontSize: '13px', border: 'none', cursor: 'pointer', marginTop: '6px'
+                  }}
+                >
+                  Voltar ao cardápio
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => setOrderPlaced(null)}
+                style={{
+                  width: '100%', backgroundColor: '#ef4444', color: 'white', borderRadius: '12px',
+                  padding: '14px', fontWeight: 'bold', fontSize: '15px', border: 'none', cursor: 'pointer'
+                }}
+              >
+                Voltar ao cardápio
+              </button>
+            )}
           </div>
         </div>
       )}
