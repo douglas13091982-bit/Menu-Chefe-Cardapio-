@@ -1,5 +1,6 @@
 // @ts-nocheck -- código original migrado sem alterações de lógica
 import { useState, useRef, useEffect } from 'react'
+import { validateCoupon } from '../coupons'
 import { useStore } from '../context/StoreContext'
 import { Product, CartItem, ProductAddOn, Order, DeliveryType, PaymentMethod } from '../types'
 import { getMapboxToken } from '../mapboxToken'
@@ -247,7 +248,20 @@ function MenuView() {
     : freight.status === 'out' ? 'Fora da área'
     : freight.status === 'error' ? fmt(config.deliveryFee)
     : 'Informe o endereço'
-  const checkoutTotal = totalPrice + checkoutDeliveryFee
+  const [couponInput, setCouponInput] = useState('')
+  const [appliedCode, setAppliedCode] = useState('')
+  const [couponMsg, setCouponMsg] = useState('')
+  // revalida sempre que o carrinho muda (pedido mínimo, etc.)
+  const couponCheck = appliedCode ? validateCoupon(config.coupons, appliedCode, totalPrice) : null
+  const discount = couponCheck && couponCheck.ok ? couponCheck.discount : 0
+  const activeCouponCode = couponCheck && couponCheck.ok ? couponCheck.coupon.code : ''
+  const applyCoupon = () => {
+    const r = validateCoupon(config.coupons, couponInput, totalPrice)
+    if (r.ok) { setAppliedCode(r.coupon.code); setCouponMsg('') }
+    else { setAppliedCode(''); setCouponMsg(r.message) }
+  }
+  const removeCoupon = () => { setAppliedCode(''); setCouponInput(''); setCouponMsg('') }
+  const checkoutTotal = Math.max(0, totalPrice - discount) + checkoutDeliveryFee
   const changeValue = parseFloat((changeFor || '').replace(',', '.')) || 0
   const paymentLabels: Record<PaymentMethod, string> = {
     card: 'Cartão',
@@ -365,6 +379,8 @@ function MenuView() {
       items: cart,
       total: totalPrice,
       deliveryFee: checkoutDeliveryFee,
+      discount: discount > 0 ? discount : undefined,
+      couponCode: discount > 0 ? activeCouponCode : undefined,
       status: 'pending',
       customerName: customerName.trim(),
       customerPhone: customerPhone.trim(),
@@ -381,6 +397,7 @@ function MenuView() {
     setOrderPlaced(order)
     setShowCheckout(false)
     setCart([])
+    removeCoupon()
     setPaymentMethod('')
     setChangeFor('')
     setAddrStreet('')
@@ -1043,10 +1060,40 @@ function MenuView() {
               borderTop: '1px solid #f3f4f6',
               backgroundColor: '#fafafa'
             }}>
+              <div style={{ marginBottom: '10px' }}>
+                {discount > 0 ? (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '10px', padding: '8px 10px' }}>
+                    <span style={{ fontSize: '13px', color: '#166534', fontWeight: 600 }}>🏷️ Cupom {activeCouponCode} aplicado</span>
+                    <button onClick={removeCoupon} style={{ background: 'none', border: 'none', color: '#b91c1c', fontSize: '12px', cursor: 'pointer' }}>Remover</button>
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <input
+                        value={couponInput}
+                        onChange={e => { setCouponInput(e.target.value.toUpperCase()); setCouponMsg('') }}
+                        onKeyDown={e => { if (e.key === 'Enter') applyCoupon() }}
+                        placeholder="Cupom de desconto"
+                        style={{ flex: 1, minWidth: 0, border: '1px solid #e5e7eb', borderRadius: '10px', padding: '10px 12px', fontSize: '14px', textTransform: 'uppercase' }}
+                      />
+                      <button onClick={applyCoupon} style={{ background: '#1f2937', color: 'white', border: 'none', borderRadius: '10px', padding: '0 16px', fontWeight: 600, fontSize: '13px', cursor: 'pointer' }}>Aplicar</button>
+                    </div>
+                    {(couponMsg || (appliedCode && couponCheck && !couponCheck.ok)) && (
+                      <p style={{ margin: '6px 0 0', fontSize: '12px', color: '#b91c1c' }}>{couponMsg || (couponCheck && !couponCheck.ok ? couponCheck.message : '')}</p>
+                    )}
+                  </>
+                )}
+              </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
                 <span style={{ color: '#6b7280', fontSize: '13px' }}>Subtotal</span>
                 <span style={{ fontWeight: 600, fontSize: '13px' }}>{fmt(totalPrice)}</span>
               </div>
+              {discount > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                  <span style={{ color: '#16a34a', fontSize: '13px' }}>Desconto</span>
+                  <span style={{ fontWeight: 600, fontSize: '13px', color: '#16a34a' }}>- {fmt(discount)}</span>
+                </div>
+              )}
               <div style={{ 
                 display: 'flex', 
                 justifyContent: 'space-between', 
@@ -1472,7 +1519,7 @@ function MenuView() {
                 {orderPlaced.changeFor ? ` (troco para ${fmt(orderPlaced.changeFor)})` : ''}
               </p>
               <p style={{ fontSize: '13px', color: '#374151', margin: 0 }}>
-                🧾 Total: <strong>{fmt(orderPlaced.total + orderPlaced.deliveryFee)}</strong>
+                🧾 Total: <strong>{fmt(orderPlaced.total + orderPlaced.deliveryFee - (orderPlaced.discount || 0))}</strong>
               </p>
             </div>
             {whatsappUrl ? (

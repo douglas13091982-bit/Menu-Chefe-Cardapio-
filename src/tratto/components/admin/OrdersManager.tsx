@@ -120,7 +120,7 @@ function OrdersManager() {
                   </div>
                   <div>
                     <p className="text-gray-500 text-xs">Total</p>
-                    <p className="font-bold text-green-700">R$ {(order.total + order.deliveryFee).toFixed(2).replace('.', ',')}</p>
+                    <p className="font-bold text-green-700">R$ {(order.total + order.deliveryFee - (order.discount || 0)).toFixed(2).replace('.', ',')}</p>
                   </div>
                 </div>
                 {(order.deliveryType || order.paymentMethod) && (
@@ -250,9 +250,15 @@ function OrdersManager() {
                   <span className="text-gray-600">Taxa de entrega</span>
                   <span>R$ {selectedOrder.deliveryFee.toFixed(2).replace('.', ',')}</span>
                 </div>
+                {selectedOrder.discount > 0 && (
+                  <div className="flex justify-between text-sm text-green-700">
+                    <span>Desconto{selectedOrder.couponCode ? ` (${selectedOrder.couponCode})` : ''}</span>
+                    <span>- R$ {selectedOrder.discount.toFixed(2).replace('.', ',')}</span>
+                  </div>
+                )}
                 <div className="flex justify-between font-bold text-lg pt-2 border-t">
                   <span>Total</span>
-                  <span className="text-green-700">R$ {(selectedOrder.total + selectedOrder.deliveryFee).toFixed(2).replace('.', ',')}</span>
+                  <span className="text-green-700">R$ {(selectedOrder.total + selectedOrder.deliveryFee - (selectedOrder.discount || 0)).toFixed(2).replace('.', ',')}</span>
                 </div>
               </div>
 

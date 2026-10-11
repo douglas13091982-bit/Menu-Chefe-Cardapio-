@@ -8,8 +8,9 @@ import OrdersManager from './OrdersManager'
 import SettingsPanel from './SettingsPanel'
 import DeliveryPanel from './DeliveryPanel'
 import MarketingPanel from './MarketingPanel'
+import CouponsManager from './CouponsManager'
 
-type AdminTab = 'dashboard' | 'orders' | 'products' | 'categories' | 'delivery' | 'marketing' | 'settings'
+type AdminTab = 'dashboard' | 'orders' | 'products' | 'categories' | 'delivery' | 'marketing' | 'coupons' | 'settings'
 
 const tabs: { id: AdminTab; label: string; icon: string }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: '📊' },
@@ -17,6 +18,7 @@ const tabs: { id: AdminTab; label: string; icon: string }[] = [
   { id: 'products', label: 'Produtos', icon: '🍔' },
   { id: 'categories', label: 'Categorias', icon: '📁' },
   { id: 'delivery', label: 'Entrega', icon: '🗺️' },
+  { id: 'coupons', label: 'Cupons', icon: '🏷️' },
   { id: 'marketing', label: 'Marketing', icon: '📣' },
   { id: 'settings', label: 'Configurações', icon: '⚙️' },
 ]
@@ -76,6 +78,7 @@ function AdminPanel() {
         {activeTab === 'products' && <ProductsManager />}
         {activeTab === 'categories' && <CategoriesManager />}
         {activeTab === 'delivery' && <DeliveryPanel />}
+        {activeTab === 'coupons' && <CouponsManager />}
         {activeTab === 'marketing' && <MarketingPanel />}
         {activeTab === 'settings' && <SettingsPanel />}
       </main>

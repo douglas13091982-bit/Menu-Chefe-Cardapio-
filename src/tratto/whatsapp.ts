@@ -40,7 +40,10 @@ export function buildOrderMessage(order: Order, config: StoreConfig): string {
   if (order.deliveryType === 'delivery') {
     lines.push(`*Taxa de entrega:* ${money(order.deliveryFee)}`)
   }
-  lines.push(`*Total:* ${money(order.total + order.deliveryFee)}`)
+  if (order.discount && order.discount > 0) {
+    lines.push(`*Desconto${order.couponCode ? ' (' + order.couponCode + ')' : ''}:* -${money(order.discount)}`)
+  }
+  lines.push(`*Total:* ${money(order.total + order.deliveryFee - (order.discount || 0))}`)
   lines.push('')
   if (order.deliveryType === 'delivery') {
     lines.push(`*Entrega em:* ${order.customerAddress}`)

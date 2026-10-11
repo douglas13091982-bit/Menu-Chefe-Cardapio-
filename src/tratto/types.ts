@@ -46,6 +46,8 @@ export interface Order {
   deliveryType?: DeliveryType
   paymentMethod?: PaymentMethod
   changeFor?: number
+  discount?: number
+  couponCode?: string
   createdAt: string
   updatedAt: string
 }
@@ -72,7 +74,19 @@ export interface StoreConfig {
   openTime: string
   closeTime: string
   weeklyHours?: DayHours[]
+  coupons?: Coupon[]
   isOpen: boolean
+}
+
+export interface Coupon {
+  id: string
+  code: string
+  type: 'percent' | 'fixed'
+  value: number
+  minOrder?: number
+  startsAt?: string // YYYY-MM-DD
+  expiresAt?: string // YYYY-MM-DD
+  active: boolean
 }
 
 export interface DeliveryZone {
