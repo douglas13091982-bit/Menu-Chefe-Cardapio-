@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { CheckCircle2, MapPin,  useState } from 'react'
 import { getSavedMapboxToken, setSavedMapboxToken } from '../../mapboxToken'
 
 function MapboxIntegration() {
@@ -32,7 +32,7 @@ function MapboxIntegration() {
 
       {message && (
         <div className="bg-green-50 border border-green-200 text-green-700 rounded-lg p-3 flex items-center gap-2">
-          <span></span>
+          <CheckCircle2 size={18} />
           <span className="text-sm font-medium">{message}</span>
         </div>
       )}
@@ -40,10 +40,10 @@ function MapboxIntegration() {
       <div className="bg-white rounded-xl shadow-sm p-6">
         <div className="flex items-center justify-between gap-2 mb-4 flex-wrap">
           <h3 className="font-bold text-gray-800 flex items-center gap-2">
-            <span></span> Mapbox (mapa de entrega)
+            <MapPin size={18} className="text-[#d9273f]" /> Mapbox (mapa de entrega)
           </h3>
           {savedToken ? (
-            <span className="text-xs font-medium px-3 py-1 rounded-full bg-green-50 text-green-700 border border-green-200">Mapbox conectado </span>
+            <span className="text-xs font-medium px-3 py-1 rounded-full bg-green-50 text-green-700 border border-green-200"><CheckCircle2 size={14} className="inline mr-1" /> Mapbox conectado </span>
           ) : (
             <span className="text-xs font-medium px-3 py-1 rounded-full bg-gray-100 text-gray-600 border border-gray-200">Mapbox não configurado</span>
           )}
