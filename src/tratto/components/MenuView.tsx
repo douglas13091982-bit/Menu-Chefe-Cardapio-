@@ -712,7 +712,6 @@ function MenuView() {
                   flexShrink: 0
                 }}
               >
-                <span style={{ fontSize: isMobile ? '16px' : '18px' }}>{cat.icon}</span>
                 <span>{cat.name}</span>
               </button>
             ))}
@@ -744,7 +743,6 @@ function MenuView() {
                 alignItems: 'center',
                 gap: '8px'
               }}>
-                <span style={{ fontSize: isMobile ? '20px' : '24px' }}>{category.icon}</span>
                 {category.name}
                 <span style={{ 
                   fontSize: '13px', 
