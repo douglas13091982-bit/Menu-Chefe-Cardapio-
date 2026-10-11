@@ -181,7 +181,7 @@ function OrdersManager() {
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-xl font-bold text-gray-800">Pedido {selectedOrder.id}</h3>
-                <button onClick={() => setSelectedOrder(null)} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">✕</button>
+                <button onClick={() => setSelectedOrder(null)} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200"></button>
               </div>
 
               <div className={`inline-block px-3 py-1 rounded-full text-sm font-medium border mb-4 ${statusColors[selectedOrder.status]}`}>
