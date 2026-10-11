@@ -462,7 +462,7 @@ function SettingsPanel() {
           <form onSubmit={handleChangePassword} className="space-y-4">
             {passwordSaved && (
               <div className="bg-green-50 border border-green-200 text-green-700 rounded-lg p-3 flex items-center gap-2">
-                <AlertTriangle size={18} />
+                <CheckCircle2 size={18} />
                 <span className="text-sm font-medium">Senha alterada com sucesso!</span>
               </div>
             )}
