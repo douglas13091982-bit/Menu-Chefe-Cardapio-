@@ -33,6 +33,9 @@ function MenuView() {
   const [cepStatus, setCepStatus] = useState<'idle' | 'loading' | 'ok' | 'error'>('idle')
   const [cepMessage, setCepMessage] = useState('')
   const cepRequestRef = useRef(0)
+  // true quando a rua veio do CEP: o endereço fica preenchido e travado, só falta o número
+  const [addressLocked, setAddressLocked] = useState(false)
+  const numberInputRef = useRef<HTMLInputElement | null>(null)
   const [changeFor, setChangeFor] = useState('')
   const [orderPlaced, setOrderPlaced] = useState<Order | null>(null)
   const sectionRefs = useRef<{ [key: string]: HTMLElement | null }>({})
@@ -155,11 +158,13 @@ function MenuView() {
     const token = getMapboxToken()
     if (!token) {
       setCepStatus('error')
+      setAddressLocked(false)
       setCepMessage('Busca por CEP indisponível no momento. Preencha o endereço manualmente.')
       return
     }
     setCepStatus('loading')
     setCepMessage('Buscando endereço...')
+    setAddressLocked(false)
     try {
       const formatted = digits.slice(0, 5) + '-' + digits.slice(5)
       const url =
@@ -184,20 +189,24 @@ function MenuView() {
       const uf = ctx.region?.region_code || ''
       if (!feature || (!street && !neighborhood && !city)) {
         setCepStatus('error')
+      setAddressLocked(false)
         setCepMessage('Não encontramos esse CEP. Preencha o endereço manualmente.')
         return
       }
       const cityUf = city && uf ? `${city} - ${uf}` : city
       setCustomerAddress([street, neighborhood, cityUf].filter(Boolean).join(', '))
       setCepStatus('ok')
+      setAddressLocked(!!street)
       setCepMessage(
         street
           ? 'Endereço encontrado! Informe o número e o complemento.'
           : 'CEP localizado. Complete a rua e informe o número.'
       )
+      if (street) setTimeout(() => numberInputRef.current?.focus(), 50)
     } catch {
       if (requestId !== cepRequestRef.current) return
       setCepStatus('error')
+      setAddressLocked(false)
       setCepMessage('Não foi possível buscar o CEP agora. Preencha o endereço manualmente.')
     }
   }
@@ -211,6 +220,7 @@ function MenuView() {
       cepRequestRef.current++
       setCepStatus('idle')
       setCepMessage('')
+      setAddressLocked(false)
     }
   }
 
@@ -256,6 +266,7 @@ function MenuView() {
     setCep('')
     setCepStatus('idle')
     setCepMessage('')
+    setAddressLocked(false)
   }
 
   const scrollToCategory = (categoryId: string) => {
@@ -1026,21 +1037,26 @@ function MenuView() {
                     </p>
                   )}
                   <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '4px', marginTop: cepMessage ? 0 : '10px' }}>
-                    Endereço de entrega *
+                    Endereço de entrega *{addressLocked ? ' (preenchido pelo CEP)' : ''}
                   </label>
                   <input
                     value={customerAddress}
                     onChange={e => setCustomerAddress(e.target.value)}
+                    readOnly={addressLocked}
                     placeholder="Rua, bairro, cidade"
                     style={{
                       width: '100%', boxSizing: 'border-box', padding: '12px', borderRadius: '10px',
-                      border: '1px solid #e5e7eb', fontSize: '14px', marginBottom: '10px', outline: 'none'
+                      border: '1px solid #e5e7eb', fontSize: '14px', marginBottom: '10px', outline: 'none',
+                      backgroundColor: addressLocked ? '#f3f4f6' : 'white',
+                      color: addressLocked ? '#4b5563' : '#111827',
+                      cursor: addressLocked ? 'not-allowed' : 'text'
                     }}
                   />
                   <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '4px' }}>
                     Número e complemento *
                   </label>
                   <input
+                    ref={numberInputRef}
                     value={customerNumber}
                     onChange={e => setCustomerNumber(e.target.value)}
                     placeholder="Ex.: 123, apto 4"
