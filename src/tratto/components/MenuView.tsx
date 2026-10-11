@@ -26,7 +26,7 @@ function MenuView() {
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
-  const addToCart = (product: Product, addOnIds: string[] = []) => {
+  const addToCart = (product: Product, addOnIds: string[] = [], incQty = false) => {
     const chosenAddOns = (product.addOns || []).filter(a => addOnIds.includes(a.id))
     setCart(prev => {
       const keyOf = (item: CartItem) =>
@@ -34,17 +34,21 @@ function MenuView() {
       const key = product.id + '|' + chosenAddOns.map(a => a.id).sort().join(',')
       const existing = prev.find(item => keyOf(item) === key)
       if (existing) {
-        return prev.map(item => keyOf(item) === key ? { ...item, quantity: item.quantity + 1 } : item)
+        return prev.map(item => keyOf(item) === key ? { ...item, quantity: item.quantity + (incQty ? 1 : 0) } : item)
       }
       return [...prev, { product, quantity: 1, selectedAddOns: chosenAddOns }]
     })
   }
 
-  const removeFromCart = (productId: string) => {
+  const removeFromCart = (productId: string, addOnIds?: string[]) => {
     setCart(prev => {
-      // remove o último item que contenha esse produto (com ou sem adicionais)
+      const targetKey = addOnIds
+        ? productId + '|' + [...addOnIds].sort().join(',')
+        : undefined
+      // se passou os adicionais, mexe exatamente naquele item; senão remove o último desse produto
       for (let i = prev.length - 1; i >= 0; i--) {
-        if (prev[i].product.id === productId) {
+        const k = prev[i].product.id + '|' + [...(prev[i].selectedAddOns || [])].map(a => a.id).sort().join(',')
+        if (targetKey ? k === targetKey : prev[i].product.id === productId) {
           if (prev[i].quantity > 1) {
             return prev.map((item, idx) => idx === i ? { ...item, quantity: item.quantity - 1 } : item)
           }
@@ -354,7 +358,11 @@ function MenuView() {
                     key={product.id}
                     product={product}
                     quantity={getCartQuantity(product.id)}
-                    onAdd={() => addToCart(product)}
+                    onAdd={() => {
+                      // produtos com adicionais sempre abrem o modal para escolher os extras
+                      if ((product.addOns || []).length > 0) openProductModal(product)
+                      else addToCart(product, [], true)
+                    }}
                     onRemove={() => removeFromCart(product.id)}
                     onClick={() => openProductModal(product)}
                     isMobile={isMobile}
@@ -589,7 +597,7 @@ function MenuView() {
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <button
-                      onClick={() => removeFromCart(item.product.id)}
+                      onClick={() => removeFromCart(item.product.id, (item.selectedAddOns || []).map(a => a.id))}
                       style={{
                         width: '30px',
                         height: '30px',
@@ -611,7 +619,7 @@ function MenuView() {
                       {item.quantity}
                     </span>
                     <button
-                      onClick={() => addToCart(item.product)}
+                      onClick={() => addToCart(item.product, (item.selectedAddOns || []).map(a => a.id), true)}
                       style={{
                         width: '30px',
                         height: '30px',
@@ -811,7 +819,7 @@ function MenuView() {
                 </span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <button
-                    onClick={() => removeFromCart(selectedProduct.id)}
+                    onClick={() => removeFromCart(selectedProduct.id, selectedAddOns)}
                     style={{
                       width: '38px',
                       height: '38px',
@@ -833,7 +841,7 @@ function MenuView() {
                     {getCartQuantity(selectedProduct.id)}
                   </span>
                   <button
-                    onClick={() => addToCart(selectedProduct, selectedAddOns)}
+                    onClick={() => addToCart(selectedProduct, selectedAddOns, true)}
                     style={{
                       width: '38px',
                       height: '38px',
