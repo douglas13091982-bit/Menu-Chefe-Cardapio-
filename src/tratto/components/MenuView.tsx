@@ -490,8 +490,60 @@ function MenuView() {
           backgroundColor: 'white',
           borderRadius: '16px',
           boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-          padding: isMobile ? '16px' : '20px'
+          padding: isMobile ? '12px 14px' : '20px'
         }}>
+          {isMobile ? (
+            <>
+              {/* Versão compacta para celular */}
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px' }}>
+                <div style={{ minWidth: 0 }}>
+                  <h2 style={{ fontSize: '16px', fontWeight: 'bold', color: '#1f2937', margin: 0, lineHeight: 1.25 }}>
+                    {config.name}
+                  </h2>
+                  {config.subtitle && (
+                    <p style={{ fontSize: '12px', color: '#6b7280', margin: '1px 0 0 0' }}>{config.subtitle}</p>
+                  )}
+                </div>
+                <span style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '5px', flexShrink: 0,
+                  padding: '4px 9px', borderRadius: '20px', fontSize: '11px', fontWeight: 700, whiteSpace: 'nowrap',
+                  backgroundColor: storeStatus.open ? '#dcfce7' : '#fee2e2',
+                  color: storeStatus.open ? '#166534' : '#b91c1c'
+                }}>
+                  <span style={{
+                    width: '7px', height: '7px', borderRadius: '50%', display: 'inline-block',
+                    backgroundColor: storeStatus.open ? '#22c55e' : '#ef4444'
+                  }}></span>
+                  {storeStatus.open ? 'Aberto' : 'Fechado'}
+                </span>
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px', alignItems: 'center' }}>
+                {storeStatus.text.includes('•') && (
+                  <span style={{
+                    display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', borderRadius: '14px',
+                    fontSize: '11px', fontWeight: 600,
+                    backgroundColor: storeStatus.open ? '#dcfce7' : '#fee2e2',
+                    color: storeStatus.open ? '#166534' : '#b91c1c'
+                  }}>
+                    🕐 {storeStatus.text.split('•').slice(1).join('•').trim()}
+                  </span>
+                )}
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', backgroundColor: '#f3f4f6', color: '#374151', padding: '3px 8px', borderRadius: '14px', fontSize: '11px', fontWeight: 600 }}>
+                  ★ 4.8
+                </span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', backgroundColor: '#f3f4f6', color: '#374151', padding: '3px 8px', borderRadius: '14px', fontSize: '11px', fontWeight: 500 }}>
+                  🛵 40-50 min
+                </span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', backgroundColor: '#f3f4f6', color: '#374151', padding: '3px 8px', borderRadius: '14px', fontSize: '11px', fontWeight: 500 }}>
+                  📍 2.5 km
+                </span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', backgroundColor: '#f0fdf4', color: '#15803d', padding: '3px 8px', borderRadius: '14px', fontSize: '11px', fontWeight: 600 }}>
+                  {'🏷️'} {fixedEnabled && !mapboxEnabled ? 'Taxa por bairro' : `Entrega ${mapboxEnabled && perKm > 0 ? 'desde ' : ''}${fmt(config.deliveryFee)}`}
+                </span>
+              </div>
+            </>
+          ) : (
+            <>
           <h2 style={{ 
             fontSize: isMobile ? '16px' : '22px', 
             fontWeight: 'bold', 
@@ -591,6 +643,8 @@ function MenuView() {
               {storeStatus.text}
             </span>
           </div>
+            </>
+          )}
         </div>
       </div>
 
