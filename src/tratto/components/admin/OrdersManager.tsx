@@ -1,5 +1,6 @@
 // @ts-nocheck -- código original migrado sem alterações de lógica
 import { useState } from 'react'
+import { Clock3, ChefHat, Truck, CheckCircle2, XCircle, X } from 'lucide-react'
 import { useStore } from '../../context/StoreContext'
 import { Order } from '../../types'
 
@@ -34,6 +35,14 @@ function OrdersManager() {
     cancelled: 'bg-red-100 text-red-700 border-red-300'
   }
 
+  const statusIcons: { [key: string]: any } = {
+    pending: Clock3,
+    preparing: ChefHat,
+    delivering: Truck,
+    completed: CheckCircle2,
+    cancelled: XCircle,
+  }
+
   const counts = {
     pending: orders.filter(o => o.status === 'pending').length,
     preparing: orders.filter(o => o.status === 'preparing').length,
@@ -59,7 +68,7 @@ function OrdersManager() {
               filterStatus === status ? 'ring-2 ring-red-500 border-red-300' : 'border-gray-200'
             } bg-white hover:shadow-sm`}
           >
-            <span className="mx-auto mb-1 block h-1 w-8 rounded-full bg-[#d9273f]" />
+            <span className="mx-auto mb-1 flex h-8 w-8 items-center justify-center rounded-lg bg-[#fff0f2] text-[#d9273f]"><StatusIcon icon={statusIcons[status]} /></span>
             <p className="text-lg font-bold text-gray-800 mt-1">{count}</p>
             <p className="text-xs text-gray-500">{statusLabels[status]}</p>
           </button>
@@ -98,7 +107,7 @@ function OrdersManager() {
                 <div className="flex items-center gap-3 mb-2">
                   <span className="font-bold text-gray-800">{order.id}</span>
                   <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${statusColors[order.status]}`}>
-                    {statusLabels[order.status]}
+                    <StatusIcon icon={statusIcons[order.status]} /> {statusLabels[order.status]}
                   </span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm">
@@ -185,7 +194,7 @@ function OrdersManager() {
               </div>
 
               <div className={`inline-block px-3 py-1 rounded-full text-sm font-medium border mb-4 ${statusColors[selectedOrder.status]}`}>
-                {statusLabels[selectedOrder.status]}
+                <StatusIcon icon={statusIcons[selectedOrder.status]} /> {statusLabels[selectedOrder.status]}
               </div>
 
               <div className="space-y-3 mb-4">
@@ -273,6 +282,10 @@ function OrdersManager() {
       )}
     </div>
   )
+}
+
+function StatusIcon({ icon: Icon }: { icon: any }) {
+  return <Icon size={16} strokeWidth={1.9} aria-hidden="true" />
 }
 
 export default OrdersManager
