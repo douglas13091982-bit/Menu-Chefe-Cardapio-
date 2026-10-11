@@ -1,5 +1,6 @@
 // @ts-nocheck -- código original migrado sem alterações de lógica
 import { useState } from 'react'
+import { Pencil, Trash2, X } from 'lucide-react'
 import { useStore } from '../../context/StoreContext'
 import { Category } from '../../types'
 
@@ -68,7 +69,7 @@ function CategoriesManager() {
                 <h3 className="text-xl font-bold text-gray-800">
                   {editingCategory ? 'Editar Categoria' : 'Nova Categoria'}
                 </h3>
-                <button onClick={resetForm} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200"></button>
+                <button onClick={resetForm} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200"><X size={16} /></button>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -125,7 +126,7 @@ function CategoriesManager() {
                 className="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-100"
                 title="Editar"
               >
-                Editar
+                <Pencil size={15} />
               </button>
               <button
                 onClick={() => {
@@ -138,7 +139,7 @@ function CategoriesManager() {
                 className="w-9 h-9 rounded-lg bg-red-50 text-red-600 flex items-center justify-center hover:bg-red-100"
                 title="Excluir"
               >
-                Excluir
+                <Trash2 size={15} />
               </button>
             </div>
           </div>
