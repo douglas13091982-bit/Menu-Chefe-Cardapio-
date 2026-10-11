@@ -1845,6 +1845,33 @@ function getProductFallbackImage(categoryId: string) {
   return images[categoryId] || images.hamburgueres
 }
 
+// Compatibilidade visual para produtos de demonstração antigos que usavam
+// imagens genéricas repetidas. Fotos enviadas pelo estabelecimento são preservadas.
+function getProductDisplayImage(product: Product) {
+  const legacyPhotos: Record<string, string> = {
+    'Tratto Duplo Cheddar': 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=900&q=85',
+    'Smash Bacon Crispy': 'https://images.unsplash.com/photo-1553979459-d2229ba7433a?auto=format&fit=crop&w=900&q=85',
+    'Smash Tratto': 'https://images.unsplash.com/photo-1561758033-d89a9ad46330?auto=format&fit=crop&w=900&q=85',
+    'Chicken Crispy Burger': 'https://images.unsplash.com/photo-1606755962773-d324e0a13086?auto=format&fit=crop&w=900&q=85',
+    'X-Burger Clássico': 'https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=900&q=85',
+    'Combo Tratto Duplo': 'https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=900&q=85',
+    'Combo Smash Bacon': 'https://images.unsplash.com/photo-1553979459-d2229ba7433a?auto=format&fit=crop&w=900&q=85',
+    'Combo Família (4 pessoas)': 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=900&q=85',
+    'Batata Frita Média': 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?auto=format&fit=crop&w=900&q=85',
+    'Batata com Cheddar e Bacon': 'https://images.unsplash.com/photo-1639024471283-03518883512d?auto=format&fit=crop&w=900&q=85',
+    'Onion Rings': 'https://images.unsplash.com/photo-1562967914-608f82629710?auto=format&fit=crop&w=900&q=85',
+    'Nuggets (10 un)': 'https://images.unsplash.com/photo-1562967914-608f82629710?auto=format&fit=crop&w=900&q=85',
+    'Brownie com Sorvete': 'https://images.unsplash.com/photo-1563805042-7684c019e1cb?auto=format&fit=crop&w=900&q=85',
+    'Milkshake Ovomaltine': 'https://images.unsplash.com/photo-1572490122747-3968b75cc699?auto=format&fit=crop&w=900&q=85',
+    'Coca-Cola Lata 350ml': 'https://images.unsplash.com/photo-1629203851122-3726ecdf080e?auto=format&fit=crop&w=900&q=85',
+    'Guaraná Antarctica Lata 350ml': 'https://images.unsplash.com/photo-1544145945-f90425340c7e?auto=format&fit=crop&w=900&q=85',
+    'Suco Natural 500ml': 'https://images.unsplash.com/photo-1600271886742-f049cd451bba?auto=format&fit=crop&w=900&q=85',
+    'Água Mineral 500ml': 'https://images.unsplash.com/photo-1564419320461-6870880221ad?auto=format&fit=crop&w=900&q=85',
+  }
+  if (product.image?.includes('image.qwenlm.ai')) return legacyPhotos[product.name] || getProductFallbackImage(product.categoryId)
+  return product.image || getProductFallbackImage(product.categoryId)
+}
+
 function ProductCard({ product, quantity, onAdd, onRemove, onClick, isMobile }: {
   product: Product
   quantity: number
@@ -1893,7 +1920,7 @@ function ProductCard({ product, quantity, onAdd, onRemove, onClick, isMobile }: 
         background: '#f3e7dc',
       }}>
         <img
-          src={product.image || fallbackImage}
+          src={getProductDisplayImage(product)}
           alt={product.name}
           loading="lazy"
           onError={e => {
