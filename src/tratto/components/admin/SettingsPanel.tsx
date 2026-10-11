@@ -1,6 +1,7 @@
 // @ts-nocheck -- código original migrado sem alterações de lógica
 import { useState } from 'react'
 import { useStore } from '../../context/StoreContext'
+import { supabase } from '@/integrations/supabase/client'
 import MapboxIntegration from './MapboxIntegration'
 
 function SettingsPanel() {
@@ -37,27 +38,38 @@ function SettingsPanel() {
     setTimeout(() => setSaved(false), 3000)
   }
 
-  const handleChangePassword = (e: React.FormEvent) => {
+  const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault()
     setPasswordError('')
-    
-    const ADMIN_PASSWORD_KEY = 'admin_password'
-    const currentStoredPassword = localStorage.getItem(ADMIN_PASSWORD_KEY) || 'admin123'
-    
-    if (currentPassword !== currentStoredPassword) {
-      setPasswordError('Senha atual incorreta')
-      return
-    }
-    if (newPassword.length < 4) {
-      setPasswordError('A nova senha deve ter pelo menos 4 caracteres')
+
+    if (newPassword.length < 6) {
+      setPasswordError('A nova senha deve ter pelo menos 6 caracteres')
       return
     }
     if (newPassword !== confirmPassword) {
       setPasswordError('As senhas não coincidem')
       return
     }
-    
-    localStorage.setItem(ADMIN_PASSWORD_KEY, newPassword)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user?.email) {
+        setPasswordError('Sessão expirada. Saia e entre novamente.')
+        return
+      }
+      const { error: signError } = await supabase.auth.signInWithPassword({ email: user.email, password: currentPassword })
+      if (signError) {
+        setPasswordError('Senha atual incorreta')
+        return
+      }
+      const { error: updateError } = await supabase.auth.updateUser({ password: newPassword })
+      if (updateError) {
+        setPasswordError('Não foi possível alterar a senha: ' + updateError.message)
+        return
+      }
+    } catch {
+      setPasswordError('Não foi possível alterar a senha agora. Tente novamente.')
+      return
+    }
     setPasswordSaved(true)
     setCurrentPassword('')
     setNewPassword('')
@@ -368,7 +380,7 @@ function SettingsPanel() {
                 value={newPassword}
                 onChange={e => setNewPassword(e.target.value)}
                 className="w-full border rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
-                placeholder="Mínimo 4 caracteres"
+                placeholder="Mínimo 6 caracteres"
               />
             </div>
             <div>

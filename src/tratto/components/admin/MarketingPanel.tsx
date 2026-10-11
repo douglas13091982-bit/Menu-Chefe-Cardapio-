@@ -1,18 +1,36 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { loadMarketing, saveMarketing } from '../../marketing'
 
 function MarketingPanel() {
-  const initial = loadMarketing()
-  const [pixelId, setPixelId] = useState(initial.pixelId)
-  const [accessToken, setAccessToken] = useState(initial.accessToken)
-  const [savedPixelId, setSavedPixelId] = useState(initial.pixelId)
+  const [pixelId, setPixelId] = useState('')
+  const [accessToken, setAccessToken] = useState('')
+  const [savedPixelId, setSavedPixelId] = useState('')
   const [showToken, setShowToken] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [saveError, setSaveError] = useState('')
+  const [loaded, setLoaded] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    let active = true
+    loadMarketing().then(m => {
+      if (!active) return
+      setPixelId(m.pixelId)
+      setAccessToken(m.accessToken)
+      setSavedPixelId(m.pixelId)
+      setLoaded(true)
+    })
+    return () => { active = false }
+  }, [])
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setSaveError('')
     const data = { pixelId: pixelId.trim(), accessToken: accessToken.trim() }
-    saveMarketing(data)
+    const err = await saveMarketing(data)
+    if (err) {
+      setSaveError('Não foi possível salvar: ' + err)
+      return
+    }
     setSavedPixelId(data.pixelId)
     setSaved(true)
     setTimeout(() => setSaved(false), 3000)
@@ -31,6 +49,13 @@ function MarketingPanel() {
         <div className="bg-green-50 border border-green-200 text-green-700 rounded-lg p-3 flex items-center gap-2">
           <span>✅</span>
           <span className="text-sm font-medium">Configurações de marketing salvas!</span>
+        </div>
+      )}
+
+      {saveError && (
+        <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 flex items-center gap-2">
+          <span>⚠️</span>
+          <span className="text-sm font-medium">{saveError}</span>
         </div>
       )}
 
@@ -89,7 +114,8 @@ function MarketingPanel() {
 
         <button
           type="submit"
-          className="w-full bg-red-500 hover:bg-red-600 text-white py-3 rounded-xl font-bold text-sm transition-all"
+          disabled={!loaded}
+          className="w-full bg-red-500 disabled:opacity-50 hover:bg-red-600 text-white py-3 rounded-xl font-bold text-sm transition-all"
         >
           Salvar
         </button>

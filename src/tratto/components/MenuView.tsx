@@ -321,7 +321,7 @@ function MenuView() {
     if (!canPlaceOrder) return
     const now = new Date().toISOString()
     const order: Order = {
-      id: '#' + Math.floor(1000 + Math.random() * 9000),
+      id: '#' + Date.now().toString(36).slice(-5).toUpperCase() + Math.floor(Math.random() * 36).toString(36).toUpperCase(),
       items: cart,
       total: totalPrice,
       deliveryFee: checkoutDeliveryFee,

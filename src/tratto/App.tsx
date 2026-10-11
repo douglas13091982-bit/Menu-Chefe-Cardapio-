@@ -1,7 +1,8 @@
 // @ts-nocheck -- código original migrado sem alterações de lógica
 import { useState, useEffect } from 'react'
 import { trackMenuPageView } from './marketing'
-import { StoreProvider } from './context/StoreContext'
+import { StoreProvider, isCurrentUserAdmin } from './context/StoreContext'
+import { supabase } from '@/integrations/supabase/client'
 import MenuView from './components/MenuView'
 import AdminPanel from './components/admin/AdminPanel'
 import LoginScreen from './components/LoginScreen'
@@ -12,12 +13,19 @@ function App() {
   const [view, setView] = useState<View>('menu')
   const [isAuthenticated, setIsAuthenticated] = useState(false)
 
-  // Check if already logged in (session)
+  // Sessão real do Supabase: só conta como logado quem tem o papel 'admin'
   useEffect(() => {
-    const auth = sessionStorage.getItem('admin_auth')
-    if (auth === 'true') {
-      setIsAuthenticated(true)
-    }
+    let active = true
+    isCurrentUserAdmin()
+      .then(ok => { if (active) setIsAuthenticated(ok) })
+      .catch(() => { if (active) setIsAuthenticated(false) })
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(event => {
+      if (event === 'SIGNED_OUT') {
+        setIsAuthenticated(false)
+        setView(v => (v === 'admin' ? 'menu' : v))
+      }
+    })
+    return () => { active = false; subscription.unsubscribe() }
   }, [])
 
   // Meta Pixel: PageView ao abrir o cardápio (só se houver Pixel ID salvo)
@@ -27,13 +35,12 @@ function App() {
 
   const handleLogin = () => {
     setIsAuthenticated(true)
-    sessionStorage.setItem('admin_auth', 'true')
     setView('admin')
   }
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try { await supabase.auth.signOut() } catch {}
     setIsAuthenticated(false)
-    sessionStorage.removeItem('admin_auth')
     setView('menu')
   }
 

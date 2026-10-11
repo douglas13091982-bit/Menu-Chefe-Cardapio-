@@ -1,5 +1,7 @@
 // @ts-nocheck -- código original migrado sem alterações de lógica
 import { useState } from 'react'
+import { supabase } from '@/integrations/supabase/client'
+import { isCurrentUserAdmin } from '../context/StoreContext'
 
 interface LoginScreenProps {
   onLogin: () => void
@@ -7,27 +9,34 @@ interface LoginScreenProps {
 }
 
 function LoginScreen({ onLogin, onBack }: LoginScreenProps) {
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-  // Senha do admin (pode ser alterada nas configurações)
-  const ADMIN_PASSWORD = localStorage.getItem('admin_password') || 'admin123'
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError('')
-
-    // Simula delay de autenticação
-    setTimeout(() => {
-      if (password === ADMIN_PASSWORD) {
-        onLogin()
-      } else {
-        setError('Senha incorreta. Tente novamente.')
+    try {
+      const { error: authError } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
+      if (authError) {
+        setError('E-mail ou senha incorretos. Tente novamente.')
         setLoading(false)
+        return
       }
-    }, 800)
+      const ok = await isCurrentUserAdmin()
+      if (!ok) {
+        await supabase.auth.signOut()
+        setError('Acesso negado: esta conta não é de administrador.')
+        setLoading(false)
+        return
+      }
+      onLogin()
+    } catch {
+      setError('Não foi possível entrar agora. Tente novamente.')
+      setLoading(false)
+    }
   }
 
   return (
@@ -58,7 +67,21 @@ function LoginScreen({ onLogin, onBack }: LoginScreenProps) {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Senha do Administrador
+                E-mail do Administrador
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={e => { setEmail(e.target.value); setError('') }}
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 transition-all"
+                placeholder="seu@email.com"
+                autoComplete="username"
+                autoFocus
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Senha
               </label>
               <div className="relative">
                 <input
@@ -69,7 +92,7 @@ function LoginScreen({ onLogin, onBack }: LoginScreenProps) {
                     error ? 'border-red-300 bg-red-50' : 'border-gray-200'
                   }`}
                   placeholder="Digite sua senha"
-                  autoFocus
+                  autoComplete="current-password"
                 />
                 <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">
                   🔒
@@ -84,9 +107,9 @@ function LoginScreen({ onLogin, onBack }: LoginScreenProps) {
 
             <button
               type="submit"
-              disabled={loading || !password}
+              disabled={loading || !password || !email}
               className={`w-full py-3 rounded-xl font-bold text-sm transition-all ${
-                loading || !password
+                loading || !password || !email
                   ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                   : 'bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/20'
               }`}
@@ -102,14 +125,6 @@ function LoginScreen({ onLogin, onBack }: LoginScreenProps) {
             </button>
           </form>
 
-          <div className="mt-6 pt-4 border-t border-gray-100">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-              <p className="text-xs text-blue-700">
-                💡 <strong>Dica:</strong> A senha padrão é <code className="bg-blue-100 px-1.5 py-0.5 rounded font-mono">admin123</code>. 
-                Você pode alterá-la nas configurações.
-              </p>
-            </div>
-          </div>
         </div>
 
         {/* Back button */}
