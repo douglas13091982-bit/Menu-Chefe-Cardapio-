@@ -18,7 +18,7 @@ function CategoriesManager() {
 
   const openEditForm = (category: Category) => {
     setEditingCategory(category)
-    setFormData({ name: category.name, order: category.order })
+    setFormData({ name: category.name, icon: '', order: category.order })
     setShowForm(true)
   }
 
@@ -27,6 +27,7 @@ function CategoriesManager() {
     const category: Category = {
       id: editingCategory?.id || Date.now().toString(),
       name: formData.name,
+      icon: formData.icon || '',
       order: formData.order || categories.length + 1
     }
     if (editingCategory) {
