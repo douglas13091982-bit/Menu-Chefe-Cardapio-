@@ -55,7 +55,7 @@ function MarketingPanel() {
 
       {saveError && (
         <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 flex items-center gap-2">
-          <span></span>
+          <AlertTriangle size={18} />
           <span className="text-sm font-medium">{saveError}</span>
         </div>
       )}
