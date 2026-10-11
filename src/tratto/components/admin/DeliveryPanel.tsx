@@ -1,5 +1,6 @@
 // @ts-nocheck -- código original migrado sem alterações de lógica
 import { useState, useRef, useEffect } from 'react'
+import { Pencil, Trash2, X, Wallet, MapPin, Zap, Lightbulb, CheckCircle2 } from 'lucide-react'
 import { getMapboxToken, MAPBOX_TOKEN_EVENT } from '../../mapboxToken'
 import { useStore } from '../../context/StoreContext'
 import { DeliveryZone } from '../../types'
@@ -78,7 +79,7 @@ function DeliveryPanel() {
       <div className="bg-white rounded-xl shadow-sm p-6 space-y-5">
         <div>
           <h3 className="font-bold text-gray-800 flex items-center gap-2">
-            <span></span> Como cobrar a entrega
+            <Wallet size={18} className="text-[#d9273f]" /> Como cobrar a entrega
           </h3>
           <p className="text-xs text-gray-500 mt-1">Ligue ou desligue cada forma de cobrança. Vale para os pedidos de entrega do cardápio.</p>
         </div>
@@ -128,7 +129,7 @@ function DeliveryPanel() {
         <div className="p-4 border-b flex items-center justify-between">
           <div>
             <h3 className="font-bold text-gray-800 flex items-center gap-2">
-              <span></span> Mapa de Cobertura - MapBox
+              <MapPin size={18} className="text-[#d9273f]" /> Mapa de Cobertura - MapBox
             </h3>
             <p className="text-xs text-gray-500 mt-1">Visualize as zonas de entrega no mapa interativo</p>
           </div>
@@ -152,7 +153,7 @@ function DeliveryPanel() {
       {/* MapBox Config Info */}
       <div className="bg-white rounded-xl shadow-sm p-5">
         <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
-          <span></span> Configuração MapBox
+          <Zap size={18} className="text-[#d9273f]" /> Configuração MapBox
         </h3>
         <div className="bg-gray-50 rounded-lg p-4 space-y-2 text-sm">
           <div className="flex items-center gap-2">
@@ -199,14 +200,14 @@ function DeliveryPanel() {
                 className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-100 text-xs"
                 title="Editar"
               >
-                
+                <Pencil size={14} />
               </button>
               <button
                 onClick={() => { if (confirm('Excluir zona?')) deleteDeliveryZone(zone.id) }}
                 className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center hover:bg-red-100 text-xs"
                 title="Excluir"
               >
-                
+                <Trash2 size={14} />
               </button>
             </div>
           </div>
@@ -230,7 +231,7 @@ function DeliveryPanel() {
                 <h3 className="text-xl font-bold text-gray-800">
                   {editingZone ? 'Editar Zona' : 'Nova Zona de Entrega'}
                 </h3>
-                <button onClick={resetForm} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200"></button>
+                <button onClick={resetForm} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200"><X size={16} /></button>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
