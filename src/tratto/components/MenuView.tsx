@@ -706,9 +706,9 @@ function MenuView() {
                   border: 'none',
                   cursor: 'pointer',
                   transition: 'all 0.2s',
-                  backgroundColor: activeCategory === cat.id ? '#ef4444' : '#f3f4f6',
-                  color: activeCategory === cat.id ? '#ffffff' : '#374151',
-                  boxShadow: activeCategory === cat.id ? '0 2px 8px rgba(239, 68, 68, 0.3)' : 'none',
+                  backgroundColor: activeCategory === cat.id ? '#782d25' : '#f5eee7',
+                  color: activeCategory === cat.id ? '#fffaf5' : '#49372e',
+                  boxShadow: activeCategory === cat.id ? '0 4px 12px rgba(120, 45, 37, 0.2)' : 'none',
                   flexShrink: 0
                 }}
               >
@@ -844,14 +844,14 @@ function MenuView() {
               onClick={() => setShowCart(true)}
               style={{
                 width: '100%',
-                backgroundColor: '#ef4444',
-                color: 'white',
+                backgroundColor: '#782d25',
+                color: '#fffaf5',
                 borderRadius: '14px',
                 padding: isMobile ? '14px 16px' : '16px 24px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                boxShadow: '0 10px 25px rgba(239, 68, 68, 0.4)',
+                boxShadow: '0 10px 25px rgba(120, 45, 37, 0.28)',
                 border: 'none',
                 cursor: 'pointer',
                 transition: 'transform 0.1s'
