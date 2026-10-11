@@ -1,5 +1,6 @@
 // @ts-nocheck -- código original migrado sem alterações de lógica
 import { useState } from 'react'
+import { CheckCircle2, Store, Clock3, Truck, Eye, ShieldCheck, AlertTriangle, MapPin, Phone, Tag } from 'lucide-react'
 import { useStore } from '../../context/StoreContext'
 import { supabase } from '@/integrations/supabase/client'
 import { DAY_LABELS, DAY_ORDER, getWeeklyHours, getStoreStatus } from '../../hours'
@@ -137,7 +138,7 @@ function SettingsPanel() {
 
       {saved && (
         <div className="bg-green-50 border border-green-200 text-green-700 rounded-lg p-3 flex items-center gap-2">
-          <span></span>
+          <CheckCircle2 size={18} />
           <span className="text-sm font-medium">Configurações salvas com sucesso!</span>
         </div>
       )}
@@ -146,7 +147,7 @@ function SettingsPanel() {
         {/* Store Info */}
         <div className="bg-white rounded-xl shadow-sm p-6">
           <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
-            <span></span> Informações da Loja
+            <Store size={18} className="text-[#d9273f]" /> Informações da Loja
           </h3>
           {/* Logo / Banner */}
           <div className="mb-4">
@@ -268,7 +269,7 @@ function SettingsPanel() {
         {/* Operating Hours */}
         <div className="bg-white rounded-xl shadow-sm p-6">
           <h3 className="font-bold text-gray-800 mb-1 flex items-center gap-2">
-            <span></span> Horário de Funcionamento
+            <Clock3 size={18} className="text-[#d9273f]" /> Horário de Funcionamento
           </h3>
           <p className="text-xs text-gray-500 mb-4">
             Defina os dias e horários em que a loja atende. Para fechar depois da meia-noite, use um fechamento menor que a abertura (ex.: 18:00 às 02:00).
@@ -339,7 +340,7 @@ function SettingsPanel() {
         {/* Delivery Settings */}
         <div className="bg-white rounded-xl shadow-sm p-6">
           <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
-            <span></span> Configurações de Entrega
+            <Truck size={18} className="text-[#d9273f]" /> Configurações de Entrega
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -395,7 +396,7 @@ function SettingsPanel() {
         {/* Preview */}
         <div className="bg-white rounded-xl shadow-sm p-6">
           <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
-            <span></span> Pré-visualização
+            <Eye size={18} className="text-[#d9273f]" /> Pré-visualização
           </h3>
           <div className="bg-gray-50 rounded-lg p-4">
             <div className="flex items-center gap-3">
@@ -416,7 +417,7 @@ function SettingsPanel() {
               </div>
             </div>
             <div className="mt-3 flex flex-wrap gap-3 text-xs text-gray-600">
-              <span> {formData.address}</span>
+              <span><MapPin size={14} /> {formData.address}</span>
               <span> {formData.phone}</span>
               <span className={previewStatus.open ? 'text-green-600' : 'text-red-600'}>
                 ● {previewStatus.text}
@@ -443,7 +444,7 @@ function SettingsPanel() {
       {/* Security Section */}
       <div className="bg-white rounded-xl shadow-sm p-6">
         <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
-          <span></span> Segurança - Senha de Acesso
+          <ShieldCheck size={18} className="text-[#d9273f]" /> Segurança - Senha de Acesso
         </h3>
         <p className="text-sm text-gray-500 mb-4">
           Altere a senha usada para acessar o painel administrativo.
