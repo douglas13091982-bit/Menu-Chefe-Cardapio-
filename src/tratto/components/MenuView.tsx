@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useStore } from '../context/StoreContext'
 import { Product, CartItem, ProductAddOn, Order, DeliveryType, PaymentMethod } from '../types'
+import { getMapboxToken } from '../mapboxToken'
 
 const fmt = (v: number) => `R$ ${v.toFixed(2).replace('.', ',')}`
 
@@ -27,6 +28,11 @@ function MenuView() {
   const [customerName, setCustomerName] = useState('')
   const [customerPhone, setCustomerPhone] = useState('')
   const [customerAddress, setCustomerAddress] = useState('')
+  const [customerNumber, setCustomerNumber] = useState('')
+  const [cep, setCep] = useState('')
+  const [cepStatus, setCepStatus] = useState<'idle' | 'loading' | 'ok' | 'error'>('idle')
+  const [cepMessage, setCepMessage] = useState('')
+  const cepRequestRef = useRef(0)
   const [changeFor, setChangeFor] = useState('')
   const [orderPlaced, setOrderPlaced] = useState<Order | null>(null)
   const sectionRefs = useRef<{ [key: string]: HTMLElement | null }>({})
@@ -143,11 +149,76 @@ function MenuView() {
     pix: 'PIX',
     cash: 'Dinheiro',
   }
+  // Busca o endereço pelo CEP usando a Geocoding API do Mapbox (token configurado no painel admin)
+  const lookupCep = async (digits: string) => {
+    const requestId = ++cepRequestRef.current
+    const token = getMapboxToken()
+    if (!token) {
+      setCepStatus('error')
+      setCepMessage('Busca por CEP indisponível no momento. Preencha o endereço manualmente.')
+      return
+    }
+    setCepStatus('loading')
+    setCepMessage('Buscando endereço...')
+    try {
+      const formatted = digits.slice(0, 5) + '-' + digits.slice(5)
+      const url =
+        'https://api.mapbox.com/search/geocode/v6/forward' +
+        `?q=${encodeURIComponent(formatted)}&country=br&language=pt&limit=1&types=postcode,street,address` +
+        `&access_token=${encodeURIComponent(token)}`
+      const res = await fetch(url)
+      if (requestId !== cepRequestRef.current) return
+      if (!res.ok) throw new Error('http ' + res.status)
+      const data = await res.json()
+      if (requestId !== cepRequestRef.current) return
+      const feature = data?.features?.[0]
+      const ctx = feature?.properties?.context || {}
+      const type = feature?.properties?.feature_type
+      const street =
+        ctx.address?.street_name ||
+        ctx.street?.name ||
+        (type === 'street' ? feature?.properties?.name : '') ||
+        ''
+      const neighborhood = ctx.neighborhood?.name || ctx.locality?.name || ''
+      const city = ctx.place?.name || ctx.district?.name || ''
+      const uf = ctx.region?.region_code || ''
+      if (!feature || (!street && !neighborhood && !city)) {
+        setCepStatus('error')
+        setCepMessage('Não encontramos esse CEP. Preencha o endereço manualmente.')
+        return
+      }
+      const cityUf = city && uf ? `${city} - ${uf}` : city
+      setCustomerAddress([street, neighborhood, cityUf].filter(Boolean).join(', '))
+      setCepStatus('ok')
+      setCepMessage(
+        street
+          ? 'Endereço encontrado! Informe o número e o complemento.'
+          : 'CEP localizado. Complete a rua e informe o número.'
+      )
+    } catch {
+      if (requestId !== cepRequestRef.current) return
+      setCepStatus('error')
+      setCepMessage('Não foi possível buscar o CEP agora. Preencha o endereço manualmente.')
+    }
+  }
+
+  const handleCepChange = (value: string) => {
+    const digits = value.replace(/\D/g, '').slice(0, 8)
+    setCep(digits.length > 5 ? digits.slice(0, 5) + '-' + digits.slice(5) : digits)
+    if (digits.length === 8) {
+      lookupCep(digits)
+    } else {
+      cepRequestRef.current++
+      setCepStatus('idle')
+      setCepMessage('')
+    }
+  }
+
   const canPlaceOrder =
     customerName.trim() !== '' &&
     customerPhone.trim() !== '' &&
     paymentMethod !== '' &&
-    (deliveryType === 'pickup' || customerAddress.trim() !== '')
+    (deliveryType === 'pickup' || (customerAddress.trim() !== '' && customerNumber.trim() !== ''))
 
   const openCheckout = () => {
     setShowCart(false)
@@ -165,7 +236,9 @@ function MenuView() {
       status: 'pending',
       customerName: customerName.trim(),
       customerPhone: customerPhone.trim(),
-      customerAddress: deliveryType === 'delivery' ? customerAddress.trim() : '',
+      customerAddress: deliveryType === 'delivery'
+        ? `${customerAddress.trim()}, nº ${customerNumber.trim()}${cep.length === 9 ? ' - CEP ' + cep : ''}`
+        : '',
       deliveryType,
       paymentMethod: paymentMethod as PaymentMethod,
       changeFor: paymentMethod === 'cash' && changeValue > checkoutTotal ? changeValue : undefined,
@@ -179,6 +252,10 @@ function MenuView() {
     setPaymentMethod('')
     setChangeFor('')
     setCustomerAddress('')
+    setCustomerNumber('')
+    setCep('')
+    setCepStatus('idle')
+    setCepMessage('')
   }
 
   const scrollToCategory = (categoryId: string) => {
@@ -926,12 +1003,47 @@ function MenuView() {
               {deliveryType === 'delivery' && (
                 <div style={{ marginBottom: '18px' }}>
                   <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '4px' }}>
+                    CEP
+                  </label>
+                  <input
+                    value={cep}
+                    onChange={e => handleCepChange(e.target.value)}
+                    inputMode="numeric"
+                    autoComplete="postal-code"
+                    maxLength={9}
+                    placeholder="00000-000"
+                    style={{
+                      width: '100%', boxSizing: 'border-box', padding: '12px', borderRadius: '10px',
+                      border: '1px solid #e5e7eb', fontSize: '14px', marginBottom: '4px', outline: 'none'
+                    }}
+                  />
+                  {cepMessage && (
+                    <p style={{
+                      fontSize: '12px', margin: '0 0 10px 0',
+                      color: cepStatus === 'ok' ? '#15803d' : cepStatus === 'error' ? '#dc2626' : '#6b7280'
+                    }}>
+                      {cepMessage}
+                    </p>
+                  )}
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '4px', marginTop: cepMessage ? 0 : '10px' }}>
                     Endereço de entrega *
                   </label>
                   <input
                     value={customerAddress}
                     onChange={e => setCustomerAddress(e.target.value)}
-                    placeholder="Rua, número, bairro"
+                    placeholder="Rua, bairro, cidade"
+                    style={{
+                      width: '100%', boxSizing: 'border-box', padding: '12px', borderRadius: '10px',
+                      border: '1px solid #e5e7eb', fontSize: '14px', marginBottom: '10px', outline: 'none'
+                    }}
+                  />
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '4px' }}>
+                    Número e complemento *
+                  </label>
+                  <input
+                    value={customerNumber}
+                    onChange={e => setCustomerNumber(e.target.value)}
+                    placeholder="Ex.: 123, apto 4"
                     style={{
                       width: '100%', boxSizing: 'border-box', padding: '12px', borderRadius: '10px',
                       border: '1px solid #e5e7eb', fontSize: '14px', marginBottom: '8px', outline: 'none'
@@ -1034,7 +1146,7 @@ function MenuView() {
               </div>
               {!canPlaceOrder && (
                 <p style={{ fontSize: '11px', color: '#9ca3af', textAlign: 'center', margin: '0 0 8px 0' }}>
-                  Preencha nome, telefone{deliveryType === 'delivery' ? ', endereço' : ''} e forma de pagamento
+                  Preencha nome, telefone{deliveryType === 'delivery' ? ', endereço, número' : ''} e forma de pagamento
                 </p>
               )}
               <button
