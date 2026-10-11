@@ -122,7 +122,7 @@ function ProductsManager() {
         >
           <option value="">Todas categorias</option>
           {categories.map(cat => (
-            <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>
+            <option key={cat.id} value={cat.id}>{cat.name}</option>
           ))}
         </select>
       </div>
@@ -149,7 +149,7 @@ function ProductsManager() {
                       {formData.image ? (
                         <img src={formData.image} alt="Preview" className="w-full h-full object-cover" />
                       ) : (
-                        <span className="text-gray-400 text-2xl">📷</span>
+                        <span className="text-gray-400 text-xs font-medium">Sem foto</span>
                       )}
                     </div>
                     <div className="flex-1">
@@ -357,7 +357,7 @@ function ProductsManager() {
                       <span className="bg-orange-100 text-orange-600 text-xs px-1.5 py-0.5 rounded">Popular</span>
                     )}
                   </div>
-                  <p className="text-xs text-gray-500 mt-0.5">{category?.icon} {category?.name}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">{category?.name}</p>
                   {product.addOns && product.addOns.length > 0 && (
                     <p className="text-[11px] text-gray-400 mt-0.5 truncate">
                       ➕ {product.addOns.length} adicional{product.addOns.length > 1 ? 'eis' : ''} (ex: {product.addOns[0].name})
