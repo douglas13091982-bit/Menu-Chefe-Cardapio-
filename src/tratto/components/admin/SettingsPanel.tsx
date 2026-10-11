@@ -462,13 +462,13 @@ function SettingsPanel() {
           <form onSubmit={handleChangePassword} className="space-y-4">
             {passwordSaved && (
               <div className="bg-green-50 border border-green-200 text-green-700 rounded-lg p-3 flex items-center gap-2">
-                <span></span>
+                <AlertTriangle size={18} />
                 <span className="text-sm font-medium">Senha alterada com sucesso!</span>
               </div>
             )}
             {passwordError && (
               <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 flex items-center gap-2">
-                <span></span>
+                <AlertTriangle size={18} />
                 <span className="text-sm font-medium">{passwordError}</span>
               </div>
             )}
