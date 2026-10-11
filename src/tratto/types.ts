@@ -57,6 +57,8 @@ export interface StoreConfig {
   phone: string
   address: string
   deliveryFee: number
+  deliveryPerKm?: number
+  maxDeliveryKm?: number
   minOrder: number
   openTime: string
   closeTime: string

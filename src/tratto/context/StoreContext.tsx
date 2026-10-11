@@ -33,6 +33,8 @@ const defaultConfig: StoreConfig = {
   phone: '(47) 99999-9999',
   address: 'Rua São Paulo, 1234 - Saguaçu, Joinville - SC',
   deliveryFee: 5.99,
+  deliveryPerKm: 1.5,
+  maxDeliveryKm: 10,
   minOrder: 20,
   openTime: '18:00',
   closeTime: '23:00',
@@ -228,7 +230,7 @@ function loadFromStorage<T>(key: string, defaultValue: T): T {
 }
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const [config, setConfigState] = useState<StoreConfig>(() => loadFromStorage('store_config', defaultConfig))
+  const [config, setConfigState] = useState<StoreConfig>(() => ({ ...defaultConfig, ...loadFromStorage('store_config', defaultConfig) }))
   const [products, setProducts] = useState<Product[]>(() => loadFromStorage('store_products', defaultProducts))
   const [categories, setCategories] = useState<Category[]>(() => loadFromStorage('store_categories', defaultCategories))
   const [orders, setOrders] = useState<Order[]>(() => loadFromStorage('store_orders', generateDemoOrders()))

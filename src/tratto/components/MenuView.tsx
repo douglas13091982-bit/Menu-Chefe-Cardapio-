@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useStore } from '../context/StoreContext'
 import { Product, CartItem, ProductAddOn, Order, DeliveryType, PaymentMethod } from '../types'
 import { getMapboxToken } from '../mapboxToken'
+import { geocodeAddress, drivingDistanceKm, roundMoney } from '../freight'
 
 const fmt = (v: number) => `R$ ${v.toFixed(2).replace('.', ',')}`
 
@@ -38,6 +39,55 @@ function MenuView() {
   // true quando a rua veio do CEP: o endereço fica preenchido e travado, só falta o número
   const [locked, setLocked] = useState({ street: false, neighborhood: false, city: false })
   const customerAddress = [addrStreet.trim(), addrNeighborhood.trim(), addrCity.trim()].filter(Boolean).join(', ')
+
+  // ---- Frete por distância (taxa base + valor por km, distância pela rota do Mapbox) ----
+  const perKm = Number(config.deliveryPerKm) || 0
+  const maxKm = Number(config.maxDeliveryKm) || 0
+  const useDistanceFreight = deliveryType === 'delivery' && perKm > 0
+  const [freight, setFreight] = useState<{ status: 'idle' | 'loading' | 'ok' | 'error' | 'out'; km: number; fee: number }>({
+    status: 'idle', km: 0, fee: 0
+  })
+  const freightRequestRef = useRef(0)
+
+  useEffect(() => {
+    const requestId = ++freightRequestRef.current
+    if (!useDistanceFreight || !addrStreet.trim() || !customerNumber.trim()) {
+      setFreight({ status: 'idle', km: 0, fee: 0 })
+      return
+    }
+    setFreight({ status: 'loading', km: 0, fee: 0 })
+    const timer = setTimeout(async () => {
+      const stale = () => requestId !== freightRequestRef.current
+      const fail = () => { if (!stale()) setFreight({ status: 'error', km: 0, fee: 0 }) }
+      try {
+        const token = getMapboxToken()
+        if (!token) return fail()
+        const origin = await geocodeAddress(config.address, token, 'address,street,neighborhood,locality,place')
+        if (stale()) return
+        if (!origin) return fail()
+        const num = (customerNumber.match(/\d+/) || [''])[0]
+        const query = [
+          `${addrStreet.trim()}${num ? ' ' + num : ''}`,
+          addrNeighborhood.trim(),
+          addrCity.trim()
+        ].filter(Boolean).join(', ')
+        const dest = await geocodeAddress(query, token, 'address,street', origin)
+        if (stale()) return
+        if (!dest) return fail()
+        const km = await drivingDistanceKm(origin, dest, token)
+        if (stale()) return
+        if (km === null) return fail()
+        if (maxKm > 0 && km > maxKm) {
+          setFreight({ status: 'out', km, fee: 0 })
+          return
+        }
+        setFreight({ status: 'ok', km, fee: roundMoney(config.deliveryFee + perKm * km) })
+      } catch {
+        fail()
+      }
+    }, 800)
+    return () => clearTimeout(timer)
+  }, [useDistanceFreight, addrStreet, addrNeighborhood, addrCity, customerNumber, config.address, config.deliveryFee, perKm, maxKm])
   const numberInputRef = useRef<HTMLInputElement | null>(null)
   const [changeFor, setChangeFor] = useState('')
   const [orderPlaced, setOrderPlaced] = useState<Order | null>(null)
@@ -147,7 +197,17 @@ function MenuView() {
   const totalPrice = cart.reduce((sum, item) => sum + getItemUnitPrice(item) * item.quantity, 0)
 
   // ---- Checkout helpers ----
-  const checkoutDeliveryFee = deliveryType === 'delivery' ? config.deliveryFee : 0
+  const checkoutDeliveryFee =
+    deliveryType === 'delivery'
+      ? (useDistanceFreight && freight.status === 'ok' ? freight.fee : config.deliveryFee)
+      : 0
+  const deliveryFeeLabel = !useDistanceFreight
+    ? fmt(config.deliveryFee)
+    : freight.status === 'ok' ? fmt(freight.fee)
+    : freight.status === 'loading' ? 'Calculando...'
+    : freight.status === 'out' ? 'Fora da área'
+    : freight.status === 'error' ? fmt(config.deliveryFee)
+    : 'Informe o endereço'
   const checkoutTotal = totalPrice + checkoutDeliveryFee
   const changeValue = parseFloat((changeFor || '').replace(',', '.')) || 0
   const paymentLabels: Record<PaymentMethod, string> = {
@@ -249,7 +309,8 @@ function MenuView() {
     customerName.trim() !== '' &&
     customerPhone.trim() !== '' &&
     paymentMethod !== '' &&
-    (deliveryType === 'pickup' || (addrStreet.trim() !== '' && customerNumber.trim() !== ''))
+    (deliveryType === 'pickup' || (addrStreet.trim() !== '' && customerNumber.trim() !== '')) &&
+    !(useDistanceFreight && (freight.status === 'idle' || freight.status === 'loading' || freight.status === 'out'))
 
   const openCheckout = () => {
     setShowCart(false)
@@ -464,7 +525,7 @@ function MenuView() {
               fontSize: '13px', 
               fontWeight: 600 
             }}>
-              {'🏷️'} Entrega: {fmt(config.deliveryFee)}
+              {'🏷️'} Entrega: {perKm > 0 ? 'a partir de ' : ''}{fmt(config.deliveryFee)}
             </span>
             <span style={{ 
               display: 'flex', 
@@ -1007,7 +1068,7 @@ function MenuView() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '14px' }}>
                 {[
                   { value: 'pickup' as DeliveryType, icon: '🏪', title: 'Retirar no local', desc: config.address || 'No endereço da loja' },
-                  { value: 'delivery' as DeliveryType, icon: '🛵', title: 'Entrega', desc: `${fmt(config.deliveryFee)} taxa` },
+                  { value: 'delivery' as DeliveryType, icon: '🛵', title: 'Entrega', desc: perKm > 0 ? `${fmt(config.deliveryFee)} + ${fmt(perKm)}/km` : `${fmt(config.deliveryFee)} taxa` },
                 ].map(opt => (
                   <button
                     key={opt.value}
@@ -1121,6 +1182,17 @@ function MenuView() {
                       border: '1px solid #e5e7eb', fontSize: '14px', marginBottom: '8px', outline: 'none'
                     }}
                   />
+                  {useDistanceFreight && freight.status !== 'idle' && (
+                    <p style={{
+                      fontSize: '13px', fontWeight: 600, margin: '0 0 8px 0',
+                      color: freight.status === 'ok' ? '#15803d' : freight.status === 'loading' ? '#6b7280' : freight.status === 'out' ? '#dc2626' : '#b45309'
+                    }}>
+                      {freight.status === 'loading' && 'Calculando frete...'}
+                      {freight.status === 'ok' && `🛵 Distância: ${freight.km.toFixed(1).replace('.', ',')} km • Frete: ${fmt(freight.fee)}`}
+                      {freight.status === 'out' && `Endereço fora da área de entrega (máximo ${maxKm} km).`}
+                      {freight.status === 'error' && `Não foi possível calcular a distância. Será cobrada a taxa base de ${fmt(config.deliveryFee)}.`}
+                    </p>
+                  )}
                   {deliveryZones.length > 0 && (
                     <p style={{ fontSize: '11px', color: '#9ca3af', margin: 0 }}>
                       Bairros atendidos: {deliveryZones.map(z => z.name).join(', ')}
@@ -1206,7 +1278,7 @@ function MenuView() {
                   {deliveryType === 'delivery' ? 'Taxa de entrega' : 'Retirada no local'}
                 </span>
                 <span style={{ fontWeight: 600, fontSize: '13px', color: '#16a34a' }}>
-                  {deliveryType === 'delivery' ? fmt(config.deliveryFee) : 'Grátis'}
+                  {deliveryType === 'delivery' ? deliveryFeeLabel : 'Grátis'}
                 </span>
               </div>
               <div style={{

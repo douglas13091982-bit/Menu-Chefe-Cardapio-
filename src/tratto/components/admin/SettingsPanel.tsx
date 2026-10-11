@@ -220,7 +220,7 @@ function SettingsPanel() {
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Taxa de entrega padrão (R$)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Taxa base de entrega (R$)</label>
               <input
                 type="number"
                 step="0.01"
@@ -228,6 +228,30 @@ function SettingsPanel() {
                 onChange={e => setFormData(prev => ({ ...prev, deliveryFee: parseFloat(e.target.value) || 0 }))}
                 className="w-full border rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
               />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Valor por km rodado (R$)</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.deliveryPerKm ?? 0}
+                onChange={e => setFormData(prev => ({ ...prev, deliveryPerKm: parseFloat(e.target.value) || 0 }))}
+                className="w-full border rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+              />
+              <p className="text-xs text-gray-500 mt-1">Use 0 para cobrar só a taxa base (frete fixo).</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Distância máxima de entrega (km)</label>
+              <input
+                type="number"
+                step="0.1"
+                min="0"
+                value={formData.maxDeliveryKm ?? 0}
+                onChange={e => setFormData(prev => ({ ...prev, maxDeliveryKm: parseFloat(e.target.value) || 0 }))}
+                className="w-full border rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+              />
+              <p className="text-xs text-gray-500 mt-1">Use 0 para não limitar. Acima disso o pedido para entrega é bloqueado.</p>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Pedido mínimo (R$)</label>
@@ -240,6 +264,9 @@ function SettingsPanel() {
               />
             </div>
           </div>
+          <p className="text-xs text-gray-500 mt-4">
+            Frete = taxa base + valor por km × distância pela rota de carro (calculada pelo Mapbox a partir do endereço da loja). Requer o token do Mapbox em Integrações.
+          </p>
         </div>
 
         {/* Preview */}
