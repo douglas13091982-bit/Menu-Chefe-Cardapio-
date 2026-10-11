@@ -140,8 +140,8 @@ html { scroll-behavior: smooth; }
 .custom-scrollbar::-webkit-scrollbar-thumb { background: #d5c9bd; border-radius: 8px; }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #b8a99a; }
 .mapboxgl-ctrl-attrib { font-size: 10px !important; }
-.peer:checked ~ .peer-checked\\:bg-green-500 { background-color: #22c55e; }
-.peer:checked ~ .peer-checked\\:after\\:translate-x-full::after { transform: translateX(100%); }
+.peer:checked ~ .peer-checked\:bg-green-500 { background-color: #22c55e; }
+.peer:checked ~ .peer-checked\:after\:translate-x-full::after { transform: translateX(100%); }
 
 /* Tratto: acabamento visual consistente, acolhedor e premium */
 body > div { min-height: 100vh; }
