@@ -192,3 +192,118 @@ img { image-rendering: auto; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }
+
+
+/* Redesign Tratto — hierarquia visual, superfícies consistentes e mobile-first */
+:root {
+  --tratto-ink: #2f241f;
+  --tratto-muted: #786b63;
+  --tratto-line: #e9dfd6;
+  --tratto-paper: #fffdf9;
+  --tratto-wine: #782d25;
+  --tratto-wine-hover: #61231d;
+}
+body {
+  background: #faf8f5;
+  color: var(--tratto-ink);
+}
+::selection { background: #ead0c5; color: #3c201b; }
+
+/* Área administrativa */
+aside {
+  box-shadow: 1px 0 0 rgba(65, 43, 32, .025);
+}
+aside nav button {
+  min-height: 44px;
+  border-radius: 11px !important;
+  padding: 8px 10px !important;
+  transition: background-color .18s ease, color .18s ease, border-color .18s ease;
+}
+aside nav button:hover { transform: none !important; }
+aside nav button span span {
+  font-size: 14px;
+  letter-spacing: -.01em;
+}
+main .space-y-6 > div:first-child h1,
+main h1 {
+  letter-spacing: -.035em;
+  line-height: 1.15;
+}
+main input, main select, main textarea {
+  min-height: 42px;
+  border-color: #e4d9d0;
+  background-color: #fff;
+  box-shadow: 0 1px 2px rgba(45, 30, 22, .025);
+}
+main input:focus, main select:focus, main textarea:focus {
+  border-color: #a76a5d;
+  box-shadow: 0 0 0 3px rgba(120, 45, 37, .09);
+}
+main button {
+  font-weight: 600;
+}
+main button:active { transform: translateY(1px); }
+main .bg-red-500, main .hover\:bg-red-600:hover {
+  background-color: var(--tratto-wine) !important;
+}
+main .bg-red-500:hover { background-color: var(--tratto-wine-hover) !important; }
+main .rounded-lg, main .rounded-xl { border-radius: 12px; }
+main .rounded-2xl { border-radius: 16px; }
+
+/* Tabelas e listagens mais legíveis em telas pequenas */
+main table { width: 100%; border-collapse: separate; border-spacing: 0; }
+main th {
+  color: #76665d;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .055em;
+  text-transform: uppercase;
+}
+main td, main th { padding: 12px 14px; }
+main tr > * { border-bottom: 1px solid #eee6df; }
+main tr:last-child > * { border-bottom: 0; }
+
+/* Diálogos confortáveis e acessíveis */
+.fixed.inset-0.z-50 > .relative {
+  border: 1px solid rgba(95, 63, 48, .1);
+  box-shadow: 0 24px 80px rgba(36, 24, 18, .22);
+}
+.fixed.inset-0.z-50 input,
+.fixed.inset-0.z-50 select,
+.fixed.inset-0.z-50 textarea { width: 100%; }
+
+/* Menos movimento decorativo; transições só onde ajudam a leitura */
+button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+@media (hover: hover) and (pointer: fine) {
+  main .bg-white.rounded-xl, main .bg-white.rounded-2xl {
+    transition: border-color .18s ease, box-shadow .18s ease;
+  }
+}
+@media (max-width: 767px) {
+  main { padding: 14px !important; }
+  main .space-y-6 { gap: 18px; }
+  main h1 { font-size: 1.45rem; }
+  main .grid { min-width: 0; }
+  main table { display: block; overflow-x: auto; white-space: nowrap; }
+  main td, main th { padding: 10px 12px; }
+  aside {
+    width: min(84vw, 300px) !important;
+    padding-top: 64px !important;
+    box-shadow: 16px 0 44px rgba(37, 25, 19, .12);
+  }
+  aside nav button { min-height: 46px; }
+  .fixed.inset-0.z-50 { align-items: flex-end; padding: 0 !important; }
+  .fixed.inset-0.z-50 > .relative {
+    width: 100% !important;
+    max-width: none !important;
+    max-height: min(92dvh, 900px) !important;
+    border-radius: 20px 20px 0 0 !important;
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+  }
+  .fixed.inset-0.z-50 > .relative > div { padding: 20px !important; }
+  button, [role="button"] { touch-action: manipulation; }
+}
+@media (max-width: 380px) {
+  nav[style*="position: fixed"] button { padding-left: 9px !important; padding-right: 9px !important; }
+  main { padding: 10px !important; }
+}
