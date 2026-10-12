@@ -21,6 +21,7 @@ interface StoreContextType {
   deleteCategory: (id: string) => void
   // Orders
   orders: Order[]
+  lastIncomingOrder: Order | null
   addOrder: (order: Order) => void
   updateOrderStatus: (id: string, status: Order['status']) => void
   // Delivery
@@ -75,6 +76,7 @@ export function StoreProvider({ children, slug, storeId: storeIdProp, isAdmin = 
   const [products, setProducts] = useState<Product[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [orders, setOrders] = useState<Order[]>([])
+  const [lastIncomingOrder, setLastIncomingOrder] = useState<Order | null>(null)
   const [deliveryZones, setDeliveryZones] = useState<DeliveryZone[]>([])
 
   // 1) Descobre a loja pelo endereço (cardápio público)
@@ -149,6 +151,7 @@ export function StoreProvider({ children, slug, storeId: storeIdProp, isAdmin = 
           }
         }
         const order = { ...(row.data || {}), id: row.id, status: row.status }
+        if (payload.eventType === 'INSERT') setLastIncomingOrder(order)
         setOrders(prev => {
           const exists = prev.some(item => item.id === order.id)
           return exists
@@ -227,7 +230,7 @@ export function StoreProvider({ children, slug, storeId: storeIdProp, isAdmin = 
       config, setConfig,
       products, addProduct, updateProduct, deleteProduct,
       categories, addCategory, updateCategory, deleteCategory,
-      orders, addOrder, updateOrderStatus,
+      orders, lastIncomingOrder, addOrder, updateOrderStatus,
       deliveryZones, addDeliveryZone, updateDeliveryZone, deleteDeliveryZone,
       storeId: sid, storeName: storeName || config.name, storeState, dataReady
     }}>
