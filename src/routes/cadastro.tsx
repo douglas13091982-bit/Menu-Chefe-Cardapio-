@@ -42,6 +42,19 @@ function SignupPage() {
 
     setLoading(true);
     try {
+      // Evita criar uma conta órfã caso a migração SaaS ainda não esteja no Supabase.
+      const { data: trialPlan, error: planError } = await supabase
+        .from("saas_plans")
+        .select("id")
+        .eq("id", "trial")
+        .eq("active", true)
+        .maybeSingle();
+
+      if (planError || !trialPlan) {
+        setError("O cadastro de novas lojas ainda não foi ativado no sistema. Tente novamente mais tarde.");
+        return;
+      }
+
       const { error: signupError } = await supabase.auth.signUp({
         email: email.trim().toLowerCase(),
         password,
