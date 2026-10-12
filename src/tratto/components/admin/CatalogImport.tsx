@@ -3,16 +3,11 @@ import { useState } from 'react'
 import { useStore } from '../../context/StoreContext'
 import { searchMerchants, fetchMenu, fetchMenuByUrl, parseMenu, buildImport } from '../../geckoImport'
 
-const KEY = 'tratto_gecko_key'
-const lsGet = (k) => { try { return localStorage.getItem(k) || '' } catch { return '' } }
-const lsSet = (k, v) => { try { v ? localStorage.setItem(k, v) : localStorage.removeItem(k) } catch {} }
 const money = (n) => 'R$ ' + Number(n).toFixed(2).replace('.', ',')
 const inputCls = 'w-full border rounded-lg px-3 py-2 text-sm'
 
 export default function CatalogImport({ onClose }) {
   const { categories, products, addCategory, addProduct } = useStore()
-  const [apiKey, setApiKey] = useState(lsGet(KEY))
-  const [remember, setRemember] = useState(!!lsGet(KEY))
   const [source, setSource] = useState('ifood')
   const [storeUrl, setStoreUrl] = useState('')
   const [zip, setZip] = useState('')
@@ -26,7 +21,6 @@ export default function CatalogImport({ onClose }) {
   const [selected, setSelected] = useState(new Set())
   const [done, setDone] = useState('')
 
-  const persistKey = () => lsSet(KEY, remember ? apiKey.trim() : '')
   const run = async (fn) => {
     setError(''); setDone(''); setLoading(true)
     try { await fn() } catch (e) { setError(e.message || 'Erro inesperado.') } finally { setLoading(false) }
@@ -37,14 +31,12 @@ export default function CatalogImport({ onClose }) {
   }
 
   const doSearch = () => run(async () => {
-    persistKey()
-    const r = await searchMerchants(apiKey, zip)
+    const r = await searchMerchants(zip)
     setHits(r)
     if (!r.length) throw new Error('Nenhuma loja encontrada para esse CEP.')
   })
   const doFetch = () => run(async () => {
-    persistKey()
-    load(source === 'ifood' ? await fetchMenuByUrl(apiKey, storeUrl) : await fetchMenu(apiKey, merchantId, zip))
+    load(source === 'ifood' ? await fetchMenuByUrl(storeUrl) : await fetchMenu(merchantId, zip))
   })
   const doParse = () => run(async () => {
     let json
@@ -85,13 +77,6 @@ export default function CatalogImport({ onClose }) {
 
           {!menu && (
             <>
-              <label className="block text-sm">Chave da API (GeckoAPI)
-                <input type="password" className={inputCls} value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="Cole sua chave" autoComplete="off" />
-              </label>
-              <label className="flex items-center gap-2 text-xs text-gray-600">
-                <input type="checkbox" checked={remember} onChange={e => setRemember(e.target.checked)} />
-                Lembrar a chave neste navegador
-              </label>
               <div className="flex gap-2 text-sm">
                 {[['ifood', 'iFood (link da loja)'], ['pedeai', 'pede.ai (CEP + ID)']].map(([v, l]) => (
                   <button key={v} type="button" onClick={() => setSource(v)}
@@ -113,12 +98,12 @@ export default function CatalogImport({ onClose }) {
                 </div>
               )}
               <div className="flex flex-wrap gap-2">
-                <button disabled={loading || !apiKey || (source === 'ifood' ? !/^https?:\/\//.test(storeUrl.trim()) : !zip || !merchantId)} onClick={doFetch}
+                <button disabled={loading || (source === 'ifood' ? !/^https?:\/\//.test(storeUrl.trim()) : !zip || !merchantId)} onClick={doFetch}
                   className="bg-green-600 disabled:bg-gray-300 text-white rounded-lg px-4 py-2 text-sm font-semibold">
                   {loading ? 'Buscando…' : 'Buscar cardápio'}
                 </button>
                 {source === 'pedeai' && (
-                  <button disabled={loading || !apiKey || !zip} onClick={doSearch}
+                  <button disabled={loading || !zip} onClick={doSearch}
                     className="border rounded-lg px-4 py-2 text-sm disabled:opacity-50">Não sei o ID: listar lojas do CEP</button>
                 )}
               </div>
@@ -136,7 +121,7 @@ export default function CatalogImport({ onClose }) {
 
               <div className="border-t pt-3">
                 <button onClick={() => setShowPaste(v => !v)} className="text-sm text-gray-600 underline">
-                  {showPaste ? 'Esconder' : 'Colar JSON'} (alternativa se o navegador bloquear a conexão)
+                  {showPaste ? 'Esconder' : 'Colar JSON'} (alternativa se a importação automática falhar)
                 </button>
                 {showPaste && (
                   <div className="mt-2 space-y-2">

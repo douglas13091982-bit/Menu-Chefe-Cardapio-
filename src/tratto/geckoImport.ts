@@ -1,7 +1,7 @@
 // Importação de catálogo via GeckoAPI (https://geckoapi.com.br/docs/) — fonte pede.ai
 import type { Product, Category } from './types'
 
-const ENDPOINT = 'https://api.geckoapi.com.br/v1/extract'
+import { supabase } from '@/integrations/supabase/client'
 
 export interface ImportItem {
   key: string
@@ -19,39 +19,27 @@ export interface MerchantHit { merchantId: string; name: string; isOpen: boolean
 const norm = (s: string) =>
   (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim()
 
-async function call(apiKey: string, body: any) {
-  let res: Response
+// A chave do GeckoAPI fica no servidor; aqui só chamamos a função segura com a sessão do admin.
+async function call(body: any) {
+  const { data: sess } = await supabase.auth.getSession()
+  const token = sess?.session?.access_token
+  if (!token) throw new Error('Faça login como administrador para importar.')
   try {
-    res = await fetch(ENDPOINT, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${apiKey.trim()}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    })
-  } catch {
-    throw new Error('Não foi possível conectar ao GeckoAPI pelo navegador (possível bloqueio de CORS). Use a opção "Colar JSON" abaixo.')
+    const { geckoExtract } = await import('@/lib/catalog-import.functions')
+    return await geckoExtract({ data: body, headers: { Authorization: `Bearer ${token}` } })
+  } catch (e: any) {
+    throw new Error(e?.message || 'Não foi possível importar agora.')
   }
-  const json = await res.json().catch(() => null)
-  if (!res.ok) {
-    const code = json?.errorCode || res.status
-    const msg: Record<string, string> = {
-      UNAUTHORIZED: 'Chave da API inválida.',
-      INSUFFICIENT_CREDITS: 'Sem créditos no GeckoAPI.',
-      INVALID_PAYLOAD: 'Dados inválidos (confira ID da loja e CEP).',
-      RATE_LIMIT_EXCEEDED: 'Muitas requisições. Tente de novo em instantes.',
-    }
-    throw new Error(msg[code] || `Erro do GeckoAPI (${code}).`)
-  }
-  return json
 }
 
-export async function searchMerchants(apiKey: string, zipCode: string): Promise<MerchantHit[]> {
-  const json = await call(apiKey, { target: 'pede.ai', type: 'plp', zipCode })
+export async function searchMerchants(zipCode: string): Promise<MerchantHit[]> {
+  const json = await call({ target: 'pede.ai', type: 'plp', zipCode })
   const items = json?.data?.items || []
   return items.map((i: any) => ({ merchantId: String(i.merchantId), name: i.name, isOpen: !!i.isOpen }))
 }
 
-export async function fetchMenu(apiKey: string, merchantId: string, zipCode: string) {
-  const json = await call(apiKey, { target: 'pede.ai', type: 'pdp', merchantId: String(merchantId).trim(), zipCode })
+export async function fetchMenu(merchantId: string, zipCode: string) {
+  const json = await call({ target: 'pede.ai', type: 'pdp', merchantId: String(merchantId).trim(), zipCode })
   return parseMenu(json)
 }
 
@@ -120,8 +108,8 @@ export function parseMenu(json: any): { merchantName: string; sections: ImportSe
   return { merchantName: String(root?.name || root?.merchant?.name || ''), sections }
 }
 
-export async function fetchMenuByUrl(apiKey: string, url: string, target = 'ifood.com.br') {
-  const json = await call(apiKey, { target, type: 'pdp', url: url.trim() })
+export async function fetchMenuByUrl(url: string) {
+  const json = await call({ target: 'ifood.com.br', type: 'pdp', url: url.trim() })
   return parseMenu(json)
 }
 
