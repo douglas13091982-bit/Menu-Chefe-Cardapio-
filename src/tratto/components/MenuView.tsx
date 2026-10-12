@@ -50,6 +50,7 @@ function MenuView() {
   const maxKm = Number(config.maxDeliveryKm) || 0
   // Chaves do painel (Entrega): taxas fixas por bairro e/ou cálculo automático pelo Mapbox
   const mapboxEnabled = config.mapboxFreightEnabled !== false
+  const pickupEnabled = config.pickupEnabled !== false
   const fixedEnabled = config.fixedZoneFeesEnabled === true
   const normText = (t: string) => (t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim()
   const matchedZone = deliveryType === 'delivery' && fixedEnabled && addrNeighborhood.trim()
@@ -358,6 +359,9 @@ function MenuView() {
       setLocked({ street: false, neighborhood: false, city: false })
     }
   }
+
+  // Se a loja desligou a retirada, o pedido é sempre entrega
+  useEffect(() => { if (!pickupEnabled && deliveryType === 'pickup') setDeliveryType('delivery') }, [pickupEnabled, deliveryType])
 
   const canPlaceOrder =
     customerName.trim() !== '' &&
@@ -1205,9 +1209,9 @@ function MenuView() {
               <p style={{ fontSize: '13px', fontWeight: 600, color: '#374151', margin: '0 0 8px 0' }}>
                 Como deseja receber seu pedido? *
               </p>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '14px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: pickupEnabled ? '1fr 1fr' : '1fr', gap: '10px', marginBottom: '14px' }}>
                 {[
-                  { value: 'pickup' as DeliveryType, title: 'Retirar no local', desc: config.address || 'No endereço da loja' },
+                  ...(pickupEnabled ? [{ value: 'pickup' as DeliveryType, title: 'Retirar no local', desc: config.address || 'No endereço da loja' }] : []),
                   { value: 'delivery' as DeliveryType, title: 'Entrega', desc: fixedEnabled && !mapboxEnabled ? 'Taxa por bairro' : (mapboxEnabled && perKm > 0 ? `${fmt(config.deliveryFee)} + ${fmt(perKm)}/km` : `${fmt(config.deliveryFee)} taxa`) },
                 ].map(opt => (
                   <button

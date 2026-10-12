@@ -14,6 +14,7 @@ function DeliveryPanel() {
   const { config, setConfig, deliveryZones, addDeliveryZone, updateDeliveryZone, deleteDeliveryZone } = useStore()
   const fixedEnabled = config.fixedZoneFeesEnabled === true
   const mapboxEnabled = config.mapboxFreightEnabled !== false
+  const pickupEnabled = config.pickupEnabled !== false
   const [showForm, setShowForm] = useState(false)
   const [editingZone, setEditingZone] = useState<DeliveryZone | null>(null)
   const [formData, setFormData] = useState({ name: '', price: '', estimatedTime: '' })
@@ -74,6 +75,34 @@ function DeliveryPanel() {
         >
           <span>+</span> Nova Zona
         </button>
+      </div>
+
+      {/* Retirada no local */}
+      <div className="bg-white rounded-xl shadow-sm p-6">
+        <label className="flex items-start justify-between gap-4 cursor-pointer">
+          <div>
+            <h3 className="font-bold text-gray-800 flex items-center gap-2">
+              <MapPin size={18} className="text-[#d9273f]" /> Retirada no local
+            </h3>
+            <p className="text-xs text-gray-500 mt-1">
+              {pickupEnabled
+                ? 'O cliente pode escolher retirar o pedido na loja (sem taxa de entrega).'
+                : 'Desligada: o cliente só consegue pedir entrega.'}
+            </p>
+            {pickupEnabled && !(config.address || '').trim() && (
+              <p className="text-xs text-amber-700 mt-1">Dica: preencha o endereço da loja em Configurações para ele aparecer na retirada.</p>
+            )}
+          </div>
+          <span className="relative inline-flex items-center flex-shrink-0">
+            <input
+              type="checkbox"
+              checked={pickupEnabled}
+              onChange={e => setConfig({ ...config, pickupEnabled: e.target.checked })}
+              className="sr-only peer"
+            />
+            <span className="w-11 h-6 bg-gray-200 peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></span>
+          </span>
+        </label>
       </div>
 
       {/* Como cobrar a entrega */}

@@ -74,6 +74,7 @@ export interface StoreConfig {
   openTime: string
   closeTime: string
   weeklyHours?: DayHours[]
+  pickupEnabled?: boolean
   coupons?: Coupon[]
   isOpen: boolean
 }
