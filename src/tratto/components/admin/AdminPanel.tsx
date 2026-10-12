@@ -25,6 +25,8 @@ const tabs = [
 ]
 
 function AdminPanel() {
+  const { orders } = useStore()
+  const pendingOrdersCount = orders.filter(order => order.status === 'pending').length
   const [activeTab, setActiveTab] = useState<AdminTab>('dashboard')
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
