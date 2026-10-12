@@ -18,9 +18,9 @@ const included = [
 ];
 
 export function HomePage() {
-  const [plan, setPlan] = useState<{ plan_name: string; price_cents: number; trial_days: number; contact_whatsapp: string } | null>(null);
+  const [plan, setPlan] = useState<{ system_name?: string; logo_url?: string | null; plan_name: string; price_cents: number; trial_days: number; contact_whatsapp: string } | null>(null);
   useEffect(() => {
-    supabase.from("platform_settings").select("plan_name, price_cents, trial_days, contact_whatsapp").eq("id", "main").maybeSingle()
+    supabase.from("platform_settings").select("system_name, logo_url, plan_name, price_cents, trial_days, contact_whatsapp").eq("id", "main").maybeSingle()
       .then(({ data }) => { if (data) setPlan(data as any); });
   }, []);
   const wa = String(plan?.contact_whatsapp || "").replace(/\D/g, "");
@@ -29,9 +29,11 @@ export function HomePage() {
     <main className="min-h-screen bg-white text-slate-950">
       <header className="sticky top-0 z-20 border-b border-slate-200/80 bg-white/90 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 sm:px-8">
-          <Link to="/" className="flex items-center gap-3" aria-label="Tratto início">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-600 text-white"><ChefHat size={22} /></span>
-            <span className="text-lg font-bold tracking-tight">tratto<span className="text-red-600">.</span><span className="ml-2 hidden text-xs font-medium text-slate-500 sm:inline">DIGITAL MENU</span></span>
+          <Link to="/" className="flex items-center gap-3 min-w-0" aria-label={(plan?.system_name || "Tratto Digital Menu") + " início"}>
+            {plan?.logo_url
+              ? <img src={plan.logo_url} alt="" className="h-10 w-10 rounded-xl object-contain" />
+              : <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-600 text-white"><ChefHat size={22} /></span>}
+            <span className="truncate text-lg font-bold tracking-tight">{plan?.system_name || "Tratto Digital Menu"}</span>
           </Link>
           <nav className="flex items-center gap-3">
             <a href="#recursos" className="hidden text-sm font-medium text-slate-600 hover:text-slate-950 sm:inline">Recursos</a>
