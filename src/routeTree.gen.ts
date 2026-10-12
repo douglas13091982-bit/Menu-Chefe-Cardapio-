@@ -76,6 +76,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/cadastro': {
+      id: '/cadastro',
+      path: '/cadastro',
+      fullPath: '/cadastro',
+      preLoaderRoute: typeof CadastroRouteImport,
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
