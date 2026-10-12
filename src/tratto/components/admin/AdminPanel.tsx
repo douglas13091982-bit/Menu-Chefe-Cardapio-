@@ -60,7 +60,15 @@ function AdminPanel() {
                 }`}
               >
                 <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors ${activeTab === tab.id ? "bg-[#d9273f] text-white" : "text-[#6b6265] group-hover:bg-[#fff0f2] group-hover:text-[#d9273f]"}`}><tab.icon size={19} strokeWidth={1.8} /></span>
-                <span>{tab.label}</span>
+                <span className="flex-1 text-left">{tab.label}</span>
+                {tab.id === 'orders' && pendingOrdersCount > 0 && (
+                  <span
+                    aria-label={pendingOrdersCount + (pendingOrdersCount === 1 ? ' pedido novo' : ' pedidos novos')}
+                    className="ml-auto inline-flex min-w-5 h-5 items-center justify-center rounded-full bg-[#d9273f] px-1.5 text-[11px] font-bold leading-none text-white shadow-sm"
+                  >
+                    {pendingOrdersCount > 99 ? '99+' : pendingOrdersCount}
+                  </span>
+                )}
               </button>
             ))}
           </nav>
