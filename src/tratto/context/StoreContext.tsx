@@ -139,6 +139,15 @@ export function StoreProvider({ children, slug, storeId: storeIdProp, isAdmin = 
           setOrders(prev => prev.filter(order => order.id !== row.id))
           return
         }
+        if (payload.eventType === 'INSERT' && config.orderNotificationSoundUrl && typeof window !== 'undefined' && window.localStorage.getItem('tratto_order_sound_enabled') === '1') {
+          try {
+            const notificationAudio = new Audio(config.orderNotificationSoundUrl)
+            notificationAudio.volume = 1
+            void notificationAudio.play().catch(error => console.warn('Som de novo pedido bloqueado pelo navegador. Ative o som no painel e teste novamente.', error))
+          } catch (error) {
+            console.warn('Não foi possível reproduzir o som de novo pedido.', error)
+          }
+        }
         const order = { ...(row.data || {}), id: row.id, status: row.status }
         setOrders(prev => {
           const exists = prev.some(item => item.id === order.id)
@@ -154,7 +163,7 @@ export function StoreProvider({ children, slug, storeId: storeIdProp, isAdmin = 
         if (data) setOrders(data.map(r => ({ ...r.data, status: r.status })))
       })
     return () => { supabase.removeChannel(channel) }
-  }, [isAdmin, sid])
+  }, [isAdmin, sid, config.orderNotificationSoundUrl])
 
   const setConfig = (c: StoreConfig) => {
     setConfigState(c)
