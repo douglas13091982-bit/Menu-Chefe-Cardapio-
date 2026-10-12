@@ -1,6 +1,6 @@
 // @ts-nocheck -- código original migrado sem alterações de lógica
 import { useState } from 'react'
-import { LayoutDashboard, ClipboardList, UtensilsCrossed, FolderOpen, MapPinned, TicketPercent, Megaphone, Settings } from 'lucide-react'
+import { LayoutDashboard, ClipboardList, UtensilsCrossed, FolderOpen, MapPinned, TicketPercent, Megaphone, Settings, ShoppingCart } from 'lucide-react'
 import { useStore } from '../../context/StoreContext'
 import Dashboard from './Dashboard'
 import ProductsManager from './ProductsManager'
@@ -10,12 +10,14 @@ import SettingsPanel from './SettingsPanel'
 import DeliveryPanel from './DeliveryPanel'
 import MarketingPanel from './MarketingPanel'
 import CouponsManager from './CouponsManager'
+import ManualOrder from './ManualOrder'
 
-type AdminTab = 'dashboard' | 'orders' | 'products' | 'categories' | 'delivery' | 'marketing' | 'coupons' | 'settings'
+type AdminTab = 'dashboard' | 'orders' | 'products' | 'categories' | 'delivery' | 'marketing' | 'coupons' | 'settings' | 'manual'
 
 const tabs = [
   { id: 'dashboard' as const, label: 'Dashboard', icon: LayoutDashboard },
   { id: 'orders' as const, label: 'Pedidos', icon: ClipboardList },
+  { id: 'manual' as const, label: 'Pedido manual', icon: ShoppingCart },
   { id: 'products' as const, label: 'Produtos', icon: UtensilsCrossed },
   { id: 'categories' as const, label: 'Categorias', icon: FolderOpen },
   { id: 'delivery' as const, label: 'Entrega', icon: MapPinned },
@@ -86,6 +88,7 @@ function AdminPanel() {
       <main className="flex-1 p-4 md:p-6 overflow-auto">
         {activeTab === 'dashboard' && <Dashboard />}
         {activeTab === 'orders' && <OrdersManager />}
+        {activeTab === 'manual' && <ManualOrder />}
         {activeTab === 'products' && <ProductsManager />}
         {activeTab === 'categories' && <CategoriesManager />}
         {activeTab === 'delivery' && <DeliveryPanel />}
