@@ -1,6 +1,6 @@
 // @ts-nocheck -- código original migrado sem alterações de lógica
 import { useState } from 'react'
-import { CheckCircle2, Store, Clock3, Truck, Eye, ShieldCheck, AlertTriangle, MapPin, Phone, Tag } from 'lucide-react'
+import { CheckCircle2, Store, Clock3, Truck, Eye, ShieldCheck, AlertTriangle, MapPin, Phone, Tag, Volume2, Play, Music } from 'lucide-react'
 import { useStore } from '../../context/StoreContext'
 import { supabase } from '@/integrations/supabase/client'
 import { DAY_LABELS, DAY_ORDER, getWeeklyHours, getStoreStatus } from '../../hours'
@@ -66,6 +66,39 @@ function SettingsPanel() {
     }
     reader.onerror = () => alert('Não foi possível ler o arquivo.')
     reader.readAsDataURL(file)
+  }
+
+  const handleNotificationSoundUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    if (!file.name.toLowerCase().endsWith('.mp3') && file.type !== 'audio/mpeg') {
+      alert('Selecione um arquivo de áudio MP3.')
+      return
+    }
+    if (file.size > 1024 * 1024) {
+      alert('O MP3 deve ter no máximo 1 MB para ser salvo nas configurações da loja.')
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = () => setFormData(prev => ({ ...prev, orderNotificationSoundUrl: String(reader.result || '') }))
+    reader.onerror = () => alert('Não foi possível ler o arquivo MP3.')
+    reader.readAsDataURL(file)
+  }
+
+  const testNotificationSound = async () => {
+    if (!formData.orderNotificationSoundUrl) {
+      alert('Primeiro selecione um arquivo MP3.')
+      return
+    }
+    try {
+      window.localStorage.setItem('tratto_order_sound_enabled', '1')
+      const audio = new Audio(formData.orderNotificationSoundUrl)
+      audio.volume = 1
+      await audio.play()
+    } catch {
+      alert('O navegador bloqueou o áudio. Clique novamente em Testar som e confirme que o volume do computador está ligado.')
+    }
   }
 
   const weekly = getWeeklyHours(formData)
@@ -429,6 +462,37 @@ function SettingsPanel() {
           </div>
           <p className="text-xs text-gray-500 mt-4">
             Frete = taxa base + valor por km × distância pela rota de carro (calculada pelo Mapbox a partir do endereço da loja). Requer o token do Mapbox em Integrações.
+          </p>
+        </div>
+
+        {/* Som de novo pedido */}
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <h3 className="font-bold text-gray-800 mb-2 flex items-center gap-2">
+            <Volume2 size={18} className="text-[#d9273f]" /> Notificação sonora de pedidos
+          </h3>
+          <p className="text-sm text-gray-500 mb-4">
+            Envie um MP3 para tocar automaticamente quando um novo pedido chegar ao painel desta loja. O arquivo fica salvo nas configurações.
+          </p>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            <label className="inline-flex w-fit items-center gap-2 cursor-pointer rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50">
+              <Music size={16} />
+              {formData.orderNotificationSoundUrl ? 'Trocar arquivo MP3' : 'Selecionar arquivo MP3'}
+              <input type="file" accept=".mp3,audio/mpeg" onChange={handleNotificationSoundUpload} className="hidden" />
+            </label>
+            {formData.orderNotificationSoundUrl && (
+              <button type="button" onClick={() => setFormData(prev => ({ ...prev, orderNotificationSoundUrl: '' }))} className="text-sm text-red-600 hover:text-red-700 text-left">
+                Remover áudio
+              </button>
+            )}
+            <button type="button" onClick={testNotificationSound} disabled={!formData.orderNotificationSoundUrl} className="inline-flex w-fit items-center gap-2 rounded-lg bg-[#d9273f] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#c01f35] disabled:opacity-40">
+              <Play size={16} /> Testar e ativar som
+            </button>
+          </div>
+          {formData.orderNotificationSoundUrl && (
+            <p className="mt-3 text-xs text-green-700">MP3 selecionado. Clique em “Salvar Configurações” para gravar a alteração.</p>
+          )}
+          <p className="mt-2 text-xs text-gray-500">
+            Limite: 1 MB. O navegador pode exigir que você clique em “Testar e ativar som” uma vez para autorizar a reprodução automática.
           </p>
         </div>
 
