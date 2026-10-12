@@ -37,7 +37,7 @@ function StoreFields({ name, setName, slug, setSlug, touched, setTouched }) {
       </label>
       <label className="block text-sm font-medium text-gray-700">Endereço do cardápio
         <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden text-sm">
-          <span className="px-2 text-gray-400 bg-gray-50 py-2.5 whitespace-nowrap">/l/</span>
+          <span className="px-2 text-gray-400 bg-gray-50 py-2.5 whitespace-nowrap">/</span>
           <input className="flex-1 px-2 py-2.5 outline-none min-w-0" required value={slug}
             onChange={e => { setTouched(true); setSlug(slugify(e.target.value)) }} placeholder="burger-do-joao" />
         </div>
@@ -145,7 +145,7 @@ function Blocked({ store, status, contact, onLogout }) {
 
 function PanelShell({ store, status, isSuper, contact, onLogout }) {
   const [copied, setCopied] = useState(false)
-  const link = `${window.location.origin}/l/${store.slug}`
+  const link = `${window.location.origin}/${store.slug}`
   const copy = async () => { try { await navigator.clipboard.writeText(link); setCopied(true); setTimeout(() => setCopied(false), 1800) } catch {} }
   const wa = String(contact || '').replace(/\D/g, '')
   return (
@@ -157,7 +157,7 @@ function PanelShell({ store, status, isSuper, contact, onLogout }) {
           {status === 'active' && store.paid_until && <span className="hidden sm:inline text-[11px] bg-green-100 text-green-700 rounded-full px-2 py-0.5 whitespace-nowrap">Ativa até {fmtDate(store.paid_until)}</span>}
         </div>
         <div className="flex items-center gap-1.5 text-xs">
-          <a href={`/l/${store.slug}`} target="_blank" rel="noreferrer" className="px-2.5 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 whitespace-nowrap">Ver cardápio</a>
+          <a href={`/${store.slug}`} target="_blank" rel="noreferrer" className="px-2.5 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 whitespace-nowrap">Ver cardápio</a>
           <button onClick={copy} className="px-2.5 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 whitespace-nowrap">{copied ? 'Copiado!' : 'Copiar link'}</button>
           {isSuper && <a href="/super" className="hidden sm:inline px-2.5 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50">Super admin</a>}
           <button onClick={onLogout} className="px-2.5 py-1.5 rounded-lg bg-gray-100 hover:bg-red-50 hover:text-red-600">Sair</button>
