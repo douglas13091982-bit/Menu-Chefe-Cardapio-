@@ -310,7 +310,7 @@ function PlatformTab({ plat, reload }) {
         </div>
         <label className="block text-sm">WhatsApp de contato/cobrança (com DDD)<input className={cls + ' mt-1'} inputMode="tel" value={wa} onChange={e => setWa(e.target.value)} placeholder="47999999999" /></label>
       </div>
-      {msg && <p className={\`text-sm \${msg.includes('sucesso') ? 'text-green-700' : 'text-red-600'}\`}>{msg}</p>}
+      {msg && <p className={\`text-sm ${msg.includes('sucesso') ? 'text-green-700' : 'text-red-600'}\`}>{msg}</p>}
       <button disabled={busy} className="bg-gray-900 disabled:opacity-60 text-white font-semibold rounded-lg px-4 py-2.5 text-sm">{busy ? 'Salvando…' : 'Salvar identidade e configurações'}</button>
     </form>
   )
