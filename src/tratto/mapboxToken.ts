@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client'
+import { getCurrentStoreId } from './tenant'
 
 export const MAPBOX_TOKEN_KEY = 'store_mapbox_token'
 export const MAPBOX_TOKEN_EVENT = 'store-mapbox-token-changed'
@@ -29,6 +30,6 @@ export function getSavedMapboxToken(): string {
 export function setSavedMapboxToken(token: string) {
   dbToken = token
   window.dispatchEvent(new Event(MAPBOX_TOKEN_EVENT))
-  supabase.from('store_settings').upsert({ id: 'main', mapbox_public_token: token || null, updated_at: new Date().toISOString() })
+  supabase.from('store_settings').upsert({ store_id: getCurrentStoreId(), mapbox_public_token: token || null, updated_at: new Date().toISOString() })
     .then(({ error }) => { if (error) console.error('Erro ao salvar token do Mapbox:', error) })
 }

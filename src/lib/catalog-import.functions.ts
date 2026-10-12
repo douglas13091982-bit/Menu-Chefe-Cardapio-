@@ -40,11 +40,15 @@ export const geckoExtract = createServerFn({ method: 'POST' })
   .middleware([requireSupabaseAuth])
   .inputValidator(validate)
   .handler(async ({ data, context }) => {
-    const { data: isAdmin, error } = await context.supabase.rpc('has_role', {
-      _user_id: context.userId,
-      _role: 'admin',
-    })
-    if (error || !isAdmin) throw new Error('Apenas administradores podem importar catálogo.')
+    // Só quem é dono/membro de uma loja ativa (ou o super admin) pode importar.
+    const sb: any = context.supabase
+    const { data: members, error } = await sb.from('store_members').select('store_id').eq('user_id', context.userId).limit(1)
+    const { data: isSuper } = await sb.rpc('is_super_admin')
+    if (error || (!isSuper && !(members && members.length))) throw new Error('Apenas lojistas podem importar catálogo.')
+    if (!isSuper) {
+      const { data: ok } = await sb.rpc('store_is_servable', { _store: members[0].store_id })
+      if (!ok) throw new Error('Assinatura inativa: regularize para importar catálogo.')
+    }
 
     const key = process.env['GECKO_API_KEY']
     if (!key) throw new Error('A chave do GeckoAPI não está configurada no servidor (GECKO_API_KEY).')

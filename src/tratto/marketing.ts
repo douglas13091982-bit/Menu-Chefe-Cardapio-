@@ -1,14 +1,16 @@
 // Configurações de marketing no banco: Pixel ID em store_settings (público) e token em store_secrets (só admin)
 import { supabase } from '@/integrations/supabase/client'
+import { getCurrentStoreId } from './tenant'
 
 export interface MarketingConfig {
   pixelId: string
   accessToken: string
 }
 
-export async function loadPixelId(): Promise<string> {
+export async function loadPixelId(storeId: string = getCurrentStoreId()): Promise<string> {
+  if (!storeId) return ''
   try {
-    const { data } = await supabase.from('store_settings').select('marketing_pixel_id').eq('id', 'main').maybeSingle()
+    const { data } = await supabase.from('store_settings').select('marketing_pixel_id').eq('store_id', storeId).maybeSingle()
     return String(data?.marketing_pixel_id || '')
   } catch {
     return ''
@@ -19,7 +21,7 @@ export async function loadMarketing(): Promise<MarketingConfig> {
   const pixelId = await loadPixelId()
   let accessToken = ''
   try {
-    const { data } = await supabase.from('store_secrets').select('facebook_access_token').eq('id', 'main').maybeSingle()
+    const { data } = await supabase.from('store_secrets').select('facebook_access_token').eq('store_id', getCurrentStoreId()).maybeSingle()
     accessToken = String(data?.facebook_access_token || '')
   } catch {}
   return { pixelId, accessToken }
@@ -28,9 +30,9 @@ export async function loadMarketing(): Promise<MarketingConfig> {
 // Retorna uma mensagem de erro, ou null se salvou
 export async function saveMarketing(data: MarketingConfig): Promise<string | null> {
   const now = new Date().toISOString()
-  const a = await supabase.from('store_settings').upsert({ id: 'main', marketing_pixel_id: data.pixelId || null, updated_at: now })
+  const a = await supabase.from('store_settings').upsert({ store_id: getCurrentStoreId(), marketing_pixel_id: data.pixelId || null, updated_at: now })
   if (a.error) return a.error.message
-  const b = await supabase.from('store_secrets').upsert({ id: 'main', facebook_access_token: data.accessToken || null, updated_at: now })
+  const b = await supabase.from('store_secrets').upsert({ store_id: getCurrentStoreId(), facebook_access_token: data.accessToken || null, updated_at: now })
   if (b.error) return b.error.message
   return null
 }
@@ -38,8 +40,8 @@ export async function saveMarketing(data: MarketingConfig): Promise<string | nul
 let loadedPixelId: string | null = null
 
 // Carrega o Meta Pixel (fbq) e dispara PageView. Não faz nada se não houver Pixel ID.
-export async function trackMenuPageView() {
-  const pixelId = await loadPixelId()
+export async function trackMenuPageView(storeId?: string) {
+  const pixelId = await loadPixelId(storeId)
   if (!/^\d+$/.test(pixelId)) return
   const w = window as any
   if (!w.fbq) {
