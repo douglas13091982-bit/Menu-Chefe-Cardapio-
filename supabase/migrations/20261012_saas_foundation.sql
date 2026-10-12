@@ -116,3 +116,75 @@ where slug = 'tratto'
 and not exists (
   select 1 from public.saas_subscriptions sub where sub.store_id = saas_stores.id
 );
+
+
+-- Criação segura de loja e período de teste no momento do cadastro.
+-- A função é executada pelo trigger do Auth; o cliente não recebe permissão direta
+-- para inserir lojas ou assinaturas por conta própria.
+create or replace function public.handle_new_saas_store()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  requested_name text;
+  requested_slug text;
+  safe_slug text;
+  trial_length integer := 7;
+  new_store_id uuid;
+begin
+  requested_name := trim(coalesce(new.raw_user_meta_data ->> 'store_name', ''));
+  requested_slug := lower(trim(coalesce(new.raw_user_meta_data ->> 'store_slug', '')));
+
+  if requested_name = '' or length(requested_name) > 120 then
+    raise exception 'Nome da loja inválido';
+  end if;
+
+  if requested_slug !~ '^[a-z0-9]+(-[a-z0-9]+)*$' or length(requested_slug) > 60 then
+    raise exception 'Endereço da loja inválido';
+  end if;
+
+  select coalesce(p.trial_days, 7) into trial_length
+  from public.saas_plans p
+  where p.id = 'trial' and p.active = true;
+
+  trial_length := coalesce(trial_length, 7);
+
+  insert into public.saas_stores (
+    owner_user_id, name, slug, status, trial_started_at, trial_ends_at
+  )
+  values (
+    new.id, requested_name, requested_slug, 'trial', now(),
+    now() + make_interval(days => trial_length)
+  )
+  returning id into new_store_id;
+
+  insert into public.saas_subscriptions (
+    store_id, plan_id, status, trial_started_at, trial_ends_at
+  )
+  values (
+    new_store_id, 'trial', 'trial', now(),
+    now() + make_interval(days => trial_length)
+  );
+
+  return new;
+end;
+$$;
+
+drop trigger if exists on_auth_user_created_saas_store on auth.users;
+create trigger on_auth_user_created_saas_store
+  after insert on auth.users
+  for each row
+  when (new.raw_user_meta_data ? 'store_name' and new.raw_user_meta_data ? 'store_slug')
+  execute function public.handle_new_saas_store();
+
+-- Durante o teste, a loja fica visível pelo slug. A aplicação só deve publicar
+-- operações de cardápio quando o isolamento de dados por loja estiver concluído.
+drop policy if exists "publico le lojas ativas por slug" on public.saas_stores;
+create policy "publico le lojas publicadas por slug" on public.saas_stores
+  for select to anon, authenticated
+  using (
+    status = 'active'
+    or (status = 'trial' and trial_ends_at > now())
+  );
