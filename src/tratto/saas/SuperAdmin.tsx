@@ -219,33 +219,99 @@ function PaymentsTab({ stores }) {
 }
 
 function PlatformTab({ plat, reload }) {
-  const [name, setName] = useState(plat.plan_name)
+  const [name, setName] = useState(plat.system_name || BRAND)
+  const [logoUrl, setLogoUrl] = useState(plat.logo_url || '')
+  const [logoFile, setLogoFile] = useState(null)
   const [price, setPrice] = useState((plat.price_cents / 100).toFixed(2).replace('.', ','))
   const [trial, setTrial] = useState(plat.trial_days)
   const [wa, setWa] = useState(plat.contact_whatsapp || '')
   const [msg, setMsg] = useState('')
+  const [busy, setBusy] = useState(false)
+
   const save = async (e) => {
     e.preventDefault()
+    setMsg('')
     const cents = Math.round(Number(price.replace(',', '.')) * 100)
     if (Number.isNaN(cents) || cents < 0) return setMsg('Preço inválido.')
+    if (!name.trim()) return setMsg('Informe o nome do sistema.')
+    setBusy(true)
+    let nextLogoUrl = logoUrl
+    if (logoFile) {
+      const ext = (logoFile.name.split('.').pop() || 'png').toLowerCase().replace(/[^a-z0-9]/g, '') || 'png'
+      const path = 'system-logo.' + ext
+      const { error: uploadError } = await supabase.storage.from('platform-branding').upload(path, logoFile, {
+        upsert: true,
+        contentType: logoFile.type || 'image/png',
+        cacheControl: '3600',
+      })
+      if (uploadError) {
+        setBusy(false)
+        return setMsg('Não foi possível enviar a logo. Confira se a migração de identidade visual foi aplicada. ' + uploadError.message)
+      }
+      nextLogoUrl = supabase.storage.from('platform-branding').getPublicUrl(path).data.publicUrl + '?v=' + Date.now()
+    }
     const { error } = await supabase.from('platform_settings').update({
-      plan_name: name.trim() || 'Plano', price_cents: cents, trial_days: Math.max(0, Number(trial) || 0), contact_whatsapp: wa.replace(/\D/g, ''), updated_at: new Date().toISOString(),
+      system_name: name.trim(),
+      logo_url: nextLogoUrl || null,
+      plan_name: plat.plan_name,
+      price_cents: cents,
+      trial_days: Math.max(0, Number(trial) || 0),
+      contact_whatsapp: wa.replace(/\D/g, ''),
+      updated_at: new Date().toISOString(),
     }).eq('id', 'main')
-    if (error) return setMsg(error.message)
-    setMsg('Salvo!'); reload()
+    setBusy(false)
+    if (error) return setMsg('Não foi possível salvar. Confira se a migração de identidade visual foi aplicada. ' + error.message)
+    setLogoFile(null)
+    setMsg('Configurações salvas com sucesso.')
+    reload()
   }
+
   return (
-    <form onSubmit={save} className="bg-white rounded-xl shadow-sm p-5 max-w-lg space-y-3">
-      <h3 className="font-bold">Plano e contato da plataforma</h3>
-      <p className="text-xs text-gray-500">Aparecem na página inicial e nos avisos de teste/vencimento. O preço individual de cada loja pode ser alterado na lista de lojas.</p>
-      <label className="block text-sm">Nome do plano<input className={cls} value={name} onChange={e => setName(e.target.value)} /></label>
-      <div className="grid grid-cols-2 gap-3">
-        <label className="block text-sm">Preço mensal (R$)<input className={cls} inputMode="decimal" value={price} onChange={e => setPrice(e.target.value)} /></label>
-        <label className="block text-sm">Dias de teste (novas lojas)<input className={cls} type="number" min="0" value={trial} onChange={e => setTrial(e.target.value)} /></label>
+    <form onSubmit={save} className="bg-white rounded-xl shadow-sm p-5 max-w-2xl space-y-5">
+      <div>
+        <h3 className="font-bold text-gray-900">Identidade visual do sistema</h3>
+        <p className="text-xs text-gray-500 mt-1">Essas configurações são da plataforma inteira, não da marca individual de cada restaurante.</p>
       </div>
-      <label className="block text-sm">WhatsApp de contato/cobrança (com DDD)<input className={cls} inputMode="tel" value={wa} onChange={e => setWa(e.target.value)} placeholder="47999999999" /></label>
-      {msg && <p className={`text-sm ${msg === 'Salvo!' ? 'text-green-700' : 'text-red-600'}`}>{msg}</p>}
-      <button className="bg-gray-900 text-white font-semibold rounded-lg px-4 py-2 text-sm">Salvar</button>
+      <label className="block text-sm font-medium text-gray-700">Nome do sistema
+        <input className={cls + ' mt-1'} value={name} maxLength={80} required onChange={e => setName(e.target.value)} placeholder="Ex.: Meu Cardápio Digital" />
+      </label>
+      <div className="space-y-2">
+        <label className="block text-sm font-medium text-gray-700">Logotipo do sistema</label>
+        <div className="flex flex-col sm:flex-row gap-4 sm:items-center">
+          <div className="w-24 h-24 shrink-0 rounded-xl border border-gray-200 bg-gray-50 flex items-center justify-center overflow-hidden">
+            {logoUrl
+              ? <img src={logoUrl} alt="Prévia da logo do sistema" className="max-w-full max-h-full object-contain" />
+              : <span className="text-xs text-gray-400 text-center px-2">Sem logo personalizada</span>}
+          </div>
+          <div className="flex-1 space-y-2">
+            <input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" className={cls} onChange={e => {
+              const file = e.target.files?.[0] || null
+              if (file && file.size > 2 * 1024 * 1024) {
+                setMsg('A logo deve ter no máximo 2 MB.')
+                e.target.value = ''
+                return
+              }
+              setMsg('')
+              setLogoFile(file)
+              if (file) setLogoUrl(URL.createObjectURL(file))
+            }} />
+            <p className="text-xs text-gray-500">PNG, JPG, WEBP ou SVG. Máximo de 2 MB.</p>
+            {logoUrl && <button type="button" className="text-xs text-red-600 underline" onClick={() => { setLogoUrl(''); setLogoFile(null) }}>Remover logo personalizada</button>}
+          </div>
+        </div>
+      </div>
+      <div className="border-t pt-4 space-y-3">
+        <h4 className="font-semibold text-sm text-gray-900">Plano e contato</h4>
+        <p className="text-xs text-gray-500">Essas informações aparecem na página inicial e nos avisos de teste/vencimento.</p>
+        <label className="block text-sm">Nome do plano<input className={cls + ' mt-1'} value={plat.plan_name} readOnly /></label>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <label className="block text-sm">Preço mensal (R$)<input className={cls + ' mt-1'} inputMode="decimal" value={price} onChange={e => setPrice(e.target.value)} /></label>
+          <label className="block text-sm">Dias de teste (novas lojas)<input className={cls + ' mt-1'} type="number" min="0" value={trial} onChange={e => setTrial(e.target.value)} /></label>
+        </div>
+        <label className="block text-sm">WhatsApp de contato/cobrança (com DDD)<input className={cls + ' mt-1'} inputMode="tel" value={wa} onChange={e => setWa(e.target.value)} placeholder="47999999999" /></label>
+      </div>
+      {msg && <p className={\`text-sm \${msg.includes('sucesso') ? 'text-green-700' : 'text-red-600'}\`}>{msg}</p>}
+      <button disabled={busy} className="bg-gray-900 disabled:opacity-60 text-white font-semibold rounded-lg px-4 py-2.5 text-sm">{busy ? 'Salvando…' : 'Salvar identidade e configurações'}</button>
     </form>
   )
 }
@@ -292,11 +358,11 @@ export default function SuperAdmin() {
       </div>
     )
   }
-  const tabs = [['stores', 'Lojas e assinaturas'], ['payments', 'Pagamentos'], ['platform', 'Plano e contato']]
+  const tabs = [['stores', 'Lojas e assinaturas'], ['payments', 'Pagamentos'], ['platform', 'Identidade e plataforma']]
   return (
     <div className="min-h-screen bg-gray-100">
       <header className="bg-white border-b px-4 sm:px-6 h-14 flex items-center justify-between">
-        <span className="font-extrabold text-[#782d25]">{BRAND} <span className="text-gray-400 font-medium text-sm">· Super admin</span></span>
+        <span className="font-extrabold text-[#782d25]">{plat?.logo_url ? <img src={plat.logo_url} alt="Logo do sistema" className="inline-block w-7 h-7 object-contain mr-2 align-middle" /> : null}{plat?.system_name || BRAND} <span className="text-gray-400 font-medium text-sm">· Super admin</span></span>
         <div className="flex gap-2 text-xs"><a href="/painel" className={btn}>Meu painel</a><button onClick={logout} className={btn}>Sair</button></div>
       </header>
       <main className="max-w-7xl mx-auto p-4 sm:p-6 space-y-4">
