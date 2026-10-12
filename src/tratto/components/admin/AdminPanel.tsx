@@ -1,5 +1,5 @@
 // @ts-nocheck -- código original migrado sem alterações de lógica
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { LayoutDashboard, ClipboardList, UtensilsCrossed, FolderOpen, MapPinned, TicketPercent, Megaphone, Settings, ShoppingCart } from 'lucide-react'
 import { useStore } from '../../context/StoreContext'
 import Dashboard from './Dashboard'
@@ -27,10 +27,26 @@ const tabs = [
 ]
 
 function AdminPanel() {
-  const { orders } = useStore()
+  const { orders, config, lastIncomingOrder } = useStore()
+  const [autoPrintOrder, setAutoPrintOrder] = useState<any>(null)
+  const lastPrintedOrderId = useRef<string>('')
   const pendingOrdersCount = orders.filter(order => order.status === 'pending').length
   const [activeTab, setActiveTab] = useState<AdminTab>('dashboard')
   const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  useEffect(() => {
+    if (!config.autoPrintNewOrders || !lastIncomingOrder || lastPrintedOrderId.current === lastIncomingOrder.id) return
+    lastPrintedOrderId.current = lastIncomingOrder.id
+    setAutoPrintOrder(lastIncomingOrder)
+  }, [config.autoPrintNewOrders, lastIncomingOrder])
+
+  useEffect(() => {
+    if (!autoPrintOrder) return
+    const timer = window.setTimeout(() => window.print(), 400)
+    const afterPrint = () => setAutoPrintOrder(null)
+    window.addEventListener('afterprint', afterPrint)
+    return () => { window.clearTimeout(timer); window.removeEventListener('afterprint', afterPrint) }
+  }, [autoPrintOrder])
 
   return (
     <div className="flex min-h-[calc(100vh-3rem)]">
@@ -82,6 +98,53 @@ function AdminPanel() {
       {/* Overlay for mobile */}
       {sidebarOpen && (
         <div className="fixed inset-0 bg-black/30 z-20 md:hidden" onClick={() => setSidebarOpen(false)}></div>
+      )}
+
+      {autoPrintOrder && (
+        <div id="auto-order-receipt" className="hidden">
+          <style>{`
+            @page { size: 80mm auto; margin: 4mm; }
+            @media print {
+              body * { visibility: hidden !important; }
+              #auto-order-receipt, #auto-order-receipt * { visibility: visible !important; }
+              #auto-order-receipt { display: block !important; position: absolute; left: 0; top: 0; width: 72mm; color: #000; background: #fff; font: 11px/1.4 Arial, sans-serif; }
+              .auto-receipt-center { text-align: center; }
+              .auto-receipt-line { border-top: 1px dashed #555; margin: 7px 0; }
+              .auto-receipt-row { display: flex; justify-content: space-between; gap: 8px; }
+            }
+          `}</style>
+          <div className="auto-receipt-center">
+            {config.logoUrl && <img src={config.logoUrl} alt="Logo" style={{ maxWidth: '42mm', maxHeight: '20mm', objectFit: 'contain' }} />}
+            <strong style={{ fontSize: 15 }}>{config.name || 'Minha Loja'}</strong>
+            {config.address && <div>{config.address}</div>}
+            {config.phone && <div>Telefone: {config.phone}</div>}
+            <div className="auto-receipt-line" />
+            <strong>COMPROVANTE DE VENDA</strong>
+            <div>Pedido: {autoPrintOrder.id}</div>
+            <div>{new Date(autoPrintOrder.createdAt || Date.now()).toLocaleString('pt-BR')}</div>
+          </div>
+          <div className="auto-receipt-line" />
+          <div><strong>Cliente:</strong> {autoPrintOrder.customerName || 'Não informado'}</div>
+          <div><strong>Telefone:</strong> {autoPrintOrder.customerPhone || 'Não informado'}</div>
+          <div><strong>Endereço:</strong> {autoPrintOrder.deliveryType === 'pickup' ? 'Retirada no local' : (autoPrintOrder.customerAddress || 'Não informado')}</div>
+          <div><strong>Pagamento:</strong> {autoPrintOrder.paymentMethod === 'pix' ? 'Pix' : autoPrintOrder.paymentMethod === 'cash' ? 'Dinheiro' : autoPrintOrder.paymentMethod === 'card' ? 'Cartão' : 'Não informado'}</div>
+          <div className="auto-receipt-line" />
+          {((autoPrintOrder.items || []) as any[]).map((item, index) => <div key={index} style={{ marginBottom: 5 }}>
+            <div>{item.quantity}x {item.product?.name || 'Produto'}</div>
+            {(item.selectedAddOns || []).map((addon: any) => <div key={addon.id}> + {addon.name}</div>)}
+            {item.observation && <div>Obs.: {item.observation}</div>}
+            <div className="auto-receipt-row"><span>Item</span><span>R$ {((Number(item.product?.price || 0) + (item.selectedAddOns || []).reduce((sum: number, addon: any) => sum + Number(addon.price || 0), 0)) * Number(item.quantity || 1)).toFixed(2).replace('.', ',')}</span></div>
+          </div>)}
+          <div className="auto-receipt-line" />
+          <div className="auto-receipt-row"><span>Subtotal</span><span>R$ {Number(autoPrintOrder.total || 0).toFixed(2).replace('.', ',')}</span></div>
+          <div className="auto-receipt-row"><span>Entrega</span><span>R$ {Number(autoPrintOrder.deliveryFee || 0).toFixed(2).replace('.', ',')}</span></div>
+          {Number(autoPrintOrder.discount || 0) > 0 && <div className="auto-receipt-row"><span>Desconto</span><span>- R$ {Number(autoPrintOrder.discount).toFixed(2).replace('.', ',')}</span></div>}
+          <div className="auto-receipt-line" />
+          <div className="auto-receipt-row" style={{ fontSize: 14, fontWeight: 700 }}><span>TOTAL</span><span>R$ {(Number(autoPrintOrder.total || 0) + Number(autoPrintOrder.deliveryFee || 0) - Number(autoPrintOrder.discount || 0)).toFixed(2).replace('.', ',')}</span></div>
+          <div className="auto-receipt-line" />
+          <div className="auto-receipt-center">Obrigado pela preferência!</div>
+          <div className="auto-receipt-center" style={{ fontSize: 9 }}>Comprovante não fiscal</div>
+        </div>
       )}
 
       {/* Main Content */}
