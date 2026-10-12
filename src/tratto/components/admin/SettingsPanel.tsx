@@ -1,6 +1,6 @@
 // @ts-nocheck -- código original migrado sem alterações de lógica
 import { useState } from 'react'
-import { CheckCircle2, Store, Clock3, Truck, Eye, ShieldCheck, AlertTriangle, MapPin, Phone, Tag, Volume2, Play, Music } from 'lucide-react'
+import { CheckCircle2, Store, Clock3, Truck, Eye, ShieldCheck, AlertTriangle, MapPin, Phone, Tag, Volume2, Play, Music, Printer } from 'lucide-react'
 import { useStore } from '../../context/StoreContext'
 import { supabase } from '@/integrations/supabase/client'
 import { DAY_LABELS, DAY_ORDER, getWeeklyHours, getStoreStatus } from '../../hours'
@@ -493,6 +493,31 @@ function SettingsPanel() {
           )}
           <p className="mt-2 text-xs text-gray-500">
             Limite: 1 MB. O navegador pode exigir que você clique em “Testar e ativar som” uma vez para autorizar a reprodução automática.
+          </p>
+        </div>
+
+        {/* Impressão automática de pedidos */}
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <h3 className="font-bold text-gray-800 mb-2 flex items-center gap-2">
+            <Printer size={18} className="text-[#d9273f]" /> Impressão automática de pedidos
+          </h3>
+          <p className="text-sm text-gray-500 mb-4">
+            Quando ativada, o sistema abre a impressão do comprovante assim que um novo pedido chegar, mesmo que você esteja em outra aba do painel.
+          </p>
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={Boolean(formData.autoPrintNewOrders)}
+              onChange={e => setFormData(prev => ({ ...prev, autoPrintNewOrders: e.target.checked }))}
+              className="mt-1 h-4 w-4 accent-[#d9273f]"
+            />
+            <span>
+              <span className="block text-sm font-semibold text-gray-800">Imprimir automaticamente novos pedidos</span>
+              <span className="block text-xs text-gray-500 mt-1">Desative para imprimir apenas manualmente pelo botão “Imprimir”.</span>
+            </span>
+          </label>
+          <p className="mt-3 text-xs text-amber-700">
+            Observação: o navegador pode exigir confirmação na janela de impressão. Para impressão sem diálogo, normalmente é necessário configurar o computador/ navegador em modo quiosque com uma impressora padrão.
           </p>
         </div>
 
