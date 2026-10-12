@@ -70,15 +70,15 @@ function App() {
         {/* Top Navigation Bar - Always Visible */}
         <nav 
           style={{
-            position: 'fixed',
+            position: view === 'menu' ? 'absolute' : 'fixed',
             top: 0,
             left: 0,
             right: 0,
-            zIndex: 99999,
-            backgroundColor: '#ffffff',
-            borderBottom: '3px solid #ef4444',
-            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-            height: '60px',
+            zIndex: view === 'menu' ? 40 : 99999,
+            backgroundColor: view === 'menu' ? 'transparent' : '#ffffff',
+            borderBottom: view === 'menu' ? 'none' : '3px solid #ef4444',
+            boxShadow: view === 'menu' ? 'none' : '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+            height: view === 'menu' ? '52px' : '60px',
             display: 'flex',
             alignItems: 'center'
           }}
@@ -92,8 +92,8 @@ function App() {
             alignItems: 'center',
             justifyContent: 'space-between'
           }}>
-            {/* Logo */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {/* Logo (no cardápio o banner já mostra a marca) */}
+            <div style={{ display: view === 'menu' ? 'none' : 'flex', alignItems: 'center', gap: '10px' }}>
               <div style={{
                 width: '36px',
                 height: '36px',
@@ -114,7 +114,7 @@ function App() {
             </div>
 
             {/* Navigation Buttons */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: view === 'menu' ? 'auto' : 0 }}>
               <button
                 onClick={() => setView('menu')}
                 style={{
@@ -125,7 +125,8 @@ function App() {
                   border: 'none',
                   cursor: 'pointer',
                   transition: 'all 0.2s',
-                  backgroundColor: view === 'menu' ? '#ef4444' : '#f3f4f6',
+                  backgroundColor: view === 'menu' ? 'rgba(239,68,68,0.92)' : '#f3f4f6',
+                  backdropFilter: view === 'menu' ? 'blur(6px)' : undefined,
                   color: view === 'menu' ? '#ffffff' : '#374151',
                   boxShadow: view === 'menu' ? '0 2px 4px rgba(239, 68, 68, 0.3)' : 'none',
                   display: 'flex',
@@ -157,7 +158,8 @@ function App() {
                   border: 'none',
                   cursor: 'pointer',
                   transition: 'all 0.2s',
-                  backgroundColor: view === 'admin' ? '#ef4444' : '#f3f4f6',
+                  backgroundColor: view === 'admin' ? '#ef4444' : (view === 'menu' ? 'rgba(255,255,255,0.85)' : '#f3f4f6'),
+                  backdropFilter: view === 'menu' ? 'blur(6px)' : undefined,
                   color: view === 'admin' ? '#ffffff' : '#374151',
                   boxShadow: view === 'admin' ? '0 2px 4px rgba(239, 68, 68, 0.3)' : 'none',
                   display: 'flex',
@@ -172,7 +174,7 @@ function App() {
                 }}
                 onMouseOut={(e) => {
                   if (view !== 'admin') {
-                    e.currentTarget.style.backgroundColor = '#f3f4f6'
+                    e.currentTarget.style.backgroundColor = view === 'menu' ? 'rgba(255,255,255,0.85)' : '#f3f4f6'
                   }
                 }}
               >
@@ -215,7 +217,7 @@ function App() {
         </nav>
 
         {/* Main Content */}
-        <main style={{ paddingTop: '60px' }}>
+        <main style={{ paddingTop: view === 'menu' ? 0 : '60px' }}>
           {view === 'menu' ? <MenuView /> : <AdminPanel />}
         </main>
       </div>

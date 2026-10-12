@@ -682,7 +682,7 @@ function MenuView() {
       {/* Category Navigation - Mobile Optimized */}
       <div style={{
         position: 'sticky',
-        top: '60px',
+        top: 0,
         zIndex: 20,
         backgroundColor: 'rgba(255, 255, 255, 0.95)',
         backdropFilter: 'blur(8px)',
