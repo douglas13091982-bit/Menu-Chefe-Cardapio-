@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowRight, Check, ChefHat, ClipboardList, CreditCard, Globe2, Smartphone, Store, Zap } from "lucide-react";
+import { ArrowRight, Check, ChefHat, ClipboardList, Globe2, Smartphone, Store, Zap } from "lucide-react";
 
 const features = [
   { icon: Smartphone, title: "Cardápio que funciona no celular", description: "Uma experiência rápida e intuitiva para seus clientes pedirem de qualquer lugar." },
