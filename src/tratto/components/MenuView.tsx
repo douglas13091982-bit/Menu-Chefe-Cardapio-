@@ -28,6 +28,7 @@ function MenuView() {
   const [isMobile, setIsMobile] = useState(false)
   // Checkout (aparece após "Finalizar pedido" no carrinho)
   const [showCheckout, setShowCheckout] = useState(false)
+  const [checkoutStep, setCheckoutStep] = useState(1)
   const [deliveryType, setDeliveryType] = useState<DeliveryType>('pickup')
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | ''>('')
   const [customerName, setCustomerName] = useState('')
@@ -366,7 +367,20 @@ function MenuView() {
     !(useDistanceFreight && (freight.status === 'idle' || freight.status === 'loading' || freight.status === 'out')) &&
     !fixedOnlyNoMatch
 
+  const step1Valid = customerName.trim() !== '' && customerPhone.trim() !== ''
+  const step2Valid =
+    (deliveryType === 'pickup' || (addrStreet.trim() !== '' && customerNumber.trim() !== '')) &&
+    !(useDistanceFreight && (freight.status === 'idle' || freight.status === 'loading' || freight.status === 'out')) &&
+    !fixedOnlyNoMatch
+  const stepValid = checkoutStep === 1 ? step1Valid : checkoutStep === 2 ? step2Valid : canPlaceOrder
+  const stepHint = checkoutStep === 1
+    ? 'Preencha seu nome e telefone'
+    : checkoutStep === 2
+      ? (deliveryType === 'delivery' ? 'Informe o CEP, o número e confira a taxa de entrega' : '')
+      : 'Escolha a forma de pagamento'
+
   const openCheckout = () => {
+    setCheckoutStep(1)
     setShowCart(false)
     setShowCheckout(true)
   }
@@ -1184,8 +1198,30 @@ function MenuView() {
                   ✕
                 </button>
               </div>
+              <div style={{ display: 'flex', alignItems: 'center', marginTop: '12px' }}>
+                {['Seus dados', 'Entrega', 'Pagamento'].map((label, i) => {
+                  const n = i + 1
+                  const done = checkoutStep > n
+                  const current = checkoutStep === n
+                  return (
+                    <div key={label} style={{ display: 'flex', alignItems: 'center', flex: n < 3 ? 1 : 'none' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                        <div style={{
+                          width: '26px', height: '26px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: '12px', fontWeight: 700,
+                          backgroundColor: done ? '#16a34a' : current ? '#ef4444' : '#e5e7eb',
+                          color: done || current ? 'white' : '#6b7280'
+                        }}>{done ? '✓' : n}</div>
+                        <span style={{ fontSize: '11px', fontWeight: current ? 700 : 500, color: current ? '#1f2937' : '#9ca3af' }}>{label}</span>
+                      </div>
+                      {n < 3 && <div style={{ flex: 1, height: '2px', margin: '0 8px 16px', backgroundColor: done ? '#16a34a' : '#e5e7eb' }} />}
+                    </div>
+                  )
+                })}
+              </div>
             </div>
             <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '16px' : '20px' }}>
+              {checkoutStep === 1 && (<>
               {/* Nome e telefone */}
               <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '4px' }}>
                 Seu nome *
@@ -1213,6 +1249,9 @@ function MenuView() {
                 }}
               />
 
+              </>)}
+
+              {checkoutStep === 2 && (<>
               {/* Retirada ou entrega */}
               <p style={{ fontSize: '13px', fontWeight: 600, color: '#374151', margin: '0 0 8px 0' }}>
                 Como deseja receber seu pedido? *
@@ -1363,6 +1402,9 @@ function MenuView() {
                 </div>
               )}
 
+              </>)}
+
+              {checkoutStep === 3 && (<>
               {/* Forma de pagamento */}
               <p style={{ fontSize: '13px', fontWeight: 600, color: '#374151', margin: '0 0 8px 0' }}>
                 Forma de pagamento *
@@ -1423,6 +1465,7 @@ function MenuView() {
                   )}
                 </div>
               )}
+              </>)}
             </div>
 
             {/* Resumo + confirmar */}
@@ -1431,10 +1474,17 @@ function MenuView() {
               borderTop: '1px solid #f3f4f6',
               backgroundColor: '#fafafa'
             }}>
+              {checkoutStep === 3 && (<>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
                 <span style={{ color: '#6b7280', fontSize: '13px' }}>Subtotal</span>
                 <span style={{ fontWeight: 600, fontSize: '13px' }}>{fmt(totalPrice)}</span>
               </div>
+              {discount > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                  <span style={{ color: '#16a34a', fontSize: '13px' }}>Desconto ({activeCouponCode})</span>
+                  <span style={{ fontWeight: 600, fontSize: '13px', color: '#16a34a' }}>- {fmt(discount)}</span>
+                </div>
+              )}
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
                 <span style={{ color: '#6b7280', fontSize: '13px' }}>
                   {deliveryType === 'delivery' ? 'Taxa de entrega' : 'Retirada no local'}
@@ -1450,29 +1500,40 @@ function MenuView() {
                 <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#1f2937' }}>Total</span>
                 <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#1f2937' }}>{fmt(checkoutTotal)}</span>
               </div>
-              {!canPlaceOrder && (
+              </>)}
+              {!stepValid && stepHint && (
                 <p style={{ fontSize: '11px', color: '#9ca3af', textAlign: 'center', margin: '0 0 8px 0' }}>
-                  Preencha nome, telefone{deliveryType === 'delivery' ? ', endereço, número' : ''} e forma de pagamento
+                  {stepHint}
                 </p>
               )}
-              <button
-                onClick={placeOrder}
-                disabled={!canPlaceOrder}
-                style={{
-                  width: '100%',
-                  backgroundColor: canPlaceOrder ? '#16a34a' : '#d1d5db',
-                  color: 'white',
-                  borderRadius: '12px',
-                  padding: '14px',
-                  fontWeight: 'bold',
-                  fontSize: '15px',
-                  border: 'none',
-                  cursor: canPlaceOrder ? 'pointer' : 'not-allowed',
-                  boxShadow: canPlaceOrder ? '0 4px 12px rgba(22, 163, 74, 0.3)' : 'none'
-                }}
-              >
-                Confirmar pedido • {fmt(checkoutTotal)}
-              </button>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                {checkoutStep > 1 && (
+                  <button
+                    onClick={() => setCheckoutStep(checkoutStep - 1)}
+                    style={{ flex: '0 0 auto', backgroundColor: 'white', color: '#374151', borderRadius: '12px', padding: '14px 18px', fontWeight: 600, fontSize: '14px', border: '1px solid #e5e7eb', cursor: 'pointer' }}
+                  >
+                    ← Voltar
+                  </button>
+                )}
+                <button
+                  onClick={() => (checkoutStep < 3 ? setCheckoutStep(checkoutStep + 1) : placeOrder())}
+                  disabled={!stepValid}
+                  style={{
+                    flex: 1,
+                    backgroundColor: stepValid ? '#16a34a' : '#d1d5db',
+                    color: 'white',
+                    borderRadius: '12px',
+                    padding: '14px',
+                    fontWeight: 'bold',
+                    fontSize: '15px',
+                    border: 'none',
+                    cursor: stepValid ? 'pointer' : 'not-allowed',
+                    boxShadow: stepValid ? '0 4px 12px rgba(22, 163, 74, 0.3)' : 'none'
+                  }}
+                >
+                  {checkoutStep < 3 ? 'Continuar →' : `Confirmar pedido • ${fmt(checkoutTotal)}`}
+                </button>
+              </div>
             </div>
           </div>
         </div>
