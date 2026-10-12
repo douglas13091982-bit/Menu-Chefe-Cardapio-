@@ -34,18 +34,18 @@ export default function CatalogImport({ onClose }) {
 
   // Importação direta do CSV exportado pelo Cardápio Web.
   const parseCsv = (text) => {
-    const sample = text.split(/\\r?\\n/, 1)[0] || ''
+    const sample = text.split(/\r?\n/, 1)[0] || ''
     const delimiter = (sample.match(/;/g) || []).length > (sample.match(/,/g) || []).length ? ';' : ','
     const rows = []
     let row = [], cell = '', quoted = false
-    const input = text.replace(/^\\uFEFF/, '')
+    const input = text.replace(/^\uFEFF/, '')
     for (let i = 0; i < input.length; i++) {
       const ch = input[i]
       if (ch === '"' && quoted && input[i + 1] === '"') { cell += '"'; i++ }
       else if (ch === '"') quoted = !quoted
       else if (ch === delimiter && !quoted) { row.push(cell); cell = '' }
-      else if ((ch === '\\n' || ch === '\\r') && !quoted) {
-        if (ch === '\\r' && input[i + 1] === '\\n') i++
+      else if ((ch === '\n' || ch === '\r') && !quoted) {
+        if (ch === '\r' && input[i + 1] === '\n') i++
         row.push(cell); cell = ''
         if (row.some(v => String(v).trim())) rows.push(row)
         row = []
@@ -78,7 +78,7 @@ export default function CatalogImport({ onClose }) {
     const parsePrice = (value) => {
       const raw = String(value ?? '').trim()
       if (!raw) return NaN
-      const normalized = raw.includes(',') ? raw.replace(/\\./g, '').replace(',', '.') : raw
+      const normalized = raw.includes(',') ? raw.replace(/\./g, '').replace(',', '.') : raw
       return Number(normalized)
     }
     const parsedProducts = rows.map((r, index) => {
