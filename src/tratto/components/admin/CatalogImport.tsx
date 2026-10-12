@@ -20,6 +20,8 @@ export default function CatalogImport({ onClose }) {
   const [menu, setMenu] = useState(null)
   const [selected, setSelected] = useState(new Set())
   const [done, setDone] = useState('')
+  const [csvCatalog, setCsvCatalog] = useState(null)
+  const [csvFilename, setCsvFilename] = useState('')
 
   const run = async (fn) => {
     setError(''); setDone(''); setLoading(true)
@@ -29,6 +31,71 @@ export default function CatalogImport({ onClose }) {
     setMenu(m)
     setSelected(new Set(m.sections.flatMap(s => s.items.map(i => i.key))))
   }
+
+  // Importação direta do CSV exportado pelo Cardápio Web.
+  const parseCsv = (text) => {
+    const sample = text.split(/\\r?\\n/, 1)[0] || ''
+    const delimiter = (sample.match(/;/g) || []).length > (sample.match(/,/g) || []).length ? ';' : ','
+    const rows = []
+    let row = [], cell = '', quoted = false
+    const input = text.replace(/^\\uFEFF/, '')
+    for (let i = 0; i < input.length; i++) {
+      const ch = input[i]
+      if (ch === '"' && quoted && input[i + 1] === '"') { cell += '"'; i++ }
+      else if (ch === '"') quoted = !quoted
+      else if (ch === delimiter && !quoted) { row.push(cell); cell = '' }
+      else if ((ch === '\\n' || ch === '\\r') && !quoted) {
+        if (ch === '\\r' && input[i + 1] === '\\n') i++
+        row.push(cell); cell = ''
+        if (row.some(v => String(v).trim())) rows.push(row)
+        row = []
+      } else cell += ch
+    }
+    row.push(cell)
+    if (row.some(v => String(v).trim())) rows.push(row)
+    if (rows.length < 2) throw new Error('O CSV não contém linhas de produtos.')
+    const headers = rows.shift().map(h => String(h).trim().toLowerCase())
+    return rows.map(values => Object.fromEntries(headers.map((h, i) => [h, String(values[i] ?? '').trim()])))
+  }
+  const loadCsv = async (file) => run(async () => {
+    if (!file) return
+    const text = await file.text()
+    const rows = parseCsv(text)
+    const required = ['produto_id', 'categoria_id', 'categoria', 'produto', 'preco', 'status']
+    const missing = required.filter(k => !(k in (rows[0] || {})))
+    if (missing.length) throw new Error('Este arquivo não parece ser a exportação esperada do Cardápio Web. Campos ausentes: ' + missing.join(', '))
+    const categoryMap = new Map()
+    rows.forEach((r, index) => {
+      const id = r.categoria_id || ('sem-categoria-' + index)
+      if (!categoryMap.has(id)) categoryMap.set(id, {
+        sourceId: id,
+        name: r.categoria || 'Outros',
+        description: r.categoria_descricao || '',
+        image: r.categoria_foto_url || '',
+        order: categoryMap.size + 1
+      })
+    })
+    const parsedProducts = rows.map((r, index) => {
+      const price = Number(String(r.preco || '0').replace(/\\./g, '').replace(',', '.')) || 0
+      const promo = Number(String(r.preco_promocional || '').replace(/\\./g, '').replace(',', '.'))
+      const promoActive = ['sim', 'true', '1', 'yes'].includes(String(r.promocao_ativa || '').toLowerCase()) && Number.isFinite(promo) && promo > 0
+      return {
+        sourceId: r.produto_id || String(index + 1),
+        name: r.produto || 'Produto sem nome',
+        description: r.descricao || '',
+        price: promoActive ? promo : price,
+        image: r.foto_url || r.miniatura_url || '',
+        categorySourceId: r.categoria_id || ('sem-categoria-' + index),
+        categoryName: r.categoria || 'Outros',
+        available: String(r.status || '').toUpperCase() === 'ACTIVE',
+        popular: ['sim', 'true', '1', 'yes'].includes(String(r.destaque || '').toLowerCase()) || String(r.selo || '').toLowerCase() === 'best_seller'
+      }
+    })
+    setCsvCatalog({ categories: [...categoryMap.values()], products: parsedProducts })
+    setCsvFilename(file.name)
+    setMenu(null)
+    setDone('')
+  })
 
   const doSearch = () => run(async () => {
     const r = await searchMerchants(zip)
@@ -53,6 +120,39 @@ export default function CatalogImport({ onClose }) {
   })
 
   const doImport = () => {
+    if (csvCatalog) {
+      const categoryBySource = new Map()
+      let categoryCount = 0
+      csvCatalog.categories.forEach((sourceCategory, index) => {
+        const existing = categories.find(c => c.name.trim().toLowerCase() === sourceCategory.name.trim().toLowerCase())
+        const id = existing?.id || ('cw-cat-' + sourceCategory.sourceId)
+        categoryBySource.set(sourceCategory.sourceId, id)
+        if (!existing) {
+          addCategory({ id, name: sourceCategory.name, icon: '', order: sourceCategory.order || index + 1 })
+          categoryCount++
+        }
+      })
+      let productCount = 0, skipped = 0
+      csvCatalog.products.forEach((sourceProduct) => {
+        const categoryId = categoryBySource.get(sourceProduct.categorySourceId)
+        const exists = products.some(p => p.name.trim().toLowerCase() === sourceProduct.name.trim().toLowerCase() && p.categoryId === categoryId)
+        if (exists) { skipped++; return }
+        addProduct({
+          id: 'cw-prod-' + sourceProduct.sourceId,
+          name: sourceProduct.name,
+          description: sourceProduct.description,
+          price: sourceProduct.price,
+          image: sourceProduct.image,
+          categoryId,
+          popular: sourceProduct.popular,
+          available: sourceProduct.available
+        })
+        productCount++
+      })
+      setDone(`${productCount} produto(s) e ${categoryCount} categoria(s) importados do Cardápio Web.${skipped ? ` ${skipped} produto(s) já existentes foram ignorados.` : ''}`)
+      setCsvCatalog(null)
+      return
+    }
     const { newCategories, newProducts, skipped } = buildImport(menu.sections, selected, categories, products)
     newCategories.forEach(addCategory)
     newProducts.forEach(addProduct)
@@ -66,7 +166,7 @@ export default function CatalogImport({ onClose }) {
         <div className="p-4 border-b flex items-center justify-between">
           <div>
             <h2 className="text-lg font-bold">Importar catálogo</h2>
-            <p className="text-xs text-gray-500">Puxa o cardápio de uma loja do iFood ou do pede.ai usando o GeckoAPI.</p>
+            <p className="text-xs text-gray-500">Importe por link (iFood/pede.ai) ou por arquivo CSV do Cardápio Web.</p>
           </div>
           <button onClick={onClose} className="w-8 h-8 rounded-full bg-gray-100" aria-label="Fechar">✕</button>
         </div>
@@ -75,8 +175,13 @@ export default function CatalogImport({ onClose }) {
           {done && <p className="text-sm bg-green-50 text-green-700 border border-green-200 rounded-lg p-3">{done}</p>}
           {error && <p className="text-sm bg-red-50 text-red-700 border border-red-200 rounded-lg p-3">{error}</p>}
 
-          {!menu && (
+          {!menu && !csvCatalog && (
             <>
+              <section className="rounded-xl border border-dashed border-[#d9273f]/50 bg-red-50/40 p-4 space-y-2">
+                <h3 className="font-semibold text-sm text-gray-800">Importar exportação do Cardápio Web</h3>
+                <p className="text-xs text-gray-600">Selecione o CSV exportado no painel. Categorias, descrições, preços, disponibilidade e links de imagens serão mapeados para esta loja.</p>
+                <input type="file" accept=".csv,text/csv" disabled={loading} onChange={e => { const f = e.target.files?.[0]; if (f) loadCsv(f); e.target.value = '' }} className="block w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-white file:px-3 file:py-2 file:text-sm file:font-medium file:text-gray-700 border rounded-lg bg-white" />
+              </section>
               <div className="flex gap-2 text-sm">
                 {[['ifood', 'iFood (link da loja)'], ['pedeai', 'pede.ai (CEP + ID)']].map(([v, l]) => (
                   <button key={v} type="button" onClick={() => setSource(v)}
@@ -134,6 +239,22 @@ export default function CatalogImport({ onClose }) {
             </>
           )}
 
+          {csvCatalog && (
+            <section className="space-y-3">
+              <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-800">
+                <strong>Arquivo validado:</strong> {csvFilename}<br />
+                {csvCatalog.categories.length} categorias e {csvCatalog.products.length} produtos encontrados. {csvCatalog.products.filter(p => p.available).length} disponíveis e {csvCatalog.products.filter(p => !p.available).length} indisponíveis.
+              </div>
+              <div className="max-h-72 overflow-y-auto rounded-lg border divide-y">
+                {csvCatalog.categories.map(cat => {
+                  const items = csvCatalog.products.filter(p => p.categorySourceId === cat.sourceId)
+                  return <div key={cat.sourceId} className="p-3"><div className="font-semibold text-sm">{cat.name} <span className="text-gray-500 font-normal">({items.length})</span></div>{items.slice(0, 3).map(p => <div key={p.sourceId} className="flex items-center gap-3 py-2 text-sm">{p.image && <img src={p.image} alt="" className="w-10 h-10 rounded object-cover" loading="lazy" />}<span className="min-w-0 flex-1"><span className="block truncate">{p.name}</span><span className="text-xs text-gray-500">{p.available ? 'Disponível' : 'Indisponível'}</span></span><span className="whitespace-nowrap">{money(p.price)}</span></div>)}{items.length > 3 && <p className="text-xs text-gray-500">e mais {items.length - 3} produto(s)…</p>}</div>
+                })}
+              </div>
+              <p className="text-xs text-gray-500">Os produtos serão gravados somente na loja aberta neste painel. Produtos com o mesmo nome e categoria serão ignorados para evitar duplicações.</p>
+            </section>
+          )}
+
           {menu && (
             <>
               <p className="text-sm text-gray-600">
@@ -169,11 +290,11 @@ export default function CatalogImport({ onClose }) {
           )}
         </div>
 
-        {menu && (
+        {(menu || csvCatalog) && (
           <div className="p-4 border-t flex gap-2 justify-end">
-            <button onClick={() => setMenu(null)} className="border rounded-lg px-4 py-2 text-sm">Voltar</button>
-            <button disabled={selected.size === 0} onClick={doImport} className="bg-green-600 disabled:bg-gray-300 text-white rounded-lg px-4 py-2 text-sm font-semibold">
-              Importar {selected.size} item(ns)
+            <button onClick={() => { setMenu(null); setCsvCatalog(null) }} className="border rounded-lg px-4 py-2 text-sm">Voltar</button>
+            <button disabled={loading || (csvCatalog ? csvCatalog.products.length === 0 : selected.size === 0)} onClick={doImport} className="bg-green-600 disabled:bg-gray-300 text-white rounded-lg px-4 py-2 text-sm font-semibold">
+              {csvCatalog ? `Importar ${csvCatalog.products.length} produtos` : `Importar ${selected.size} item(ns)`}
             </button>
           </div>
         )}
