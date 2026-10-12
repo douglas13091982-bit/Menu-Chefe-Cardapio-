@@ -75,9 +75,15 @@ export default function CatalogImport({ onClose }) {
         order: categoryMap.size + 1
       })
     })
+    const parsePrice = (value) => {
+      const raw = String(value ?? '').trim()
+      if (!raw) return NaN
+      const normalized = raw.includes(',') ? raw.replace(/\\./g, '').replace(',', '.') : raw
+      return Number(normalized)
+    }
     const parsedProducts = rows.map((r, index) => {
-      const price = Number(String(r.preco || '0').replace(/\\./g, '').replace(',', '.')) || 0
-      const promo = Number(String(r.preco_promocional || '').replace(/\\./g, '').replace(',', '.'))
+      const price = parsePrice(r.preco || '0') || 0
+      const promo = parsePrice(r.preco_promocional)
       const promoActive = ['sim', 'true', '1', 'yes'].includes(String(r.promocao_ativa || '').toLowerCase()) && Number.isFinite(promo) && promo > 0
       return {
         sourceId: r.produto_id || String(index + 1),
