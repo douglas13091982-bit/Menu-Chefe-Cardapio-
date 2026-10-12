@@ -1,31 +1,15 @@
-import { createFileRoute, ClientOnly } from "@tanstack/react-router";
-import { lazy, Suspense } from "react";
-
-const App = lazy(() => import("../tratto/App"));
+import { createFileRoute } from "@tanstack/react-router";
+import { HomePage } from "../tratto/components/HomePage";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Tratto Hamburgueria - Cardápio" },
-      { name: "description", content: "Cardápio digital da Tratto Hamburgueria: hambúrgueres, combos, acompanhamentos, sobremesas e bebidas." },
-      { property: "og:title", content: "Tratto Hamburgueria - Cardápio" },
-      { property: "og:description", content: "Cardápio digital da Tratto Hamburgueria." },
+      { title: "Tratto Digital Menu | Cardápio digital para seu restaurante" },
+      { name: "description", content: "Crie um cardápio digital profissional, organize pedidos e compartilhe um link exclusivo para sua loja." },
+      { property: "og:title", content: "Tratto Digital Menu" },
+      { property: "og:description", content: "Cardápios digitais e pedidos para restaurantes e lanchonetes." },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
-    ],
-    links: [
-      { rel: "stylesheet", href: "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" },
     ],
   }),
-  component: Index,
+  component: HomePage,
 });
-
-function Index() {
-  return (
-    <ClientOnly fallback={null}>
-      <Suspense fallback={null}>
-        <App />
-      </Suspense>
-    </ClientOnly>
-  );
-}
