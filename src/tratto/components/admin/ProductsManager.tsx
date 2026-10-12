@@ -3,10 +3,12 @@ import { useState, useRef } from 'react'
 import { Pencil, Trash2, X } from 'lucide-react'
 import { useStore } from '../../context/StoreContext'
 import { Product, ProductAddOn } from '../../types'
+import CatalogImport from './CatalogImport'
 
 function ProductsManager() {
   const { products, categories, addProduct, updateProduct, deleteProduct } = useStore()
   const [showForm, setShowForm] = useState(false)
+  const [showImport, setShowImport] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [search, setSearch] = useState('')
   const [filterCategory, setFilterCategory] = useState('')
@@ -99,13 +101,22 @@ function ProductsManager() {
           <h1 className="text-2xl font-bold text-gray-800">Produtos</h1>
           <p className="text-gray-500 text-sm">{products.length} produtos cadastrados</p>
         </div>
+        <div className="flex gap-2">
+        <button
+          onClick={() => setShowImport(true)}
+          className="border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg font-medium text-sm"
+        >
+          Importar catálogo
+        </button>
         <button
           onClick={() => { resetForm(); setShowForm(true) }}
           className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2"
         >
           <span>+</span> Novo Produto
         </button>
+        </div>
       </div>
+      {showImport && <CatalogImport onClose={() => setShowImport(false)} />}
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
