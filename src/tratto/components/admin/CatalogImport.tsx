@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { useState } from 'react'
 import { useStore } from '../../context/StoreContext'
-import { searchMerchants, fetchMenu, parseMenu, buildImport } from '../../geckoImport'
+import { searchMerchants, fetchMenu, fetchMenuByUrl, parseMenu, buildImport } from '../../geckoImport'
 
 const KEY = 'tratto_gecko_key'
 const lsGet = (k) => { try { return localStorage.getItem(k) || '' } catch { return '' } }
@@ -13,6 +13,8 @@ export default function CatalogImport({ onClose }) {
   const { categories, products, addCategory, addProduct } = useStore()
   const [apiKey, setApiKey] = useState(lsGet(KEY))
   const [remember, setRemember] = useState(!!lsGet(KEY))
+  const [source, setSource] = useState('ifood')
+  const [storeUrl, setStoreUrl] = useState('')
   const [zip, setZip] = useState('')
   const [merchantId, setMerchantId] = useState('')
   const [hits, setHits] = useState([])
@@ -42,7 +44,7 @@ export default function CatalogImport({ onClose }) {
   })
   const doFetch = () => run(async () => {
     persistKey()
-    load(await fetchMenu(apiKey, merchantId, zip))
+    load(source === 'ifood' ? await fetchMenuByUrl(apiKey, storeUrl) : await fetchMenu(apiKey, merchantId, zip))
   })
   const doParse = () => run(async () => {
     let json
@@ -72,7 +74,7 @@ export default function CatalogImport({ onClose }) {
         <div className="p-4 border-b flex items-center justify-between">
           <div>
             <h2 className="text-lg font-bold">Importar catálogo</h2>
-            <p className="text-xs text-gray-500">Puxa o cardápio de uma loja do pede.ai usando o GeckoAPI.</p>
+            <p className="text-xs text-gray-500">Puxa o cardápio de uma loja do iFood ou do pede.ai usando o GeckoAPI.</p>
           </div>
           <button onClick={onClose} className="w-8 h-8 rounded-full bg-gray-100" aria-label="Fechar">✕</button>
         </div>
@@ -90,21 +92,35 @@ export default function CatalogImport({ onClose }) {
                 <input type="checkbox" checked={remember} onChange={e => setRemember(e.target.checked)} />
                 Lembrar a chave neste navegador
               </label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <label className="block text-sm">CEP da região
-                  <input className={inputCls} value={zip} onChange={e => setZip(e.target.value)} placeholder="89200-000" inputMode="numeric" />
-                </label>
-                <label className="block text-sm">ID da loja (merchantId)
-                  <input className={inputCls} value={merchantId} onChange={e => setMerchantId(e.target.value)} placeholder="Ex.: 35275" />
-                </label>
+              <div className="flex gap-2 text-sm">
+                {[['ifood', 'iFood (link da loja)'], ['pedeai', 'pede.ai (CEP + ID)']].map(([v, l]) => (
+                  <button key={v} type="button" onClick={() => setSource(v)}
+                    className={`px-3 py-1.5 rounded-full border ${source === v ? 'bg-gray-900 text-white border-gray-900' : 'bg-white'}`}>{l}</button>
+                ))}
               </div>
+              {source === 'ifood' ? (
+                <label className="block text-sm">Link da loja no iFood
+                  <input className={inputCls} value={storeUrl} onChange={e => setStoreUrl(e.target.value)} placeholder="https://www.ifood.com.br/delivery/..." />
+                </label>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <label className="block text-sm">CEP da região
+                    <input className={inputCls} value={zip} onChange={e => setZip(e.target.value)} placeholder="89200-000" inputMode="numeric" />
+                  </label>
+                  <label className="block text-sm">ID da loja (merchantId)
+                    <input className={inputCls} value={merchantId} onChange={e => setMerchantId(e.target.value)} placeholder="Ex.: 35275" />
+                  </label>
+                </div>
+              )}
               <div className="flex flex-wrap gap-2">
-                <button disabled={loading || !apiKey || !zip || !merchantId} onClick={doFetch}
+                <button disabled={loading || !apiKey || (source === 'ifood' ? !/^https?:\/\//.test(storeUrl.trim()) : !zip || !merchantId)} onClick={doFetch}
                   className="bg-green-600 disabled:bg-gray-300 text-white rounded-lg px-4 py-2 text-sm font-semibold">
                   {loading ? 'Buscando…' : 'Buscar cardápio'}
                 </button>
-                <button disabled={loading || !apiKey || !zip} onClick={doSearch}
-                  className="border rounded-lg px-4 py-2 text-sm disabled:opacity-50">Não sei o ID: listar lojas do CEP</button>
+                {source === 'pedeai' && (
+                  <button disabled={loading || !apiKey || !zip} onClick={doSearch}
+                    className="border rounded-lg px-4 py-2 text-sm disabled:opacity-50">Não sei o ID: listar lojas do CEP</button>
+                )}
               </div>
 
               {hits.length > 0 && (
@@ -124,7 +140,7 @@ export default function CatalogImport({ onClose }) {
                 </button>
                 {showPaste && (
                   <div className="mt-2 space-y-2">
-                    <textarea className={inputCls + ' h-32 font-mono text-xs'} value={pasted} onChange={e => setPasted(e.target.value)} placeholder="Cole aqui a resposta JSON do GeckoAPI (pede.ai, type pdp)" />
+                    <textarea className={inputCls + ' h-32 font-mono text-xs'} value={pasted} onChange={e => setPasted(e.target.value)} placeholder="Cole aqui a resposta JSON do GeckoAPI (cardápio da loja)" />
                     <button disabled={loading || !pasted.trim()} onClick={doParse}
                       className="border rounded-lg px-4 py-2 text-sm disabled:opacity-50">Ler JSON</button>
                   </div>
