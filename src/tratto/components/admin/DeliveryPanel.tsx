@@ -2,11 +2,13 @@
 import { useState, useRef, useEffect } from 'react'
 import { Pencil, Trash2, X, Wallet, MapPin, Zap, Lightbulb, CheckCircle2 } from 'lucide-react'
 import { getMapboxToken, MAPBOX_TOKEN_EVENT } from '../../mapboxToken'
+import { geocodeAddress } from '../../freight'
 import { useStore } from '../../context/StoreContext'
 import { DeliveryZone } from '../../types'
 
 // Joinville coordinates
 const DEFAULT_CENTER = { lat: -26.30, lng: -48.85 }
+const colors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#8b5cf6', '#ec4899']
 
 function DeliveryPanel() {
   const { config, setConfig, deliveryZones, addDeliveryZone, updateDeliveryZone, deleteDeliveryZone } = useStore()
@@ -58,7 +60,6 @@ function DeliveryPanel() {
     ]
   }
 
-  const colors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#8b5cf6', '#ec4899']
 
   return (
     <div className="space-y-6">
@@ -136,7 +137,7 @@ function DeliveryPanel() {
           <span className="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full font-medium">MapBox GL</span>
         </div>
         <div className="relative h-[400px]">
-          <MapComponent zones={deliveryZones} colors={colors} />
+          <MapComponent zones={deliveryZones} colors={colors} address={config.address} />
         </div>
         {/* Legend */}
         <div className="p-4 border-t flex flex-wrap gap-3">
@@ -294,121 +295,145 @@ function DeliveryPanel() {
   )
 }
 
-// Map Component with SVG fallback
-function MapComponent({ zones, colors }: { zones: DeliveryZone[]; colors: string[] }) {
+// Mapa Mapbox: cria o mapa uma única vez por token e só sincroniza as zonas/marcador depois.
+// O fallback (grade SVG) só aparece se o mapa nunca chegar a carregar.
+function MapComponent({ zones, colors, address }: { zones: DeliveryZone[]; colors: string[]; address?: string }) {
   const mapRef = useRef<HTMLDivElement>(null)
-  const [mapLoaded, setMapLoaded] = useState(false)
+  const mapObj = useRef<any>(null)
+  const gl = useRef<any>(null)
+  const markerRef = useRef<any>(null)
+  const addedIds = useRef<string[]>([])
+  const [mapReady, setMapReady] = useState(false)
   const [useFallback, setUseFallback] = useState(false)
   const [mapboxToken, setMapboxToken] = useState(getMapboxToken())
+  const [center, setCenter] = useState(DEFAULT_CENTER)
 
   // Atualiza o mapa quando o token é salvo/removido no painel
   useEffect(() => {
-    const onChange = () => { setUseFallback(false); setMapLoaded(false); setMapboxToken(getMapboxToken()) }
+    const onChange = () => {
+      const t = getMapboxToken()
+      setMapboxToken(prev => (prev === t ? prev : t))
+    }
     window.addEventListener(MAPBOX_TOKEN_EVENT, onChange)
     return () => window.removeEventListener(MAPBOX_TOKEN_EVENT, onChange)
   }, [])
 
+  // Centraliza no endereço da loja (se informado); senão usa o centro padrão
+  useEffect(() => {
+    let cancelled = false
+    const q = (address || '').trim()
+    if (!q || !mapboxToken) { setCenter(DEFAULT_CENTER); return }
+    geocodeAddress(q, mapboxToken, 'address,street,place')
+      .then(p => { if (!cancelled && p) setCenter(p) })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [address, mapboxToken])
+
+  // Cria o mapa (uma vez por token)
   useEffect(() => {
     if (!mapRef.current) return
-
+    let cancelled = false
+    let loaded = false
+    let timer: any = null
     let map: any = null
+    setMapReady(false)
+    setUseFallback(false)
 
-    const initMap = async () => {
+    ;(async () => {
       try {
-        const mapboxgl = await import('mapbox-gl')
-        // Token MapBox configurado via variável de ambiente
-        mapboxgl.default.accessToken = mapboxToken
-
-        map = new mapboxgl.default.Map({
-          container: mapRef.current!,
+        const mod: any = await import('mapbox-gl')
+        await import('mapbox-gl/dist/mapbox-gl.css')
+        if (cancelled || !mapRef.current) return
+        const mapboxgl = mod.default || mod
+        gl.current = mapboxgl
+        mapboxgl.accessToken = mapboxToken
+        map = new mapboxgl.Map({
+          container: mapRef.current,
           style: 'mapbox://styles/mapbox/streets-v12',
           center: [DEFAULT_CENTER.lng, DEFAULT_CENTER.lat],
-          zoom: 12
+          zoom: 12,
         })
-
-        map.addControl(new mapboxgl.default.NavigationControl(), 'top-right')
-
+        mapObj.current = map
+        map.addControl(new mapboxgl.NavigationControl(), 'top-right')
         map.on('load', () => {
-          setMapLoaded(true)
-
-          zones.forEach((zone, idx) => {
-            const coordinates = zone.coordinates.map(c => [c.lng, c.lat])
-            if (coordinates.length > 0 &&
-                (coordinates[0][0] !== coordinates[coordinates.length-1][0] ||
-                 coordinates[0][1] !== coordinates[coordinates.length-1][1])) {
-              coordinates.push(coordinates[0])
-            }
-
-            try {
-              map.addSource(`zone-${zone.id}`, {
-                type: 'geojson',
-                data: {
-                  type: 'Feature',
-                  properties: { name: zone.name, price: zone.price },
-                  geometry: { type: 'Polygon', coordinates: [coordinates] }
-                }
-              })
-
-              map.addLayer({
-                id: `zone-fill-${zone.id}`,
-                type: 'fill',
-                source: `zone-${zone.id}`,
-                paint: {
-                  'fill-color': colors[idx % colors.length],
-                  'fill-opacity': 0.3
-                }
-              })
-
-              map.addLayer({
-                id: `zone-line-${zone.id}`,
-                type: 'line',
-                source: `zone-${zone.id}`,
-                paint: {
-                  'line-color': colors[idx % colors.length],
-                  'line-width': 2,
-                  'line-opacity': 0.8
-                }
-              })
-
-              map.on('click', `zone-fill-${zone.id}`, (e: any) => {
-                new mapboxgl.default.Popup()
-                  .setLngLat(e.lngLat)
-                  .setHTML(`<div style="padding:4px"><strong>${zone.name}</strong><br>Taxa: R$ ${zone.price.toFixed(2).replace('.', ',')}<br>${zone.estimatedTime}</div>`)
-                  .addTo(map)
-              })
-            } catch (err) {
-              console.warn('Error adding zone layer:', err)
-            }
-          })
-
-          // Restaurant marker
-          new mapboxgl.default.Marker({ color: '#ef4444' })
-            .setLngLat([DEFAULT_CENTER.lng, DEFAULT_CENTER.lat])
-            .setPopup(new mapboxgl.default.Popup().setHTML('<div style="padding:4px"><strong> Restaurante</strong></div>'))
-            .addTo(map)
+          loaded = true
+          clearTimeout(timer)
+          map.resize()
+          if (!cancelled) setMapReady(true)
         })
-
-        map.on('error', () => {
-          setUseFallback(true)
+        // Erros de tile/recurso depois que o mapa carregou são normais: só cai no fallback se nunca carregou.
+        map.on('error', (e: any) => {
+          console.warn('Mapbox:', e?.error?.message || e)
+          if (!loaded && !cancelled) setUseFallback(true)
         })
-
-        // Timeout fallback
-        setTimeout(() => {
-          if (!mapLoaded) setUseFallback(true)
-        }, 8000)
-
+        timer = setTimeout(() => { if (!loaded && !cancelled) setUseFallback(true) }, 15000)
       } catch (err) {
         console.error('MapBox init error:', err)
-        setUseFallback(true)
+        if (!cancelled) setUseFallback(true)
       }
-    }
-
-    initMap()
+    })()
 
     return () => {
-      if (map) map.remove()
+      cancelled = true
+      clearTimeout(timer)
+      try { markerRef.current?.remove() } catch {}
+      markerRef.current = null
+      addedIds.current = []
+      try { map?.remove() } catch {}
+      mapObj.current = null
+      setMapReady(false)
     }
   }, [mapboxToken])
+
+  // Sincroniza zonas (adicionar/editar/excluir) sem recriar o mapa
+  useEffect(() => {
+    const map = mapObj.current
+    const mapboxgl = gl.current
+    if (!mapReady || !map || !mapboxgl) return
+    for (const id of addedIds.current) {
+      ;['fill', 'line'].forEach(k => { if (map.getLayer(`zone-${k}-${id}`)) map.removeLayer(`zone-${k}-${id}`) })
+      if (map.getSource(`zone-${id}`)) map.removeSource(`zone-${id}`)
+    }
+    addedIds.current = []
+    zones.forEach((zone, idx) => {
+      const coordinates = (zone.coordinates || []).map(c => [c.lng, c.lat])
+      if (coordinates.length < 3) return
+      const first = coordinates[0], last = coordinates[coordinates.length - 1]
+      if (first[0] !== last[0] || first[1] !== last[1]) coordinates.push(first)
+      try {
+        map.addSource(`zone-${zone.id}`, {
+          type: 'geojson',
+          data: { type: 'Feature', properties: { name: zone.name, price: zone.price }, geometry: { type: 'Polygon', coordinates: [coordinates] } },
+        })
+        const color = colors[idx % colors.length]
+        map.addLayer({ id: `zone-fill-${zone.id}`, type: 'fill', source: `zone-${zone.id}`, paint: { 'fill-color': color, 'fill-opacity': 0.3 } })
+        map.addLayer({ id: `zone-line-${zone.id}`, type: 'line', source: `zone-${zone.id}`, paint: { 'line-color': color, 'line-width': 2, 'line-opacity': 0.8 } })
+        map.on('click', `zone-fill-${zone.id}`, (e: any) => {
+          const el = document.createElement('div')
+          el.style.padding = '4px'
+          const t = document.createElement('strong'); t.textContent = zone.name
+          el.append(t, document.createElement('br'), `Taxa: R$ ${Number(zone.price).toFixed(2).replace('.', ',')}`, document.createElement('br'), String(zone.estimatedTime || ''))
+          new mapboxgl.Popup().setLngLat(e.lngLat).setDOMContent(el).addTo(map)
+        })
+        addedIds.current.push(zone.id)
+      } catch (err) {
+        console.warn('Error adding zone layer:', err)
+      }
+    })
+  }, [zones, mapReady, colors])
+
+  // Marcador do restaurante + centro do mapa
+  useEffect(() => {
+    const map = mapObj.current
+    const mapboxgl = gl.current
+    if (!mapReady || !map || !mapboxgl) return
+    map.jumpTo({ center: [center.lng, center.lat] })
+    if (markerRef.current) markerRef.current.remove()
+    markerRef.current = new mapboxgl.Marker({ color: '#ef4444' })
+      .setLngLat([center.lng, center.lat])
+      .setPopup(new mapboxgl.Popup().setText('Restaurante'))
+      .addTo(map)
+  }, [center, mapReady])
 
   if (useFallback) {
     return <MapFallback zones={zones} colors={colors} />
@@ -417,7 +442,7 @@ function MapComponent({ zones, colors }: { zones: DeliveryZone[]; colors: string
   return (
     <div className="relative w-full h-full">
       <div ref={mapRef} className="w-full h-full" />
-      {!mapLoaded && !useFallback && (
+      {!mapReady && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
           <div className="text-center">
             <div className="animate-spin w-8 h-8 border-4 border-red-500 border-t-transparent rounded-full mx-auto mb-2"></div>
