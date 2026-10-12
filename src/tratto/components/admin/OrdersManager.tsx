@@ -106,6 +106,7 @@ function OrdersManager() {
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-2">
                   <span className="font-bold text-gray-800">{order.id}</span>
+                  {(order.source === 'manual' || order.orderType === 'balcao') && <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-semibold text-gray-600">Balcão</span>}
                   <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${statusColors[order.status]}`}>
                     <StatusIcon icon={statusIcons[order.status]} /> {statusLabels[order.status]}
                   </span>
