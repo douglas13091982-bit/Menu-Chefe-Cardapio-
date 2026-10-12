@@ -28,6 +28,7 @@ function MenuView() {
   const [isMobile, setIsMobile] = useState(false)
   // Checkout (aparece após "Finalizar pedido" no carrinho)
   const [showCheckout, setShowCheckout] = useState(false)
+  const [checkoutStep, setCheckoutStep] = useState(1)
   const [deliveryType, setDeliveryType] = useState<DeliveryType>('pickup')
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | ''>('')
   const [customerName, setCustomerName] = useState('')
@@ -366,8 +367,10 @@ function MenuView() {
     !(useDistanceFreight && (freight.status === 'idle' || freight.status === 'loading' || freight.status === 'out')) &&
     !fixedOnlyNoMatch
 
+  const canContinueCheckoutStep1 = customerName.trim() !== '' && customerPhone.trim() !== '' && (deliveryType === 'pickup' || (addrStreet.trim() !== '' && customerNumber.trim() !== '' && (!fixedEnabled || !!addrNeighborhood.trim()))) && !(useDistanceFreight && (freight.status === 'idle' || freight.status === 'loading' || freight.status === 'out')) && !fixedOnlyNoMatch
   const openCheckout = () => {
     setShowCart(false)
+    setCheckoutStep(1)
     setShowCheckout(true)
   }
 
@@ -1138,52 +1141,42 @@ function MenuView() {
       {/* Checkout Modal - aparece após "Finalizar pedido" */}
       {showCheckout && (
         <div style={{
-          position: 'fixed',
-          inset: 0,
-          zIndex: 50,
-          display: 'flex',
-          alignItems: isMobile ? 'flex-end' : 'center',
-          justifyContent: 'center'
+          position: 'fixed', inset: 0, zIndex: 50, display: 'flex',
+          alignItems: isMobile ? 'flex-end' : 'center', justifyContent: 'center'
         }}>
-          <div
-            style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
-            onClick={() => setShowCheckout(false)}
-          ></div>
+          <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,.52)' }} onClick={() => setShowCheckout(false)} />
           <div style={{
-            position: 'relative',
-            backgroundColor: 'white',
+            position: 'relative', backgroundColor: 'white',
             borderRadius: isMobile ? '20px 20px 0 0' : '20px',
-            width: '100%',
-            maxWidth: '500px',
-            maxHeight: '92vh',
-            overflow: 'hidden',
-            display: 'flex',
-            flexDirection: 'column',
-            animation: 'slideUp 0.3s ease-out'
+            width: '100%', maxWidth: '540px', maxHeight: '94vh', overflow: 'hidden',
+            display: 'flex', flexDirection: 'column', animation: 'slideUp .25s ease-out'
           }}>
-            {isMobile && (
-              <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 4px' }}>
-                <div style={{ width: '40px', height: '4px', backgroundColor: '#e5e7eb', borderRadius: '2px' }}></div>
+            {isMobile && <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 2px' }}><div style={{ width: '40px', height: '4px', backgroundColor: '#e5e7eb', borderRadius: '2px' }} /></div>}
+            <div style={{ padding: isMobile ? '12px 16px' : '20px 24px 16px', borderBottom: '1px solid #f3f4f6' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                <div>
+                  <h3 style={{ fontSize: '19px', fontWeight: 800, color: '#1f2937', margin: 0 }}>Finalizar pedido</h3>
+                  <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#6b7280' }}>Etapa {checkoutStep} de 3 • Leva só alguns instantes</p>
+                </div>
+                <button onClick={() => setShowCheckout(false)} aria-label="Fechar finalização" style={{ width: '34px', height: '34px', borderRadius: '10px', background: '#f3f4f6', color: '#4b5563', border: 'none', cursor: 'pointer', fontSize: '18px' }}>×</button>
               </div>
-            )}
-            <div style={{ padding: isMobile ? '12px 16px' : '20px', borderBottom: '1px solid #f3f4f6' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#1f2937', margin: 0 }}>
-                  Finalizar pedido
-                </h3>
-                <button
-                  onClick={() => setShowCheckout(false)}
-                  style={{
-                    width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#f3f4f6',
-                    border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center',
-                    justifyContent: 'center', fontSize: '16px'
-                  }}
-                >
-                  ✕
-                </button>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '8px', marginTop: '18px' }}>
+                {[
+                  { number: 1, title: 'Seus dados', subtitle: 'Contato e entrega' },
+                  { number: 2, title: 'Pagamento', subtitle: 'Como vai pagar' },
+                  { number: 3, title: 'Revisão', subtitle: 'Confira o pedido' },
+                ].map(step => (
+                  <div key={step.number} style={{ minWidth: 0 }}>
+                    <div style={{ height: '4px', borderRadius: '99px', background: checkoutStep >= step.number ? '#d9273f' : '#e5e7eb', marginBottom: '8px' }} />
+                    <div style={{ fontSize: '12px', fontWeight: 750, color: checkoutStep === step.number ? '#d9273f' : checkoutStep > step.number ? '#374151' : '#9ca3af' }}>{step.number}. {step.title}</div>
+                    <div style={{ fontSize: '10px', color: '#9ca3af', marginTop: '2px' }}>{step.subtitle}</div>
+                  </div>
+                ))}
               </div>
             </div>
-            <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '16px' : '20px' }}>
+            <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: isMobile ? '16px' : '20px 24px' }}>
+              {checkoutStep === 1 && (
+                <>
               {/* Nome e telefone */}
               <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '4px' }}>
                 Seu nome *
@@ -1360,7 +1353,10 @@ function MenuView() {
                   )}
                 </div>
               )}
-
+                </>
+              )}
+              {checkoutStep === 2 && (
+                <>
               {/* Forma de pagamento */}
               <p style={{ fontSize: '13px', fontWeight: 600, color: '#374151', margin: '0 0 8px 0' }}>
                 Forma de pagamento *
@@ -1422,61 +1418,66 @@ function MenuView() {
                 </div>
               )}
             </div>
-
-            {/* Resumo + confirmar */}
-            <div style={{
-              padding: isMobile ? '16px' : '20px',
-              borderTop: '1px solid #f3f4f6',
-              backgroundColor: '#fafafa'
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                <span style={{ color: '#6b7280', fontSize: '13px' }}>Subtotal</span>
-                <span style={{ fontWeight: 600, fontSize: '13px' }}>{fmt(totalPrice)}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                <span style={{ color: '#6b7280', fontSize: '13px' }}>
-                  {deliveryType === 'delivery' ? 'Taxa de entrega' : 'Retirada no local'}
-                </span>
-                <span style={{ fontWeight: 600, fontSize: '13px', color: '#16a34a' }}>
-                  {deliveryType === 'delivery' ? deliveryFeeLabel : 'Grátis'}
-                </span>
-              </div>
-              <div style={{
-                display: 'flex', justifyContent: 'space-between', paddingTop: '12px',
-                borderTop: '1px solid #e5e7eb', marginBottom: '12px'
-              }}>
-                <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#1f2937' }}>Total</span>
-                <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#1f2937' }}>{fmt(checkoutTotal)}</span>
-              </div>
-              {!canPlaceOrder && (
-                <p style={{ fontSize: '11px', color: '#9ca3af', textAlign: 'center', margin: '0 0 8px 0' }}>
-                  Preencha nome, telefone{deliveryType === 'delivery' ? ', endereço, número' : ''} e forma de pagamento
-                </p>
+                </>
               )}
-              <button
-                onClick={placeOrder}
-                disabled={!canPlaceOrder}
-                style={{
-                  width: '100%',
-                  backgroundColor: canPlaceOrder ? '#16a34a' : '#d1d5db',
-                  color: 'white',
-                  borderRadius: '12px',
-                  padding: '14px',
-                  fontWeight: 'bold',
-                  fontSize: '15px',
-                  border: 'none',
-                  cursor: canPlaceOrder ? 'pointer' : 'not-allowed',
-                  boxShadow: canPlaceOrder ? '0 4px 12px rgba(22, 163, 74, 0.3)' : 'none'
-                }}
-              >
-                Confirmar pedido • {fmt(checkoutTotal)}
-              </button>
+              {checkoutStep === 3 && (
+                <div>
+                  <h4 style={{ margin: '0 0 12px', fontSize: '16px', color: '#1f2937' }}>Confira os dados antes de confirmar</h4>
+                  <div style={{ border: '1px solid #e5e7eb', borderRadius: '14px', padding: '14px', marginBottom: '12px' }}>
+                    <p style={{ margin: '0 0 6px', fontSize: '13px', fontWeight: 800, color: '#374151' }}>Cliente</p>
+                    <p style={{ margin: 0, fontSize: '13px', color: '#4b5563' }}>{customerName}</p>
+                    <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#4b5563' }}>{customerPhone}</p>
+                  </div>
+                  <div style={{ border: '1px solid #e5e7eb', borderRadius: '14px', padding: '14px', marginBottom: '12px' }}>
+                    <p style={{ margin: '0 0 6px', fontSize: '13px', fontWeight: 800, color: '#374151' }}>Recebimento</p>
+                    <p style={{ margin: 0, fontSize: '13px', color: '#4b5563' }}>{deliveryType === 'delivery' ? 'Entrega no endereço' : 'Retirada no local'}</p>
+                    {deliveryType === 'delivery' && <p style={{ margin: '4px 0 0', fontSize: '13px', lineHeight: 1.5, color: '#4b5563' }}>{customerAddress}, nº {customerNumber}{cep.length === 9 ? ' • CEP ' + cep : ''}</p>}
+                    {deliveryType === 'pickup' && <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#4b5563' }}>{config.address || 'Endereço da loja'}</p>}
+                  </div>
+                  <div style={{ border: '1px solid #e5e7eb', borderRadius: '14px', padding: '14px', marginBottom: '12px' }}>
+                    <p style={{ margin: '0 0 6px', fontSize: '13px', fontWeight: 800, color: '#374151' }}>Pagamento</p>
+                    <p style={{ margin: 0, fontSize: '13px', color: '#4b5563' }}>{paymentMethod ? paymentLabels[paymentMethod as PaymentMethod] : 'Não selecionado'}{paymentMethod === 'cash' && changeValue > checkoutTotal ? ' • Troco para ' + fmt(changeValue) : ''}</p>
+                  </div>
+                  <div style={{ border: '1px solid #f3d0d5', background: '#fff7f8', borderRadius: '14px', padding: '14px' }}>
+                    <p style={{ margin: '0 0 8px', fontSize: '13px', fontWeight: 800, color: '#54111e' }}>Itens do pedido ({totalItems})</p>
+                    {cart.map((item, index) => (
+                      <div key={item.product.id + '-' + index} style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', padding: '6px 0', fontSize: '13px', color: '#4b5563' }}>
+                        <span>{item.quantity}× {item.product.name}{(item.selectedAddOns || []).length ? ' + ' + item.selectedAddOns.map(a => a.name).join(', ') : ''}</span>
+                        <strong style={{ whiteSpace: 'nowrap' }}>{fmt(getItemUnitPrice(item) * item.quantity)}</strong>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            <div style={{ padding: isMobile ? '14px 16px 18px' : '16px 24px 22px', borderTop: '1px solid #f3f4f6', background: '#fafafa' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '13px', color: '#6b7280' }}>
+                <span>Subtotal</span><strong style={{ color: '#374151' }}>{fmt(totalPrice)}</strong>
+              </div>
+              {discount > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '13px', color: '#15803d' }}><span>Desconto ({activeCouponCode})</span><strong>− {fmt(discount)}</strong></div>}
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', fontSize: '13px', color: '#6b7280' }}>
+                <span>{deliveryType === 'delivery' ? 'Taxa de entrega' : 'Retirada no local'}</span><strong style={{ color: '#374151' }}>{deliveryType === 'delivery' ? deliveryFeeLabel : 'Grátis'}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '10px', borderTop: '1px solid #e5e7eb', marginBottom: '12px' }}>
+                <span style={{ fontSize: '16px', fontWeight: 800, color: '#1f2937' }}>Total do pedido</span>
+                <span style={{ fontSize: '20px', fontWeight: 850, color: '#d9273f' }}>{fmt(checkoutTotal)}</span>
+              </div>
+              {checkoutStep === 1 && !canContinueCheckoutStep1 && <p style={{ fontSize: '11px', color: '#b91c1c', margin: '0 0 8px', textAlign: 'center' }}>Preencha os dados de contato e os campos obrigatórios de entrega para continuar.</p>}
+              {checkoutStep === 2 && !paymentMethod && <p style={{ fontSize: '11px', color: '#b91c1c', margin: '0 0 8px', textAlign: 'center' }}>Selecione uma forma de pagamento para continuar.</p>}
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button type="button" onClick={() => checkoutStep === 1 ? (setShowCheckout(false), setShowCart(true)) : setCheckoutStep(checkoutStep - 1)} style={{ flex: '0 0 34%', background: '#fff', color: '#374151', border: '1px solid #d1d5db', borderRadius: '12px', padding: '13px 10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}>{checkoutStep === 1 ? 'Voltar ao carrinho' : 'Voltar'}</button>
+                {checkoutStep < 3 ? (
+                  <button type="button" onClick={() => { if (checkoutStep === 1 && canContinueCheckoutStep1) setCheckoutStep(2); else if (checkoutStep === 2 && paymentMethod) setCheckoutStep(3) }} disabled={checkoutStep === 1 ? !canContinueCheckoutStep1 : !paymentMethod} style={{ flex: 1, background: (checkoutStep === 1 ? canContinueCheckoutStep1 : !!paymentMethod) ? '#d9273f' : '#d1d5db', color: '#fff', border: 'none', borderRadius: '12px', padding: '13px 12px', fontWeight: 800, fontSize: '14px', cursor: (checkoutStep === 1 ? canContinueCheckoutStep1 : !!paymentMethod) ? 'pointer' : 'not-allowed' }}>Continuar <span aria-hidden="true">→</span></button>
+                ) : (
+                  <button type="button" onClick={placeOrder} disabled={!canPlaceOrder} style={{ flex: 1, background: canPlaceOrder ? '#d9273f' : '#d1d5db', color: '#fff', border: 'none', borderRadius: '12px', padding: '13px 12px', fontWeight: 800, fontSize: '14px', cursor: canPlaceOrder ? 'pointer' : 'not-allowed' }}>Confirmar pedido</button>
+                )}
+              </div>
             </div>
           </div>
         </div>
       )}
-
-      {/* Confirmação de pedido */}
+      
+{/* Confirmação de pedido */}
       {orderPlaced && (
         <div style={{
           position: 'fixed',
