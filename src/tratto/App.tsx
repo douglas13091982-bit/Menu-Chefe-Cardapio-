@@ -125,7 +125,7 @@ function App() {
                   border: 'none',
                   cursor: 'pointer',
                   transition: 'all 0.2s',
-                  backgroundColor: view === 'menu' ? 'rgba(239,68,68,0.92)' : '#f3f4f6',
+                  backgroundColor: view === 'menu' ? 'rgba(120,45,37,0.92)' : '#f3f4f6',
                   backdropFilter: view === 'menu' ? 'blur(6px)' : undefined,
                   color: view === 'menu' ? '#ffffff' : '#374151',
                   boxShadow: view === 'menu' ? '0 2px 4px rgba(239, 68, 68, 0.3)' : 'none',
