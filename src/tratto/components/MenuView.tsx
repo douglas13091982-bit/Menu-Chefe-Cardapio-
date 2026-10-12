@@ -1417,9 +1417,9 @@ function MenuView() {
                   )}
                 </div>
               )}
-            </div>
                 </>
               )}
+            </div>
               {checkoutStep === 3 && (
                 <div>
                   <h4 style={{ margin: '0 0 12px', fontSize: '16px', color: '#1f2937' }}>Confira os dados antes de confirmar</h4>
