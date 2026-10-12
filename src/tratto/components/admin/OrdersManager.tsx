@@ -1,13 +1,22 @@
 // @ts-nocheck -- código original migrado sem alterações de lógica
-import { useState } from 'react'
-import { Clock3, ChefHat, Truck, CheckCircle2, XCircle, X } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Clock3, ChefHat, Truck, CheckCircle2, XCircle, X, Printer } from 'lucide-react'
 import { useStore } from '../../context/StoreContext'
 import { Order } from '../../types'
 
 function OrdersManager() {
-  const { orders, updateOrderStatus } = useStore()
+  const { orders, updateOrderStatus, config } = useStore()
   const [filterStatus, setFilterStatus] = useState<string>('')
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
+  const [printOrder, setPrintOrder] = useState<Order | null>(null)
+
+  useEffect(() => {
+    if (!printOrder) return
+    const timer = window.setTimeout(() => window.print(), 250)
+    const afterPrint = () => setPrintOrder(null)
+    window.addEventListener('afterprint', afterPrint)
+    return () => { window.clearTimeout(timer); window.removeEventListener('afterprint', afterPrint) }
+  }, [printOrder])
 
   const filteredOrders = orders.filter(o => !filterStatus || o.status === filterStatus)
 
@@ -154,6 +163,12 @@ function OrdersManager() {
               </div>
               <div className="flex flex-col gap-2">
                 <button
+                  onClick={() => setPrintOrder(order)}
+                  className="inline-flex items-center justify-center gap-1.5 text-xs bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-3 py-1.5 rounded-lg"
+                >
+                  <Printer size={14} /> Imprimir
+                </button>
+                <button
                   onClick={() => setSelectedOrder(order)}
                   className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg"
                 >
@@ -185,6 +200,66 @@ function OrdersManager() {
         <div className="text-center py-12 text-gray-400">
           
           <p>Nenhum pedido encontrado</p>
+        </div>
+      )}
+
+      {printOrder && (
+        <div id="order-receipt-print" className="hidden">
+          <style>{`
+            @page { size: 80mm auto; margin: 4mm; }
+            @media print {
+              body * { visibility: hidden !important; }
+              #order-receipt-print, #order-receipt-print * { visibility: visible !important; }
+              #order-receipt-print { display: block !important; position: absolute; left: 0; top: 0; width: 72mm; color: #000; background: #fff; font: 11px/1.4 Arial, sans-serif; }
+              .receipt-logo { display: block; max-width: 42mm; max-height: 20mm; object-fit: contain; margin: 0 auto 5px; }
+              .receipt-center { text-align: center; }
+              .receipt-line { border-top: 1px dashed #555; margin: 7px 0; }
+              .receipt-row { display: flex; justify-content: space-between; gap: 8px; }
+              .receipt-items { margin: 7px 0; }
+              .receipt-small { font-size: 9px; }
+            }
+          `}</style>
+          <div className="receipt-center">
+            {config.logoUrl && <img className="receipt-logo" src={config.logoUrl} alt="Logo da loja" />}
+            <strong style={{ fontSize: '15px' }}>{config.name || 'Minha Loja'}</strong>
+            {config.subtitle && <div>{config.subtitle}</div>}
+            {config.address && <div>{config.address}</div>}
+            {config.phone && <div>Telefone: {config.phone}</div>}
+            <div className="receipt-line" />
+            <strong>COMPROVANTE DE VENDA</strong>
+            <div>Pedido: {printOrder.id}</div>
+            <div>{new Date(printOrder.createdAt).toLocaleString('pt-BR')}</div>
+          </div>
+          <div className="receipt-line" />
+          <div><strong>Cliente:</strong> {printOrder.customerName}</div>
+          <div><strong>Telefone:</strong> {printOrder.customerPhone}</div>
+          <div><strong>Endereço:</strong> {printOrder.deliveryType === 'pickup' ? 'Retirada no local' : (printOrder.customerAddress || 'Não informado')}</div>
+          <div><strong>Pagamento:</strong> {printOrder.paymentMethod === 'pix' ? 'Pix' : printOrder.paymentMethod === 'cash' ? 'Dinheiro' : printOrder.paymentMethod === 'card' ? 'Cartão' : 'Não informado'}</div>
+          {printOrder.changeFor ? <div><strong>Troco para:</strong> R$ {printOrder.changeFor.toFixed(2).replace('.', ',')}</div> : null}
+          <div className="receipt-line" />
+          <div className="receipt-row"><strong>QTD / PRODUTO</strong><strong>VALOR</strong></div>
+          <div className="receipt-items">
+            {printOrder.items.map((item, index) => {
+              const extras = (item.selectedAddOns || []).reduce((sum, addon) => sum + Number(addon.price || 0), 0)
+              const unit = Number(item.product.price || 0) + extras
+              return <div key={index} style={{ marginBottom: '5px' }}>
+                <div>{item.quantity}x {item.product.name}</div>
+                {(item.selectedAddOns || []).map(addon => <div key={addon.id} className="receipt-small"> + {addon.name}</div>)}
+                {item.observation && <div className="receipt-small">Obs.: {item.observation}</div>}
+                <div className="receipt-row"><span>{item.quantity} x R$ {unit.toFixed(2).replace('.', ',')}</span><span>R$ {(unit * item.quantity).toFixed(2).replace('.', ',')}</span></div>
+              </div>
+            })}
+          </div>
+          <div className="receipt-line" />
+          <div className="receipt-row"><span>Subtotal</span><span>R$ {Number(printOrder.total || 0).toFixed(2).replace('.', ',')}</span></div>
+          <div className="receipt-row"><span>Taxa de entrega</span><span>R$ {Number(printOrder.deliveryFee || 0).toFixed(2).replace('.', ',')}</span></div>
+          {Number(printOrder.discount || 0) > 0 && <div className="receipt-row"><span>Desconto</span><span>- R$ {Number(printOrder.discount).toFixed(2).replace('.', ',')}</span></div>}
+          <div className="receipt-line" />
+          <div className="receipt-row" style={{ fontSize: '14px', fontWeight: 700 }}><span>TOTAL</span><span>R$ {(Number(printOrder.total || 0) + Number(printOrder.deliveryFee || 0) - Number(printOrder.discount || 0)).toFixed(2).replace('.', ',')}</span></div>
+          {printOrder.notes && <div style={{ marginTop: '8px' }}><strong>Observações:</strong> {printOrder.notes}</div>}
+          <div className="receipt-line" />
+          <div className="receipt-center receipt-small">Obrigado pela preferência!</div>
+          <div className="receipt-center receipt-small">Comprovante não fiscal</div>
         </div>
       )}
 
