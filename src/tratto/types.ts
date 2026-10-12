@@ -48,6 +48,8 @@ export interface Order {
   changeFor?: number
   discount?: number
   couponCode?: string
+  scheduledDate?: string // YYYY-MM-DD
+  scheduledTime?: string // HH:MM
   createdAt: string
   updatedAt: string
 }
@@ -75,6 +77,10 @@ export interface StoreConfig {
   closeTime: string
   weeklyHours?: DayHours[]
   pickupEnabled?: boolean
+  schedulingEnabled?: boolean
+  schedulingDays?: number
+  schedulingSlotMinutes?: number
+  schedulingLeadMinutes?: number
   coupons?: Coupon[]
   isOpen: boolean
 }

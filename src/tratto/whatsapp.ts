@@ -45,6 +45,10 @@ export function buildOrderMessage(order: Order, config: StoreConfig): string {
   }
   lines.push(`*Total:* ${money(order.total + order.deliveryFee - (order.discount || 0))}`)
   lines.push('')
+  if (order.scheduledDate && order.scheduledTime) {
+    const [y, m, d] = order.scheduledDate.split('-')
+    lines.push(`*PEDIDO AGENDADO para ${d}/${m}/${y} às ${order.scheduledTime}*`)
+  }
   if (order.deliveryType === 'delivery') {
     lines.push(`*Entrega em:* ${order.customerAddress}`)
   } else {

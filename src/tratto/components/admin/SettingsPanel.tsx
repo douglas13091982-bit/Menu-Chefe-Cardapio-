@@ -320,6 +320,45 @@ function SettingsPanel() {
             Copiar o horário de segunda para todos os dias
           </button>
 
+          <div className="mt-5 pt-4 border-t space-y-3">
+            <label className="flex items-start justify-between gap-4 cursor-pointer">
+              <div>
+                <p className="text-sm font-medium text-gray-800">Aceitar pedidos agendados</p>
+                <p className="text-xs text-gray-500 mt-0.5">Com a loja fechada, o cliente pode encomendar e escolher dia e horário dentro do seu horário de funcionamento. Com a loja aberta, ele pode escolher entre "Agora" e "Agendar".</p>
+              </div>
+              <span className="relative inline-flex items-center flex-shrink-0">
+                <input
+                  type="checkbox"
+                  checked={formData.schedulingEnabled === true}
+                  onChange={e => setFormData(prev => ({ ...prev, schedulingEnabled: e.target.checked }))}
+                  className="sr-only peer"
+                />
+                <span className="w-11 h-6 bg-gray-200 peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></span>
+              </span>
+            </label>
+            {formData.schedulingEnabled === true && (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <label className="block text-xs text-gray-600">Agendar até quantos dias à frente
+                  <input type="number" min="1" max="30" className="mt-1 w-full border rounded-lg px-3 py-2 text-sm"
+                    value={formData.schedulingDays ?? 7}
+                    onChange={e => setFormData(prev => ({ ...prev, schedulingDays: Number(e.target.value) || 7 }))} />
+                </label>
+                <label className="block text-xs text-gray-600">Intervalo entre horários
+                  <select className="mt-1 w-full border rounded-lg px-3 py-2 text-sm"
+                    value={formData.schedulingSlotMinutes ?? 30}
+                    onChange={e => setFormData(prev => ({ ...prev, schedulingSlotMinutes: Number(e.target.value) }))}>
+                    {[15, 30, 60].map(m => <option key={m} value={m}>{m} minutos</option>)}
+                  </select>
+                </label>
+                <label className="block text-xs text-gray-600">Antecedência mínima (minutos)
+                  <input type="number" min="0" step="5" className="mt-1 w-full border rounded-lg px-3 py-2 text-sm"
+                    value={formData.schedulingLeadMinutes ?? 60}
+                    onChange={e => setFormData(prev => ({ ...prev, schedulingLeadMinutes: Math.max(0, Number(e.target.value) || 0) }))} />
+                </label>
+              </div>
+            )}
+          </div>
+
           <div className="mt-5 pt-4 border-t">
             <label className="relative inline-flex items-center cursor-pointer">
               <input

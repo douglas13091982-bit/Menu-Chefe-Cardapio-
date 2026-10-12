@@ -126,6 +126,11 @@ function OrdersManager() {
                 </div>
                 {(order.deliveryType || order.paymentMethod) && (
                   <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                    {order.scheduledDate && (
+                      <span className="px-2 py-1 rounded-full font-bold bg-purple-100 text-purple-800">
+                        🗓️ Agendado: {order.scheduledDate.split('-').reverse().slice(0, 2).join('/')} {order.scheduledTime}
+                      </span>
+                    )}
                     {order.deliveryType && (
                       <span className={`px-2 py-1 rounded-full font-medium ${order.deliveryType === 'pickup' ? 'bg-blue-50 text-blue-700' : 'bg-amber-50 text-amber-700'}`}>
                         {order.deliveryType === 'pickup' ? 'Retirada no local' : 'Entrega'}
@@ -203,6 +208,12 @@ function OrdersManager() {
                   <p className="font-medium">{selectedOrder.customerName}</p>
                   <p className="text-sm text-gray-600">{selectedOrder.customerPhone}</p>
                 </div>
+                {selectedOrder.scheduledDate && (
+                  <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
+                    <p className="text-xs text-purple-700">Pedido agendado para</p>
+                    <p className="font-bold text-purple-900">{selectedOrder.scheduledDate.split('-').reverse().join('/')} às {selectedOrder.scheduledTime}</p>
+                  </div>
+                )}
                 <div className="bg-gray-50 rounded-lg p-3">
                   <p className="text-xs text-gray-500">{selectedOrder.deliveryType === 'pickup' ? 'Retirada' : 'Endereço de entrega'}</p>
                   {selectedOrder.deliveryType === 'pickup' ? (

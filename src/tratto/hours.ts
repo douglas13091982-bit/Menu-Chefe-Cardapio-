@@ -83,3 +83,64 @@ export function getStoreStatus(config: Partial<StoreConfig>, date: Date = new Da
   }
   return { open: false, text: 'Fechado' }
 }
+
+// ---------- Agendamento de pedidos ----------
+export interface ScheduleDay {
+  date: string // YYYY-MM-DD (data em Brasília)
+  label: string // "Hoje", "Amanhã", "ter, 14/10"
+  times: string[] // "18:00", "18:30"…
+}
+
+const pad = (n: number) => String(n).padStart(2, '0')
+const fmtTime = (min: number) => `${pad(Math.floor(min / 60))}:${pad(min % 60)}`
+
+function brtDateString(date: Date) {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: STORE_TZ }).format(date) // YYYY-MM-DD
+}
+
+const WEEKDAY_SHORT = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb']
+
+/**
+ * Horários disponíveis para agendar, sempre dentro do horário de funcionamento de cada dia.
+ * Hoje só entram horários com antecedência mínima (leadMinutes).
+ */
+export function getScheduleSlots(
+  config: Partial<StoreConfig>,
+  now: Date = new Date(),
+  opts?: { days?: number; slotMinutes?: number; leadMinutes?: number },
+): ScheduleDay[] {
+  const days = Math.min(Math.max(Number(opts?.days ?? config.schedulingDays ?? 7) || 7, 1), 30)
+  const slot = Math.min(Math.max(Number(opts?.slotMinutes ?? config.schedulingSlotMinutes ?? 30) || 30, 10), 240)
+  const lead = Math.max(Number(opts?.leadMinutes ?? config.schedulingLeadMinutes ?? 60) || 0, 0)
+  const week = getWeeklyHours(config)
+  const today = brtDateString(now)
+  const { minutes: nowMin } = storeNow(now)
+  const [ty, tm, td] = today.split('-').map(Number)
+  const out: ScheduleDay[] = []
+
+  for (let i = 0; i < days; i++) {
+    const d = new Date(Date.UTC(ty, tm - 1, td + i, 12))
+    const date = d.toISOString().slice(0, 10)
+    const dow = d.getUTCDay()
+    const h = week[dow]
+    if (!validRange(h)) continue
+    const o = toMin(h.openTime)
+    const c = toMin(h.closeTime)
+    const lastStart = (c > o ? c : 24 * 60) - slot // vira a meia-noite: agenda só até 23:59 do próprio dia
+    const times: string[] = []
+    for (let t = o; t <= lastStart; t += slot) {
+      if (i === 0 && t < nowMin + lead) continue
+      times.push(fmtTime(t))
+    }
+    if (!times.length) continue
+    const label = i === 0 ? 'Hoje' : i === 1 ? 'Amanhã' : `${WEEKDAY_SHORT[dow]}, ${pad(d.getUTCDate())}/${pad(d.getUTCMonth() + 1)}`
+    out.push({ date, label, times })
+  }
+  return out
+}
+
+export function formatScheduled(date?: string, time?: string): string {
+  if (!date || !time) return ''
+  const [y, m, d] = date.split('-')
+  return `${d}/${m}/${y} às ${time}`
+}

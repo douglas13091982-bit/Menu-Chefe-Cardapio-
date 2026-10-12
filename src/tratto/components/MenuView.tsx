@@ -5,7 +5,7 @@ import { useStore } from '../context/StoreContext'
 import { Product, CartItem, ProductAddOn, Order, DeliveryType, PaymentMethod } from '../types'
 import { getMapboxToken } from '../mapboxToken'
 import { buildWhatsAppUrl } from '../whatsapp'
-import { getStoreStatus } from '../hours'
+import { getStoreStatus, getScheduleSlots, formatScheduled } from '../hours'
 import { extractLogoBackground } from '../logoColor'
 import { geocodeAddress, drivingDistanceKm, roundMoney } from '../freight'
 
@@ -70,6 +70,16 @@ function MenuView() {
     return () => clearInterval(id)
   }, [])
   const storeStatus = getStoreStatus(config)
+  // ---- Agendamento ----
+  const schedulingEnabled = config.schedulingEnabled === true
+  const mustSchedule = schedulingEnabled && !storeStatus.open
+  const [whenMode, setWhenMode] = useState<'now' | 'schedule'>('now')
+  const [schedDate, setSchedDate] = useState('')
+  const [schedTime, setSchedTime] = useState('')
+  const scheduling = schedulingEnabled && (mustSchedule || whenMode === 'schedule')
+  const scheduleDays = schedulingEnabled && showCheckout ? getScheduleSlots(config) : []
+  const selectedDay = scheduleDays.find(d => d.date === schedDate)
+  const scheduleOk = !scheduling || !!(selectedDay && selectedDay.times.includes(schedTime))
 
   // Cor do banner = cor de fundo do logo enviado (o logo se funde ao banner)
   const [logoBg, setLogoBg] = useState<string | null>(null)
@@ -364,6 +374,7 @@ function MenuView() {
   useEffect(() => { if (!pickupEnabled && deliveryType === 'pickup') setDeliveryType('delivery') }, [pickupEnabled, deliveryType])
 
   const canPlaceOrder =
+    scheduleOk &&
     customerName.trim() !== '' &&
     customerPhone.trim() !== '' &&
     paymentMethod !== '' &&
@@ -371,7 +382,7 @@ function MenuView() {
     !(useDistanceFreight && (freight.status === 'idle' || freight.status === 'loading' || freight.status === 'out')) &&
     !fixedOnlyNoMatch
 
-  const canContinueCheckoutStep1 = customerName.trim() !== '' && customerPhone.trim() !== '' && (deliveryType === 'pickup' || (addrStreet.trim() !== '' && customerNumber.trim() !== '' && (!fixedEnabled || !!addrNeighborhood.trim()))) && !(useDistanceFreight && (freight.status === 'idle' || freight.status === 'loading' || freight.status === 'out')) && !fixedOnlyNoMatch
+  const canContinueCheckoutStep1 = scheduleOk && customerName.trim() !== '' && customerPhone.trim() !== '' && (deliveryType === 'pickup' || (addrStreet.trim() !== '' && customerNumber.trim() !== '' && (!fixedEnabled || !!addrNeighborhood.trim()))) && !(useDistanceFreight && (freight.status === 'idle' || freight.status === 'loading' || freight.status === 'out')) && !fixedOnlyNoMatch
   const openCheckout = () => {
     setCheckoutStep(1)
     setShowCart(false)
@@ -395,6 +406,8 @@ function MenuView() {
         ? `${customerAddress.trim()}, nº ${customerNumber.trim()}${cep.length === 9 ? ' - CEP ' + cep : ''}`
         : '',
       deliveryType,
+      scheduledDate: scheduling ? schedDate : undefined,
+      scheduledTime: scheduling ? schedTime : undefined,
       paymentMethod: paymentMethod as PaymentMethod,
       changeFor: paymentMethod === 'cash' && changeValue > checkoutTotal ? changeValue : undefined,
       createdAt: now,
@@ -404,6 +417,7 @@ function MenuView() {
     setOrderPlaced(order)
     setShowCheckout(false)
     setCart([])
+    setWhenMode('now'); setSchedDate(''); setSchedTime('')
     removeCoupon()
     setPaymentMethod('')
     setChangeFor('')
@@ -1354,6 +1368,62 @@ function MenuView() {
                   )}
                 </div>
               )}
+              {schedulingEnabled && (
+                <div style={{ marginBottom: '18px' }}>
+                  <p style={{ fontSize: '13px', fontWeight: 600, color: '#374151', margin: '0 0 8px 0' }}>
+                    Quando? *
+                  </p>
+                  {mustSchedule ? (
+                    <p style={{ fontSize: '12px', color: '#92400e', backgroundColor: '#fffbeb', border: '1px solid #fde68a', padding: '10px 12px', borderRadius: '10px', margin: '0 0 10px 0' }}>
+                      A loja está fechada agora ({storeStatus.text.replace('Fechado • ', '').replace('Fechado', 'fora do horário')}). Você pode encomendar e agendar para um horário em que a loja estiver aberta.
+                    </p>
+                  ) : (
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
+                      {[{ v: 'now', t: 'Agora' }, { v: 'schedule', t: 'Agendar' }].map(o => (
+                        <button key={o.v} type="button" onClick={() => setWhenMode(o.v as any)}
+                          style={{
+                            padding: '12px 8px', borderRadius: '12px', cursor: 'pointer', fontWeight: 600, fontSize: '14px', color: '#1f2937',
+                            border: whenMode === o.v ? '2px solid #ef4444' : '1px solid #e5e7eb',
+                            backgroundColor: whenMode === o.v ? '#fef2f2' : 'white'
+                          }}>{o.t}</button>
+                      ))}
+                    </div>
+                  )}
+                  {scheduling && (scheduleDays.length === 0 ? (
+                    <p style={{ fontSize: '12px', color: '#dc2626', margin: 0 }}>Não há horários disponíveis para agendamento no momento.</p>
+                  ) : (
+                    <>
+                      <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Dia</label>
+                      <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '6px', marginBottom: '8px' }}>
+                        {scheduleDays.map(d => (
+                          <button key={d.date} type="button" onClick={() => { setSchedDate(d.date); setSchedTime('') }}
+                            style={{
+                              flexShrink: 0, padding: '8px 14px', borderRadius: '999px', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
+                              border: schedDate === d.date ? '2px solid #ef4444' : '1px solid #e5e7eb',
+                              backgroundColor: schedDate === d.date ? '#fef2f2' : 'white', color: '#1f2937'
+                            }}>{d.label}</button>
+                        ))}
+                      </div>
+                      {selectedDay && (
+                        <>
+                          <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Horário</label>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                            {selectedDay.times.map(t => (
+                              <button key={t} type="button" onClick={() => setSchedTime(t)}
+                                style={{
+                                  padding: '8px 12px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
+                                  border: schedTime === t ? '2px solid #ef4444' : '1px solid #e5e7eb',
+                                  backgroundColor: schedTime === t ? '#fef2f2' : 'white', color: '#1f2937'
+                                }}>{t}</button>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                      {!scheduleOk && <p style={{ fontSize: '12px', color: '#6b7280', margin: '8px 0 0' }}>Escolha o dia e o horário.</p>}
+                    </>
+                  ))}
+                </div>
+              )}
                 </>
               )}
               {checkoutStep === 2 && (
@@ -1433,6 +1503,7 @@ function MenuView() {
                     <p style={{ margin: 0, fontSize: '13px', color: '#4b5563' }}>{deliveryType === 'delivery' ? 'Entrega no endereço' : 'Retirada no local'}</p>
                     {deliveryType === 'delivery' && <p style={{ margin: '4px 0 0', fontSize: '13px', lineHeight: 1.5, color: '#4b5563' }}>{customerAddress}, nº {customerNumber}{cep.length === 9 ? ' • CEP ' + cep : ''}</p>}
                     {deliveryType === 'pickup' && <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#4b5563' }}>{config.address || 'Endereço da loja'}</p>}
+                    {scheduling && <p style={{ margin: '6px 0 0', fontSize: '13px', fontWeight: 700, color: '#92400e' }}>🗓️ Agendado: {formatScheduled(schedDate, schedTime)}</p>}
                   </div>
                   <div style={{ border: '1px solid #e5e7eb', borderRadius: '14px', padding: '14px', marginBottom: '12px' }}>
                     <p style={{ margin: '0 0 6px', fontSize: '13px', fontWeight: 800, color: '#374151' }}>Pagamento</p>
@@ -1518,6 +1589,11 @@ function MenuView() {
                 {orderPlaced.deliveryType === 'delivery' ? 'Entrega' : 'Retirada no local'}
                 {orderPlaced.deliveryType === 'delivery' ? `: ${orderPlaced.customerAddress}` : ''}
               </p>
+              {orderPlaced.scheduledDate && (
+                <p style={{ fontSize: '13px', color: '#92400e', fontWeight: 700, margin: '0 0 6px' }}>
+                  🗓️ Agendado para {formatScheduled(orderPlaced.scheduledDate, orderPlaced.scheduledTime)}
+                </p>
+              )}
               <p style={{ fontSize: '13px', color: '#374151', margin: '0 0 6px' }}>
                 💰 Pagamento: {paymentLabels[orderPlaced.paymentMethod]}
                 {orderPlaced.changeFor ? ` (troco para ${fmt(orderPlaced.changeFor)})` : ''}
