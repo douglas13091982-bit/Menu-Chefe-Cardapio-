@@ -285,9 +285,27 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe()
   }, [])
 
-  // Admin: carrega pedidos e popula tabelas vazias com os dados padrão
+  // Admin: mantém pedidos atualizados em tempo real e carrega dados iniciais
   useEffect(() => {
     if (!isAdmin) { setOrders([]); return }
+    const channel = supabase
+      .channel('admin-orders-live')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, payload => {
+        const row = payload.new as any
+        if (!row?.id) return
+        if (payload.eventType === 'DELETE') {
+          setOrders(prev => prev.filter(order => order.id !== row.id))
+          return
+        }
+        const order = { ...(row.data || {}), id: row.id, status: row.status }
+        setOrders(prev => {
+          const exists = prev.some(item => item.id === order.id)
+          return exists
+            ? prev.map(item => item.id === order.id ? { ...item, ...order } : item)
+            : [order, ...prev]
+        })
+      })
+      .subscribe()
     const loadAdmin = async () => {
       const [settingsRes, catRes, prodRes, zoneRes] = await Promise.all([
         supabase.from('store_settings').select('id').eq('id', 'main').maybeSingle(),
@@ -312,6 +330,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (data) setOrders(data.map(r => ({ ...r.data, status: r.status })))
     }
     loadAdmin().catch(err => console.error('Erro no carregamento do admin:', err))
+    return () => { supabase.removeChannel(channel) }
   }, [isAdmin])
 
   const setConfig = (c: StoreConfig) => {

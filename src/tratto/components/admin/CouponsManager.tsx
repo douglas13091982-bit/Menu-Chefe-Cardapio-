@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { useState } from 'react'
+import { Tag, Pencil, Trash2, Plus } from 'lucide-react'
 import { useStore } from '../../context/StoreContext'
 import { normalizeCode } from '../../coupons'
 
@@ -49,7 +50,7 @@ export default function CouponsManager() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-bold">Cupons de desconto</h2>
+        <h2 className="text-xl font-bold flex items-center gap-2"><Tag size={20} className="text-[#d9273f]" /> Cupons de desconto</h2>
         <p className="text-sm text-gray-500">Crie cupons para suas promoções. O cliente digita o código no carrinho e recebe o desconto.</p>
       </div>
 
@@ -87,7 +88,7 @@ export default function CouponsManager() {
         {error && <p className="text-sm text-red-600">{error}</p>}
         <div className="flex gap-2">
           <button type="submit" className="bg-green-600 text-white rounded-lg px-4 py-2 text-sm font-semibold">
-            {editingId ? 'Salvar alterações' : 'Criar cupom'}
+            {editingId ? 'Salvar alterações' : <><Plus size={15} className="inline mr-1" />Criar cupom</>}
           </button>
           {editingId && (
             <button type="button" className="border rounded-lg px-4 py-2 text-sm" onClick={() => { setEditingId(null); setForm(empty); setError('') }}>Cancelar</button>
@@ -112,8 +113,8 @@ export default function CouponsManager() {
             </div>
             <div className="flex gap-2 text-sm">
               <button className="border rounded-lg px-3 py-1" onClick={() => save(coupons.map(x => x.id === c.id ? { ...x, active: !x.active } : x))}>{c.active ? 'Desativar' : 'Ativar'}</button>
-              <button className="border rounded-lg px-3 py-1" onClick={() => edit(c)}>Editar</button>
-              <button className="border border-red-300 text-red-600 rounded-lg px-3 py-1" onClick={() => { if (confirm(`Excluir o cupom ${c.code}?`)) save(coupons.filter(x => x.id !== c.id)) }}>Excluir</button>
+              <button className="border rounded-lg px-3 py-1" onClick={() => edit(c)}><Pencil size={14} className="inline mr-1" />Editar</button>
+              <button className="border border-red-300 text-red-600 rounded-lg px-3 py-1" onClick={() => { if (confirm(`Excluir o cupom ${c.code}?`)) save(coupons.filter(x => x.id !== c.id)) }}><Trash2 size={14} className="inline mr-1" />Excluir</button>
             </div>
           </div>
         ))}

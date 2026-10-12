@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { CheckCircle2, AlertTriangle, Facebook } from 'lucide-react'
 import { loadMarketing, saveMarketing } from '../../marketing'
 
 function MarketingPanel() {
@@ -47,14 +48,14 @@ function MarketingPanel() {
 
       {saved && (
         <div className="bg-green-50 border border-green-200 text-green-700 rounded-lg p-3 flex items-center gap-2">
-          <span>✅</span>
+          <CheckCircle2 size={18} />
           <span className="text-sm font-medium">Configurações de marketing salvas!</span>
         </div>
       )}
 
       {saveError && (
         <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 flex items-center gap-2">
-          <span>⚠️</span>
+          <AlertTriangle size={18} />
           <span className="text-sm font-medium">{saveError}</span>
         </div>
       )}
@@ -63,10 +64,10 @@ function MarketingPanel() {
         <div className="bg-white rounded-xl shadow-sm p-6">
           <div className="flex items-center justify-between gap-2 mb-4 flex-wrap">
             <h3 className="font-bold text-gray-800 flex items-center gap-2">
-              <span>📘</span> Facebook / Meta
+              <Facebook size={18} className="text-[#1877F2]" /> Facebook / Meta
             </h3>
             {pixelActive ? (
-              <span className="text-xs font-medium px-3 py-1 rounded-full bg-green-50 text-green-700 border border-green-200">Pixel ativo ✅</span>
+              <span className="text-xs font-medium px-3 py-1 rounded-full bg-green-50 text-green-700 border border-green-200">Pixel ativo </span>
             ) : (
               <span className="text-xs font-medium px-3 py-1 rounded-full bg-gray-100 text-gray-600 border border-gray-200">Pixel não configurado</span>
             )}

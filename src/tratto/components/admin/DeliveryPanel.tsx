@@ -1,5 +1,6 @@
 // @ts-nocheck -- código original migrado sem alterações de lógica
 import { useState, useRef, useEffect } from 'react'
+import { Pencil, Trash2, X, Wallet, MapPin, Zap, Lightbulb, CheckCircle2 } from 'lucide-react'
 import { getMapboxToken, MAPBOX_TOKEN_EVENT } from '../../mapboxToken'
 import { useStore } from '../../context/StoreContext'
 import { DeliveryZone } from '../../types'
@@ -78,7 +79,7 @@ function DeliveryPanel() {
       <div className="bg-white rounded-xl shadow-sm p-6 space-y-5">
         <div>
           <h3 className="font-bold text-gray-800 flex items-center gap-2">
-            <span>💰</span> Como cobrar a entrega
+            <Wallet size={18} className="text-[#d9273f]" /> Como cobrar a entrega
           </h3>
           <p className="text-xs text-gray-500 mt-1">Ligue ou desligue cada forma de cobrança. Vale para os pedidos de entrega do cardápio.</p>
         </div>
@@ -128,7 +129,7 @@ function DeliveryPanel() {
         <div className="p-4 border-b flex items-center justify-between">
           <div>
             <h3 className="font-bold text-gray-800 flex items-center gap-2">
-              <span>🗺️</span> Mapa de Cobertura - MapBox
+              <MapPin size={18} className="text-[#d9273f]" /> Mapa de Cobertura - MapBox
             </h3>
             <p className="text-xs text-gray-500 mt-1">Visualize as zonas de entrega no mapa interativo</p>
           </div>
@@ -152,28 +153,28 @@ function DeliveryPanel() {
       {/* MapBox Config Info */}
       <div className="bg-white rounded-xl shadow-sm p-5">
         <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
-          <span>⚡</span> Configuração MapBox
+          <Zap size={18} className="text-[#d9273f]" /> Configuração MapBox
         </h3>
         <div className="bg-gray-50 rounded-lg p-4 space-y-2 text-sm">
           <div className="flex items-center gap-2">
-            <span className="text-green-500">✓</span>
+            <span className="text-green-500"><CheckCircle2 size={16} /></span>
             <span className="text-gray-700">MapBox GL JS integrado</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-green-500">✓</span>
+            <span className="text-green-500"></span>
             <span className="text-gray-700">Zonas de entrega renderizadas como polígonos</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-green-500">✓</span>
+            <span className="text-green-500"></span>
             <span className="text-gray-700">Marcador do restaurante</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-green-500">✓</span>
+            <span className="text-green-500"></span>
             <span className="text-gray-700">Popups com informações de cada zona</span>
           </div>
           <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
             <p className="text-xs text-yellow-800">
-              💡 <strong>Para usar com seu token MapBox:</strong> Configure sua chave no painel MapBox Studio para criar zonas personalizadas com coordenadas reais. O mapa acima usa um token demo para visualização.
+               <strong>Para usar com seu token MapBox:</strong> Configure sua chave no painel MapBox Studio para criar zonas personalizadas com coordenadas reais. O mapa acima usa um token demo para visualização.
             </p>
           </div>
         </div>
@@ -199,14 +200,14 @@ function DeliveryPanel() {
                 className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-100 text-xs"
                 title="Editar"
               >
-                ✏️
+                <Pencil size={14} />
               </button>
               <button
                 onClick={() => { if (confirm('Excluir zona?')) deleteDeliveryZone(zone.id) }}
                 className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center hover:bg-red-100 text-xs"
                 title="Excluir"
               >
-                🗑️
+                <Trash2 size={14} />
               </button>
             </div>
           </div>
@@ -215,7 +216,7 @@ function DeliveryPanel() {
 
       {deliveryZones.length === 0 && (
         <div className="text-center py-12 text-gray-400 bg-white rounded-xl">
-          <span className="text-4xl block mb-2">🗺️</span>
+          <span className="text-4xl block mb-2"></span>
           <p>Nenhuma zona de entrega configurada</p>
         </div>
       )}
@@ -230,7 +231,7 @@ function DeliveryPanel() {
                 <h3 className="text-xl font-bold text-gray-800">
                   {editingZone ? 'Editar Zona' : 'Nova Zona de Entrega'}
                 </h3>
-                <button onClick={resetForm} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">✕</button>
+                <button onClick={resetForm} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200"><X size={16} /></button>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -271,7 +272,7 @@ function DeliveryPanel() {
 
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                   <p className="text-xs text-blue-700">
-                    💡 <strong>MapBox:</strong> As zonas são exibidas automaticamente no mapa acima. 
+                     <strong>MapBox:</strong> As zonas são exibidas automaticamente no mapa acima. 
                     Configure seu token MapBox para definir zonas com coordenadas reais.
                   </p>
                 </div>
@@ -383,7 +384,7 @@ function MapComponent({ zones, colors }: { zones: DeliveryZone[]; colors: string
           // Restaurant marker
           new mapboxgl.default.Marker({ color: '#ef4444' })
             .setLngLat([DEFAULT_CENTER.lng, DEFAULT_CENTER.lat])
-            .setPopup(new mapboxgl.default.Popup().setHTML('<div style="padding:4px"><strong>🍔 Restaurante</strong></div>'))
+            .setPopup(new mapboxgl.default.Popup().setHTML('<div style="padding:4px"><strong> Restaurante</strong></div>'))
             .addTo(map)
         })
 
@@ -463,14 +464,14 @@ function MapFallback({ zones, colors }: { zones: DeliveryZone[]; colors: string[
 
         {/* Restaurant marker */}
         <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-white rounded-full shadow-lg px-3 py-1.5 flex items-center gap-1.5">
-          <span className="text-lg">📍</span>
+          <span className="text-lg"></span>
           <span className="text-xs font-medium text-gray-700">Restaurante - Joinville</span>
         </div>
       </div>
 
       {zones.length === 0 && (
         <div className="text-center text-gray-400">
-          <span className="text-4xl block mb-2">🗺️</span>
+          <span className="text-4xl block mb-2"></span>
           <p className="text-sm">Adicione zonas de entrega</p>
         </div>
       )}

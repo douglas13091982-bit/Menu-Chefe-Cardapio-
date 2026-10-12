@@ -1,5 +1,6 @@
 // @ts-nocheck -- código original migrado sem alterações de lógica
 import { useState } from 'react'
+import { Pencil, Trash2, X } from 'lucide-react'
 import { useStore } from '../../context/StoreContext'
 import { Category } from '../../types'
 
@@ -7,17 +8,17 @@ function CategoriesManager() {
   const { categories, products, addCategory, updateCategory, deleteCategory } = useStore()
   const [showForm, setShowForm] = useState(false)
   const [editingCategory, setEditingCategory] = useState<Category | null>(null)
-  const [formData, setFormData] = useState({ name: '', icon: '🍔', order: 0 })
+  const [formData, setFormData] = useState({ name: '', icon: '', order: 0 })
 
   const resetForm = () => {
-    setFormData({ name: '', icon: '🍔', order: categories.length + 1 })
+    setFormData({ name: '', icon: '', order: categories.length + 1 })
     setEditingCategory(null)
     setShowForm(false)
   }
 
   const openEditForm = (category: Category) => {
     setEditingCategory(category)
-    setFormData({ name: category.name, icon: category.icon, order: category.order })
+    setFormData({ name: category.name, icon: '', order: category.order })
     setShowForm(true)
   }
 
@@ -26,7 +27,7 @@ function CategoriesManager() {
     const category: Category = {
       id: editingCategory?.id || Date.now().toString(),
       name: formData.name,
-      icon: formData.icon,
+      icon: formData.icon || '',
       order: formData.order || categories.length + 1
     }
     if (editingCategory) {
@@ -43,7 +44,6 @@ function CategoriesManager() {
 
   const sortedCategories = [...categories].sort((a, b) => a.order - b.order)
 
-  const emojiOptions = ['🍔', '🌭', '🍟', '🥤', '🍫', '🎁', '🍕', '🌮', '🥗', '🍗', '🧁', '🍰', '☕', '🍺', '🥩', '🐟']
 
   return (
     <div className="space-y-6">
@@ -70,29 +70,11 @@ function CategoriesManager() {
                 <h3 className="text-xl font-bold text-gray-800">
                   {editingCategory ? 'Editar Categoria' : 'Nova Categoria'}
                 </h3>
-                <button onClick={resetForm} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">✕</button>
+                <button onClick={resetForm} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200"><X size={16} /></button>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Ícone</label>
-                  <div className="grid grid-cols-8 gap-2">
-                    {emojiOptions.map(emoji => (
-                      <button
-                        key={emoji}
-                        type="button"
-                        onClick={() => setFormData(prev => ({ ...prev, icon: emoji }))}
-                        className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl transition-all ${
-                          formData.icon === emoji
-                            ? 'bg-red-100 border-2 border-red-500 scale-110'
-                            : 'bg-gray-50 border border-gray-200 hover:bg-gray-100'
-                        }`}
-                      >
-                        {emoji}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                <p className="text-xs text-gray-500">As categorias são identificadas pelo nome.</p>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Nome *</label>
@@ -135,9 +117,6 @@ function CategoriesManager() {
       <div className="space-y-3">
         {sortedCategories.map(category => (
           <div key={category.id} className="bg-white rounded-xl shadow-sm p-4 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center text-2xl">
-              {category.icon}
-            </div>
             <div className="flex-1">
               <h4 className="font-semibold text-gray-800">{category.name}</h4>
               <p className="text-xs text-gray-500">{getProductCount(category.id)} produtos • Ordem: {category.order}</p>
@@ -148,7 +127,7 @@ function CategoriesManager() {
                 className="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-100"
                 title="Editar"
               >
-                ✏️
+                <Pencil size={15} />
               </button>
               <button
                 onClick={() => {
@@ -161,7 +140,7 @@ function CategoriesManager() {
                 className="w-9 h-9 rounded-lg bg-red-50 text-red-600 flex items-center justify-center hover:bg-red-100"
                 title="Excluir"
               >
-                🗑️
+                <Trash2 size={15} />
               </button>
             </div>
           </div>
@@ -170,7 +149,6 @@ function CategoriesManager() {
 
       {categories.length === 0 && (
         <div className="text-center py-12 text-gray-400">
-          <span className="text-4xl block mb-2">📁</span>
           <p>Nenhuma categoria cadastrada</p>
         </div>
       )}

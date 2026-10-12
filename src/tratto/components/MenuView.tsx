@@ -367,18 +367,7 @@ function MenuView() {
     !(useDistanceFreight && (freight.status === 'idle' || freight.status === 'loading' || freight.status === 'out')) &&
     !fixedOnlyNoMatch
 
-  const step1Valid = customerName.trim() !== '' && customerPhone.trim() !== ''
-  const step2Valid =
-    (deliveryType === 'pickup' || (addrStreet.trim() !== '' && customerNumber.trim() !== '')) &&
-    !(useDistanceFreight && (freight.status === 'idle' || freight.status === 'loading' || freight.status === 'out')) &&
-    !fixedOnlyNoMatch
-  const stepValid = checkoutStep === 1 ? step1Valid : checkoutStep === 2 ? step2Valid : canPlaceOrder
-  const stepHint = checkoutStep === 1
-    ? 'Preencha seu nome e telefone'
-    : checkoutStep === 2
-      ? (deliveryType === 'delivery' ? 'Informe o CEP, o número e confira a taxa de entrega' : '')
-      : 'Escolha a forma de pagamento'
-
+  const canContinueCheckoutStep1 = customerName.trim() !== '' && customerPhone.trim() !== '' && (deliveryType === 'pickup' || (addrStreet.trim() !== '' && customerNumber.trim() !== '' && (!fixedEnabled || !!addrNeighborhood.trim()))) && !(useDistanceFreight && (freight.status === 'idle' || freight.status === 'loading' || freight.status === 'out')) && !fixedOnlyNoMatch
   const openCheckout = () => {
     setCheckoutStep(1)
     setShowCart(false)
@@ -563,10 +552,10 @@ function MenuView() {
                   ★ 4.8
                 </span>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', backgroundColor: '#f3f4f6', color: '#374151', padding: '3px 8px', borderRadius: '14px', fontSize: '11px', fontWeight: 500 }}>
-                  🛵 40-50 min
+                  40–50 min
                 </span>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', backgroundColor: '#f3f4f6', color: '#374151', padding: '3px 8px', borderRadius: '14px', fontSize: '11px', fontWeight: 500 }}>
-                  📍 2.5 km
+                  2.5 km
                 </span>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', backgroundColor: '#f0fdf4', color: '#15803d', padding: '3px 8px', borderRadius: '14px', fontSize: '11px', fontWeight: 600 }}>
                   {'🏷️'} {fixedEnabled && !mapboxEnabled ? 'Taxa por bairro' : `Entrega ${mapboxEnabled && perKm > 0 ? 'desde ' : ''}${fmt(config.deliveryFee)}`}
@@ -620,7 +609,7 @@ function MenuView() {
               fontSize: '12px',
               fontWeight: 500
             }}>
-              🛵 40-50 min
+              40–50 min
             </span>
             <span style={{
               display: 'inline-flex',
@@ -633,7 +622,7 @@ function MenuView() {
               fontSize: '12px',
               fontWeight: 500
             }}>
-              📍 2.5 km
+              2.5 km
             </span>
           </div>
 
@@ -717,13 +706,12 @@ function MenuView() {
                   border: 'none',
                   cursor: 'pointer',
                   transition: 'all 0.2s',
-                  backgroundColor: activeCategory === cat.id ? '#782d25' : '#f5eee7',
-                  color: activeCategory === cat.id ? '#fffaf5' : '#49372e',
-                  boxShadow: activeCategory === cat.id ? '0 4px 12px rgba(120, 45, 37, 0.2)' : 'none',
+                  backgroundColor: activeCategory === cat.id ? '#d9273f' : '#fff0f2',
+                  color: activeCategory === cat.id ? '#ffffff' : '#54111e',
+                  boxShadow: activeCategory === cat.id ? '0 4px 12px rgba(217, 39, 63, 0.2)' : 'none',
                   flexShrink: 0
                 }}
               >
-                <span style={{ fontSize: isMobile ? '16px' : '18px' }}>{cat.icon}</span>
                 <span>{cat.name}</span>
               </button>
             ))}
@@ -755,7 +743,6 @@ function MenuView() {
                 alignItems: 'center',
                 gap: '8px'
               }}>
-                <span style={{ fontSize: isMobile ? '20px' : '24px' }}>{category.icon}</span>
                 {category.name}
                 <span style={{ 
                   fontSize: '13px', 
@@ -804,7 +791,7 @@ function MenuView() {
               alignItems: 'center',
               gap: '8px'
             }}>
-              <span style={{ fontSize: isMobile ? '20px' : '24px' }}>📍</span>
+              
               Áreas de Entrega
             </h3>
             <div style={{
@@ -855,14 +842,14 @@ function MenuView() {
               onClick={() => setShowCart(true)}
               style={{
                 width: '100%',
-                backgroundColor: '#782d25',
-                color: '#fffaf5',
+                backgroundColor: '#d9273f',
+                color: '#ffffff',
                 borderRadius: '14px',
                 padding: isMobile ? '14px 16px' : '16px 24px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                boxShadow: '0 10px 25px rgba(120, 45, 37, 0.28)',
+                boxShadow: '0 10px 25px rgba(217, 39, 63, 0.28)',
                 border: 'none',
                 cursor: 'pointer',
                 transition: 'transform 0.1s'
@@ -1123,7 +1110,7 @@ function MenuView() {
                 </span>
               </div>
               <p style={{ color: '#9ca3af', fontSize: '11px', margin: '0 0 10px 0', textAlign: 'center' }}>
-                🛵 Entrega ou retirada e forma de pagamento você escolhe a seguir
+                Entrega ou retirada e forma de pagamento você escolhe a seguir
               </p>
               <button
                 onClick={openCheckout}
@@ -1151,74 +1138,42 @@ function MenuView() {
       {/* Checkout Modal - aparece após "Finalizar pedido" */}
       {showCheckout && (
         <div style={{
-          position: 'fixed',
-          inset: 0,
-          zIndex: 50,
-          display: 'flex',
-          alignItems: isMobile ? 'flex-end' : 'center',
-          justifyContent: 'center'
+          position: 'fixed', inset: 0, zIndex: 50, display: 'flex',
+          alignItems: isMobile ? 'flex-end' : 'center', justifyContent: 'center'
         }}>
-          <div
-            style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
-            onClick={() => setShowCheckout(false)}
-          ></div>
+          <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,.52)' }} onClick={() => setShowCheckout(false)} />
           <div style={{
-            position: 'relative',
-            backgroundColor: 'white',
+            position: 'relative', backgroundColor: 'white',
             borderRadius: isMobile ? '20px 20px 0 0' : '20px',
-            width: '100%',
-            maxWidth: '500px',
-            maxHeight: '92vh',
-            overflow: 'hidden',
-            display: 'flex',
-            flexDirection: 'column',
-            animation: 'slideUp 0.3s ease-out'
+            width: '100%', maxWidth: '540px', maxHeight: '94vh', overflow: 'hidden',
+            display: 'flex', flexDirection: 'column', animation: 'slideUp .25s ease-out'
           }}>
-            {isMobile && (
-              <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 4px' }}>
-                <div style={{ width: '40px', height: '4px', backgroundColor: '#e5e7eb', borderRadius: '2px' }}></div>
+            {isMobile && <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 2px' }}><div style={{ width: '40px', height: '4px', backgroundColor: '#e5e7eb', borderRadius: '2px' }} /></div>}
+            <div style={{ padding: isMobile ? '12px 16px' : '20px 24px 16px', borderBottom: '1px solid #f3f4f6' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                <div>
+                  <h3 style={{ fontSize: '19px', fontWeight: 800, color: '#1f2937', margin: 0 }}>Finalizar pedido</h3>
+                  <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#6b7280' }}>Etapa {checkoutStep} de 3 • Leva só alguns instantes</p>
+                </div>
+                <button onClick={() => setShowCheckout(false)} aria-label="Fechar finalização" style={{ width: '34px', height: '34px', borderRadius: '10px', background: '#f3f4f6', color: '#4b5563', border: 'none', cursor: 'pointer', fontSize: '18px' }}>×</button>
               </div>
-            )}
-            <div style={{ padding: isMobile ? '12px 16px' : '20px', borderBottom: '1px solid #f3f4f6' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#1f2937', margin: 0 }}>
-                  Finalizar pedido
-                </h3>
-                <button
-                  onClick={() => setShowCheckout(false)}
-                  style={{
-                    width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#f3f4f6',
-                    border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center',
-                    justifyContent: 'center', fontSize: '16px'
-                  }}
-                >
-                  ✕
-                </button>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', marginTop: '12px' }}>
-                {['Seus dados', 'Entrega', 'Pagamento'].map((label, i) => {
-                  const n = i + 1
-                  const done = checkoutStep > n
-                  const current = checkoutStep === n
-                  return (
-                    <div key={label} style={{ display: 'flex', alignItems: 'center', flex: n < 3 ? 1 : 'none' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-                        <div style={{
-                          width: '26px', height: '26px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: '12px', fontWeight: 700,
-                          backgroundColor: done ? '#16a34a' : current ? '#ef4444' : '#e5e7eb',
-                          color: done || current ? 'white' : '#6b7280'
-                        }}>{done ? '✓' : n}</div>
-                        <span style={{ fontSize: '11px', fontWeight: current ? 700 : 500, color: current ? '#1f2937' : '#9ca3af' }}>{label}</span>
-                      </div>
-                      {n < 3 && <div style={{ flex: 1, height: '2px', margin: '0 8px 16px', backgroundColor: done ? '#16a34a' : '#e5e7eb' }} />}
-                    </div>
-                  )
-                })}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '8px', marginTop: '18px' }}>
+                {[
+                  { number: 1, title: 'Seus dados', subtitle: 'Contato e entrega' },
+                  { number: 2, title: 'Pagamento', subtitle: 'Como vai pagar' },
+                  { number: 3, title: 'Revisão', subtitle: 'Confira o pedido' },
+                ].map(step => (
+                  <div key={step.number} style={{ minWidth: 0 }}>
+                    <div style={{ height: '4px', borderRadius: '99px', background: checkoutStep >= step.number ? '#d9273f' : '#e5e7eb', marginBottom: '8px' }} />
+                    <div style={{ fontSize: '12px', fontWeight: 750, color: checkoutStep === step.number ? '#d9273f' : checkoutStep > step.number ? '#374151' : '#9ca3af' }}>{step.number}. {step.title}</div>
+                    <div style={{ fontSize: '10px', color: '#9ca3af', marginTop: '2px' }}>{step.subtitle}</div>
+                  </div>
+                ))}
               </div>
             </div>
-            <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '16px' : '20px' }}>
-              {checkoutStep === 1 && (<>
+            <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: isMobile ? '16px' : '20px 24px' }}>
+              {checkoutStep === 1 && (
+                <>
               {/* Nome e telefone */}
               <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '4px' }}>
                 Seu nome *
@@ -1246,17 +1201,14 @@ function MenuView() {
                 }}
               />
 
-              </>)}
-
-              {checkoutStep === 2 && (<>
               {/* Retirada ou entrega */}
               <p style={{ fontSize: '13px', fontWeight: 600, color: '#374151', margin: '0 0 8px 0' }}>
                 Como deseja receber seu pedido? *
               </p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '14px' }}>
                 {[
-                  { value: 'pickup' as DeliveryType, icon: '🏪', title: 'Retirar no local', desc: config.address || 'No endereço da loja' },
-                  { value: 'delivery' as DeliveryType, icon: '🛵', title: 'Entrega', desc: fixedEnabled && !mapboxEnabled ? 'Taxa por bairro' : (mapboxEnabled && perKm > 0 ? `${fmt(config.deliveryFee)} + ${fmt(perKm)}/km` : `${fmt(config.deliveryFee)} taxa`) },
+                  { value: 'pickup' as DeliveryType, title: 'Retirar no local', desc: config.address || 'No endereço da loja' },
+                  { value: 'delivery' as DeliveryType, title: 'Entrega', desc: fixedEnabled && !mapboxEnabled ? 'Taxa por bairro' : (mapboxEnabled && perKm > 0 ? `${fmt(config.deliveryFee)} + ${fmt(perKm)}/km` : `${fmt(config.deliveryFee)} taxa`) },
                 ].map(opt => (
                   <button
                     key={opt.value}
@@ -1271,7 +1223,7 @@ function MenuView() {
                       textAlign: 'center'
                     }}
                   >
-                    <span style={{ fontSize: '24px', display: 'block', marginBottom: '6px' }}>{opt.icon}</span>
+                    
                     <span style={{ fontWeight: 600, fontSize: '14px', color: '#1f2937', display: 'block' }}>{opt.title}</span>
                     <span style={{ fontSize: '11px', color: '#6b7280' }}>{opt.desc}</span>
                   </button>
@@ -1280,7 +1232,7 @@ function MenuView() {
 
               {deliveryType === 'pickup' && (
                 <p style={{ fontSize: '12px', color: '#6b7280', backgroundColor: '#f9fafb', padding: '10px 12px', borderRadius: '10px', margin: '0 0 18px 0' }}>
-                  📍 Retirada na loja: <strong>{config.address || 'consulte o endereço'}</strong>
+                  Retirada na loja: <strong>{config.address || 'consulte o endereço'}</strong>
                 </p>
               )}
               {deliveryType === 'delivery' && (
@@ -1376,14 +1328,14 @@ function MenuView() {
                       color: freight.status === 'ok' ? '#15803d' : freight.status === 'loading' ? '#6b7280' : freight.status === 'out' ? '#dc2626' : '#b45309'
                     }}>
                       {freight.status === 'loading' && 'Calculando frete...'}
-                      {freight.status === 'ok' && `🛵 Distância: ${freight.km.toFixed(1).replace('.', ',')} km • Frete: ${fmt(freight.fee)}`}
+                      {freight.status === 'ok' && `Distância: ${freight.km.toFixed(1).replace('.', ',')} km • Frete: ${fmt(freight.fee)}`}
                       {freight.status === 'out' && `Endereço fora da área de entrega (máximo ${maxKm} km).`}
                       {freight.status === 'error' && `Não foi possível calcular a distância. Será cobrada a taxa base de ${fmt(config.deliveryFee)}.`}
                     </p>
                   )}
                   {matchedZone && (
                     <p style={{ fontSize: '13px', fontWeight: 600, margin: '0 0 8px 0', color: '#15803d' }}>
-                      {`🛵 Bairro ${matchedZone.name} • Taxa fixa: ${fmt(matchedZone.price)}`}
+                      {`Bairro ${matchedZone.name} • Taxa fixa: ${fmt(matchedZone.price)}`}
                     </p>
                   )}
                   {fixedOnlyNoMatch && (
@@ -1398,19 +1350,19 @@ function MenuView() {
                   )}
                 </div>
               )}
-
-              </>)}
-
-              {checkoutStep === 3 && (<>
+                </>
+              )}
+              {checkoutStep === 2 && (
+                <>
               {/* Forma de pagamento */}
               <p style={{ fontSize: '13px', fontWeight: 600, color: '#374151', margin: '0 0 8px 0' }}>
                 Forma de pagamento *
               </p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '14px' }}>
                 {([
-                  { value: 'card' as PaymentMethod, icon: '💳', title: 'Cartão' },
-                  { value: 'pix' as PaymentMethod, icon: '📱', title: 'PIX' },
-                  { value: 'cash' as PaymentMethod, icon: '💵', title: 'Dinheiro' },
+                  { value: 'card' as PaymentMethod, title: 'Cartão' },
+                  { value: 'pix' as PaymentMethod, title: 'PIX' },
+                  { value: 'cash' as PaymentMethod, title: 'Dinheiro' },
                 ]).map(opt => (
                   <button
                     key={opt.value}
@@ -1425,19 +1377,19 @@ function MenuView() {
                       textAlign: 'center'
                     }}
                   >
-                    <span style={{ fontSize: '20px', display: 'block', marginBottom: '4px' }}>{opt.icon}</span>
+                    
                     <span style={{ fontWeight: 600, fontSize: '13px', color: '#1f2937' }}>{opt.title}</span>
                   </button>
                 ))}
               </div>
               {paymentMethod === 'card' && (
                 <p style={{ fontSize: '12px', color: '#6b7280', backgroundColor: '#f9fafb', padding: '10px 12px', borderRadius: '10px', margin: '0 0 18px 0' }}>
-                  💳 O cartão é passado na entrega{deliveryType === 'pickup' ? ' na retirada' : ''} pela nossa equipe.
+                  O cartão é passado na entrega{deliveryType === 'pickup' ? ' na retirada' : ''} pela nossa equipe.
                 </p>
               )}
               {paymentMethod === 'pix' && (
                 <p style={{ fontSize: '12px', color: '#6b7280', backgroundColor: '#f9fafb', padding: '10px 12px', borderRadius: '10px', margin: '0 0 18px 0' }}>
-                  📱 Você receberá a chave PIX pelo WhatsApp ({config.phone || 'telefone da loja'}) após finalizar o pedido.
+                  Você receberá a chave PIX pelo WhatsApp ({config.phone || 'telefone da loja'}) após finalizar o pedido.
                 </p>
               )}
               {paymentMethod === 'cash' && (
@@ -1462,81 +1414,66 @@ function MenuView() {
                   )}
                 </div>
               )}
-              </>)}
-            </div>
-
-            {/* Resumo + confirmar */}
-            <div style={{
-              padding: isMobile ? '16px' : '20px',
-              borderTop: '1px solid #f3f4f6',
-              backgroundColor: '#fafafa'
-            }}>
-              {checkoutStep === 3 && (<>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                <span style={{ color: '#6b7280', fontSize: '13px' }}>Subtotal</span>
-                <span style={{ fontWeight: 600, fontSize: '13px' }}>{fmt(totalPrice)}</span>
-              </div>
-              {discount > 0 && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                  <span style={{ color: '#16a34a', fontSize: '13px' }}>Desconto ({activeCouponCode})</span>
-                  <span style={{ fontWeight: 600, fontSize: '13px', color: '#16a34a' }}>- {fmt(discount)}</span>
+                </>
+              )}
+              {checkoutStep === 3 && (
+                <div>
+                  <h4 style={{ margin: '0 0 12px', fontSize: '16px', color: '#1f2937' }}>Confira os dados antes de confirmar</h4>
+                  <div style={{ border: '1px solid #e5e7eb', borderRadius: '14px', padding: '14px', marginBottom: '12px' }}>
+                    <p style={{ margin: '0 0 6px', fontSize: '13px', fontWeight: 800, color: '#374151' }}>Cliente</p>
+                    <p style={{ margin: 0, fontSize: '13px', color: '#4b5563' }}>{customerName}</p>
+                    <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#4b5563' }}>{customerPhone}</p>
+                  </div>
+                  <div style={{ border: '1px solid #e5e7eb', borderRadius: '14px', padding: '14px', marginBottom: '12px' }}>
+                    <p style={{ margin: '0 0 6px', fontSize: '13px', fontWeight: 800, color: '#374151' }}>Recebimento</p>
+                    <p style={{ margin: 0, fontSize: '13px', color: '#4b5563' }}>{deliveryType === 'delivery' ? 'Entrega no endereço' : 'Retirada no local'}</p>
+                    {deliveryType === 'delivery' && <p style={{ margin: '4px 0 0', fontSize: '13px', lineHeight: 1.5, color: '#4b5563' }}>{customerAddress}, nº {customerNumber}{cep.length === 9 ? ' • CEP ' + cep : ''}</p>}
+                    {deliveryType === 'pickup' && <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#4b5563' }}>{config.address || 'Endereço da loja'}</p>}
+                  </div>
+                  <div style={{ border: '1px solid #e5e7eb', borderRadius: '14px', padding: '14px', marginBottom: '12px' }}>
+                    <p style={{ margin: '0 0 6px', fontSize: '13px', fontWeight: 800, color: '#374151' }}>Pagamento</p>
+                    <p style={{ margin: 0, fontSize: '13px', color: '#4b5563' }}>{paymentMethod ? paymentLabels[paymentMethod as PaymentMethod] : 'Não selecionado'}{paymentMethod === 'cash' && changeValue > checkoutTotal ? ' • Troco para ' + fmt(changeValue) : ''}</p>
+                  </div>
+                  <div style={{ border: '1px solid #f3d0d5', background: '#fff7f8', borderRadius: '14px', padding: '14px' }}>
+                    <p style={{ margin: '0 0 8px', fontSize: '13px', fontWeight: 800, color: '#54111e' }}>Itens do pedido ({totalItems})</p>
+                    {cart.map((item, index) => (
+                      <div key={item.product.id + '-' + index} style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', padding: '6px 0', fontSize: '13px', color: '#4b5563' }}>
+                        <span>{item.quantity}× {item.product.name}{(item.selectedAddOns || []).length ? ' + ' + item.selectedAddOns.map(a => a.name).join(', ') : ''}</span>
+                        <strong style={{ whiteSpace: 'nowrap' }}>{fmt(getItemUnitPrice(item) * item.quantity)}</strong>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                <span style={{ color: '#6b7280', fontSize: '13px' }}>
-                  {deliveryType === 'delivery' ? 'Taxa de entrega' : 'Retirada no local'}
-                </span>
-                <span style={{ fontWeight: 600, fontSize: '13px', color: '#16a34a' }}>
-                  {deliveryType === 'delivery' ? deliveryFeeLabel : 'Grátis'}
-                </span>
+            </div>
+            <div style={{ padding: isMobile ? '14px 16px 18px' : '16px 24px 22px', borderTop: '1px solid #f3f4f6', background: '#fafafa' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '13px', color: '#6b7280' }}>
+                <span>Subtotal</span><strong style={{ color: '#374151' }}>{fmt(totalPrice)}</strong>
               </div>
-              <div style={{
-                display: 'flex', justifyContent: 'space-between', paddingTop: '12px',
-                borderTop: '1px solid #e5e7eb', marginBottom: '12px'
-              }}>
-                <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#1f2937' }}>Total</span>
-                <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#1f2937' }}>{fmt(checkoutTotal)}</span>
+              {discount > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '13px', color: '#15803d' }}><span>Desconto ({activeCouponCode})</span><strong>− {fmt(discount)}</strong></div>}
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', fontSize: '13px', color: '#6b7280' }}>
+                <span>{deliveryType === 'delivery' ? 'Taxa de entrega' : 'Retirada no local'}</span><strong style={{ color: '#374151' }}>{deliveryType === 'delivery' ? deliveryFeeLabel : 'Grátis'}</strong>
               </div>
-              </>)}
-              {!stepValid && stepHint && (
-                <p style={{ fontSize: '11px', color: '#9ca3af', textAlign: 'center', margin: '0 0 8px 0' }}>
-                  {stepHint}
-                </p>
-              )}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '10px', borderTop: '1px solid #e5e7eb', marginBottom: '12px' }}>
+                <span style={{ fontSize: '16px', fontWeight: 800, color: '#1f2937' }}>Total do pedido</span>
+                <span style={{ fontSize: '20px', fontWeight: 850, color: '#d9273f' }}>{fmt(checkoutTotal)}</span>
+              </div>
+              {checkoutStep === 1 && !canContinueCheckoutStep1 && <p style={{ fontSize: '11px', color: '#b91c1c', margin: '0 0 8px', textAlign: 'center' }}>Preencha os dados de contato e os campos obrigatórios de entrega para continuar.</p>}
+              {checkoutStep === 2 && !paymentMethod && <p style={{ fontSize: '11px', color: '#b91c1c', margin: '0 0 8px', textAlign: 'center' }}>Selecione uma forma de pagamento para continuar.</p>}
               <div style={{ display: 'flex', gap: '10px' }}>
-                {checkoutStep > 1 && (
-                  <button
-                    onClick={() => setCheckoutStep(checkoutStep - 1)}
-                    style={{ flex: '0 0 auto', backgroundColor: 'white', color: '#374151', borderRadius: '12px', padding: '14px 18px', fontWeight: 600, fontSize: '14px', border: '1px solid #e5e7eb', cursor: 'pointer' }}
-                  >
-                    ← Voltar
-                  </button>
+                <button type="button" onClick={() => checkoutStep === 1 ? (setShowCheckout(false), setShowCart(true)) : setCheckoutStep(checkoutStep - 1)} style={{ flex: '0 0 34%', background: '#fff', color: '#374151', border: '1px solid #d1d5db', borderRadius: '12px', padding: '13px 10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}>{checkoutStep === 1 ? 'Voltar ao carrinho' : 'Voltar'}</button>
+                {checkoutStep < 3 ? (
+                  <button type="button" onClick={() => { if (checkoutStep === 1 && canContinueCheckoutStep1) setCheckoutStep(2); else if (checkoutStep === 2 && paymentMethod) setCheckoutStep(3) }} disabled={checkoutStep === 1 ? !canContinueCheckoutStep1 : !paymentMethod} style={{ flex: 1, background: (checkoutStep === 1 ? canContinueCheckoutStep1 : !!paymentMethod) ? '#d9273f' : '#d1d5db', color: '#fff', border: 'none', borderRadius: '12px', padding: '13px 12px', fontWeight: 800, fontSize: '14px', cursor: (checkoutStep === 1 ? canContinueCheckoutStep1 : !!paymentMethod) ? 'pointer' : 'not-allowed' }}>Continuar <span aria-hidden="true">→</span></button>
+                ) : (
+                  <button type="button" onClick={placeOrder} disabled={!canPlaceOrder} style={{ flex: 1, background: canPlaceOrder ? '#d9273f' : '#d1d5db', color: '#fff', border: 'none', borderRadius: '12px', padding: '13px 12px', fontWeight: 800, fontSize: '14px', cursor: canPlaceOrder ? 'pointer' : 'not-allowed' }}>Confirmar pedido</button>
                 )}
-                <button
-                  onClick={() => (checkoutStep < 3 ? setCheckoutStep(checkoutStep + 1) : placeOrder())}
-                  disabled={!stepValid}
-                  style={{
-                    flex: 1,
-                    backgroundColor: stepValid ? '#16a34a' : '#d1d5db',
-                    color: 'white',
-                    borderRadius: '12px',
-                    padding: '14px',
-                    fontWeight: 'bold',
-                    fontSize: '15px',
-                    border: 'none',
-                    cursor: stepValid ? 'pointer' : 'not-allowed',
-                    boxShadow: stepValid ? '0 4px 12px rgba(22, 163, 74, 0.3)' : 'none'
-                  }}
-                >
-                  {checkoutStep < 3 ? 'Continuar →' : `Confirmar pedido • ${fmt(checkoutTotal)}`}
-                </button>
               </div>
             </div>
           </div>
         </div>
       )}
-
-      {/* Confirmação de pedido */}
+      
+{/* Confirmação de pedido */}
       {orderPlaced && (
         <div style={{
           position: 'fixed',
@@ -1574,7 +1511,7 @@ function MenuView() {
             </p>
             <div style={{ backgroundColor: '#f9fafb', borderRadius: '12px', padding: '14px', textAlign: 'left', marginBottom: '18px' }}>
               <p style={{ fontSize: '13px', color: '#374151', margin: '0 0 6px' }}>
-                {orderPlaced.deliveryType === 'delivery' ? '🛵 Entrega' : '🏪 Retirada no local'}
+                {orderPlaced.deliveryType === 'delivery' ? 'Entrega' : 'Retirada no local'}
                 {orderPlaced.deliveryType === 'delivery' ? `: ${orderPlaced.customerAddress}` : ''}
               </p>
               <p style={{ fontSize: '13px', color: '#374151', margin: '0 0 6px' }}>
@@ -1683,7 +1620,7 @@ function MenuView() {
                   alignItems: 'center',
                   justifyContent: 'center'
                 }}>
-                  <span style={{ fontSize: '64px' }}>🍔</span>
+                  
                 </div>
               )}
               <button 
@@ -1730,7 +1667,7 @@ function MenuView() {
                     borderRadius: '12px',
                     whiteSpace: 'nowrap'
                   }}>
-                    🔥 Popular
+                    Popular
                   </span>
                 )}
               </div>
@@ -2008,7 +1945,7 @@ function ProductCard({ product, quantity, onAdd, onRemove, onClick, isMobile }: 
         {quantity > 0 && (
           <span style={{
             position: 'absolute', right: '8px', bottom: '8px',
-            background: '#782d25', color: '#fffaf5',
+            background: '#d9273f', color: '#ffffff',
             minWidth: '26px', height: '26px', padding: '0 6px',
             borderRadius: '999px', display: 'flex', alignItems: 'center',
             justifyContent: 'center', fontSize: '12px', fontWeight: 800,
@@ -2050,7 +1987,7 @@ function ProductCard({ product, quantity, onAdd, onRemove, onClick, isMobile }: 
           flexWrap: 'wrap',
         }}>
           <span style={{
-            color: '#782d25', fontWeight: 850,
+            color: '#d9273f', fontWeight: 850,
             fontSize: isMobile ? '15px' : '18px',
             lineHeight: 1.1, whiteSpace: 'nowrap',
             letterSpacing: '-.025em',
@@ -2067,18 +2004,18 @@ function ProductCard({ product, quantity, onAdd, onRemove, onClick, isMobile }: 
                   onClick={onRemove}
                   style={{
                     width: '30px', height: '30px', borderRadius: '50%',
-                    border: '1px solid #dfc5b6', color: '#782d25',
+                    border: '1px solid #dfc5b6', color: '#d9273f',
                     background: '#fffdfa', cursor: 'pointer',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: '18px', fontWeight: 600, padding: 0,
                   }}>−</button>
-                <span style={{ minWidth: '14px', textAlign: 'center', fontWeight: 800, fontSize: '13px', color: '#49372e' }}>{quantity}</span>
+                <span style={{ minWidth: '14px', textAlign: 'center', fontWeight: 800, fontSize: '13px', color: '#54111e' }}>{quantity}</span>
                 <button
                   type="button" aria-label={`Adicionar mais uma unidade de ${product.name}`}
                   onClick={onAdd}
                   style={{
                     width: '30px', height: '30px', borderRadius: '50%',
-                    border: 'none', color: '#fffaf5', background: '#782d25',
+                    border: 'none', color: '#ffffff', background: '#d9273f',
                     cursor: 'pointer', display: 'flex', alignItems: 'center',
                     justifyContent: 'center', fontSize: '18px', fontWeight: 600, padding: 0,
                   }}>+</button>
@@ -2089,12 +2026,12 @@ function ProductCard({ product, quantity, onAdd, onRemove, onClick, isMobile }: 
                 aria-label={`Adicionar ${product.name} ao pedido`}
                 onClick={e => { e.stopPropagation(); onAdd() }}
                 style={{
-                  border: 'none', color: '#fffaf5',
-                  background: '#782d25', borderRadius: '999px',
+                  border: 'none', color: '#ffffff',
+                  background: '#d9273f', borderRadius: '999px',
                   padding: isMobile ? '9px 12px' : '10px 15px',
                   fontSize: isMobile ? '11px' : '12px',
                   fontWeight: 750, cursor: 'pointer', whiteSpace: 'nowrap',
-                  boxShadow: '0 3px 9px rgba(120,45,37,.16)',
+                  boxShadow: '0 3px 9px rgba(217, 39, 63,.16)',
                   minHeight: '36px',
                 }}>+ Adicionar</button>
             )}

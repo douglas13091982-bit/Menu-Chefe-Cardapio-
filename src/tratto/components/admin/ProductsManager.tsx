@@ -1,5 +1,6 @@
 // @ts-nocheck -- código original migrado sem alterações de lógica
 import { useState, useRef } from 'react'
+import { Pencil, Trash2, X } from 'lucide-react'
 import { useStore } from '../../context/StoreContext'
 import { Product, ProductAddOn } from '../../types'
 
@@ -122,7 +123,7 @@ function ProductsManager() {
         >
           <option value="">Todas categorias</option>
           {categories.map(cat => (
-            <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>
+            <option key={cat.id} value={cat.id}>{cat.name}</option>
           ))}
         </select>
       </div>
@@ -137,7 +138,7 @@ function ProductsManager() {
                 <h3 className="text-xl font-bold text-gray-800">
                   {editingProduct ? 'Editar Produto' : 'Novo Produto'}
                 </h3>
-                <button onClick={resetForm} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">✕</button>
+                <button onClick={resetForm} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200"><X size={16} /></button>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -149,7 +150,7 @@ function ProductsManager() {
                       {formData.image ? (
                         <img src={formData.image} alt="Preview" className="w-full h-full object-cover" />
                       ) : (
-                        <span className="text-gray-400 text-2xl">📷</span>
+                        <span className="text-gray-400 text-xs font-medium">Sem foto</span>
                       )}
                     </div>
                     <div className="flex-1">
@@ -227,7 +228,7 @@ function ProductsManager() {
                     >
                       <option value="">Selecione</option>
                       {categories.map(cat => (
-                        <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>
+                        <option key={cat.id} value={cat.id}>{cat.name}</option>
                       ))}
                     </select>
                   </div>
@@ -302,7 +303,7 @@ function ProductsManager() {
                             className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center hover:bg-red-100 text-xs flex-shrink-0"
                             title="Remover adicional"
                           >
-                            🗑️
+                            <Trash2 size={13} />
                           </button>
                         </div>
                       ))}
@@ -342,7 +343,7 @@ function ProductsManager() {
                   <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-orange-100 to-red-100 flex items-center justify-center">
-                    <span className="text-3xl">🍔</span>
+                    <span className="text-3xl"></span>
                   </div>
                 )}
               </div>
@@ -357,10 +358,10 @@ function ProductsManager() {
                       <span className="bg-orange-100 text-orange-600 text-xs px-1.5 py-0.5 rounded">Popular</span>
                     )}
                   </div>
-                  <p className="text-xs text-gray-500 mt-0.5">{category?.icon} {category?.name}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">{category?.name}</p>
                   {product.addOns && product.addOns.length > 0 && (
                     <p className="text-[11px] text-gray-400 mt-0.5 truncate">
-                      ➕ {product.addOns.length} adicional{product.addOns.length > 1 ? 'eis' : ''} (ex: {product.addOns[0].name})
+                       {product.addOns.length} adicional{product.addOns.length > 1 ? 'eis' : ''} (ex: {product.addOns[0].name})
                     </p>
                   )}
                 </div>
@@ -372,14 +373,14 @@ function ProductsManager() {
                       className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-100 text-xs"
                       title="Editar"
                     >
-                      ✏️
+                      <Pencil size={14} />
                     </button>
                     <button
                       onClick={() => { if (confirm('Excluir produto?')) deleteProduct(product.id) }}
                       className="w-7 h-7 rounded-lg bg-red-50 text-red-600 flex items-center justify-center hover:bg-red-100 text-xs"
                       title="Excluir"
                     >
-                      🗑️
+                      <Trash2 size={14} />
                     </button>
                   </div>
                 </div>
@@ -391,7 +392,7 @@ function ProductsManager() {
 
       {filteredProducts.length === 0 && (
         <div className="text-center py-12 text-gray-400">
-          <span className="text-4xl block mb-2">🍔</span>
+          <span className="text-4xl block mb-2"></span>
           <p>Nenhum produto encontrado</p>
         </div>
       )}
