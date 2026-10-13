@@ -117,11 +117,12 @@ export function StoreProvider({ children, slug, storeId: storeIdProp, isAdmin = 
     setDataReady(false)
     const load = async () => {
       try {
-        const [settingsRes, catRes, prodRes, zoneRes] = await Promise.all([
+        // Prioriza os dados que permitem mostrar o cardápio; zonas de entrega
+        // são carregadas em seguida para não bloquear a primeira renderização.
+        const [settingsRes, catRes, prodRes] = await Promise.all([
           supabase.from('store_settings').select('config, mapbox_public_token').eq('store_id', sid).maybeSingle(),
           supabase.from('categories').select('data, sort_order').eq('store_id', sid).order('sort_order'),
           supabase.from('products').select('data, sort_order').eq('store_id', sid).order('sort_order'),
-          supabase.from('delivery_zones').select('data').eq('store_id', sid),
         ])
         if (cancelled) return
         const cfg = settingsRes.data?.config || {}
@@ -129,8 +130,14 @@ export function StoreProvider({ children, slug, storeId: storeIdProp, isAdmin = 
         setDbMapboxToken(settingsRes.data?.mapbox_public_token || '')
         setCategories((catRes.data || []).map(r => r.data))
         setProducts((prodRes.data || []).map(r => r.data))
-        setDeliveryZones((zoneRes.data || []).map(r => r.data))
-        ;[settingsRes, catRes, prodRes, zoneRes].forEach(r => logError('carregar dados do cardápio', r.error))
+        ;[settingsRes, catRes, prodRes].forEach(r => logError('carregar dados do cardápio', r.error))
+        // O cardápio pode aparecer sem esperar por esta consulta secundária.
+        setDataReady(true)
+        supabase.from('delivery_zones').select('data').eq('store_id', sid).then(({ data, error }) => {
+          if (cancelled) return
+          if (error) logError('carregar zonas de entrega', error)
+          setDeliveryZones((data || []).map(r => r.data))
+        })
       } catch (err) {
         console.error('Falha ao carregar a loja.', err)
       } finally {
