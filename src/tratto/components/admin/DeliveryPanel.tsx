@@ -1,5 +1,9 @@
-// @ts-nocheck -- código original migrado sem alterações de lógica
+// @ts-nocheck -- TODO(dívida técnica): tipar este componente e remover o no-check.
+// A migração do Tratto trouxe o código sem tipos; a correção de severidade alta não
+// dependia da tipagem completa. Revalidar com `tsc` ao longo das próximas iterações.
 import { useState, useRef, useEffect } from 'react'
+import mapboxgl from 'mapbox-gl'
+import 'mapbox-gl/dist/mapbox-gl.css'
 import { getMapboxToken, MAPBOX_TOKEN_EVENT } from '../../mapboxToken'
 import { useStore } from '../../context/StoreContext'
 import { DeliveryZone } from '../../types'
@@ -12,6 +16,14 @@ function DeliveryPanel() {
   const [showForm, setShowForm] = useState(false)
   const [editingZone, setEditingZone] = useState<DeliveryZone | null>(null)
   const [formData, setFormData] = useState({ name: '', price: '', estimatedTime: '' })
+  // Token em tempo real (lê direto do storage) — evita usar o token demo quando há um salvo.
+  const [mapboxToken, setMapboxToken] = useState(getMapboxToken())
+
+  useEffect(() => {
+    const onChange = () => setMapboxToken(getMapboxToken())
+    window.addEventListener(MAPBOX_TOKEN_EVENT, onChange)
+    return () => window.removeEventListener(MAPBOX_TOKEN_EVENT, onChange)
+  }, [])
 
   const resetForm = () => {
     setFormData({ name: '', price: '', estimatedTime: '' })
