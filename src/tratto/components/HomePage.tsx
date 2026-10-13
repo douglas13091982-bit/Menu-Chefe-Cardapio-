@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { supabase } from "@/integrations/supabase/client";
+import { fetchPlatformSettings, type PlatformSettings } from "../services/platform";
+import { moneyCents, whatsappUrl } from "../format";
 import {
   ArrowRight,
   Check,
@@ -94,48 +95,22 @@ const testimonials = [
 
 export function HomePage() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [plan, setPlan] = useState<{
-    system_name?: string;
-    logo_url?: string | null;
-    hero_background_url?: string | null;
-    plan_name: string;
-    price_cents: number;
-    trial_days: number;
-    contact_whatsapp: string;
-  } | null>(null);
+  const [plan, setPlan] = useState<PlatformSettings | null>(null);
 
   useEffect(() => {
-    const loadPlatformSettings = async () => {
-      const fullQuery = await supabase
-        .from("platform_settings")
-        .select("system_name, logo_url, hero_background_url, plan_name, price_cents, trial_days, contact_whatsapp")
-        .eq("id", "main")
-        .maybeSingle();
-
-      if (fullQuery.data) {
-        setPlan(fullQuery.data as NonNullable<typeof plan>);
-        return;
-      }
-
-      // Compatibilidade enquanto a migração da imagem hero ainda não foi aplicada.
-      const legacyQuery = await supabase
-        .from("platform_settings")
-        .select("system_name, logo_url, plan_name, price_cents, trial_days, contact_whatsapp")
-        .eq("id", "main")
-        .maybeSingle();
-
-      if (legacyQuery.data) {
-        setPlan({ ...legacyQuery.data, hero_background_url: null } as NonNullable<typeof plan>);
-      }
+    let alive = true;
+    fetchPlatformSettings().then((settings) => {
+      if (alive && settings) setPlan(settings);
+    });
+    return () => {
+      alive = false;
     };
-
-    void loadPlatformSettings();
   }, []);
 
-  const wa = String(plan?.contact_whatsapp || "").replace(/\D/g, "");
+  const waLink = whatsappUrl(plan?.contact_whatsapp);
   const priceCents = Number(plan?.price_cents);
   const price = Number.isFinite(priceCents)
-    ? "R$ " + (priceCents / 100).toFixed(2).replace(".", ",")
+    ? moneyCents(priceCents)
     : "R$ 99,00";
   const name = plan?.system_name || "Tratto Digital Menu";
   const trialText = plan?.trial_days ? `${plan.trial_days} dias grátis` : "teste grátis";
@@ -463,9 +438,9 @@ export function HomePage() {
             <a href="/cadastro" className={`${cta} px-7 py-4`}>
               Criar minha loja <ArrowRight size={18} />
             </a>
-            {wa && (
+            {waLink && (
               <a
-                href={`https://wa.me/${wa.startsWith("55") ? wa : "55" + wa}`}
+                href={waLink}
                 target="_blank"
                 rel="noreferrer"
                 className="home-whatsapp-link"

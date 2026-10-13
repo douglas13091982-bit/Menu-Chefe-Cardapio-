@@ -4,6 +4,7 @@ import { validateCoupon } from '../coupons'
 import { useStore } from '../context/StoreContext'
 import { Product, CartItem, ProductAddOn, Order, DeliveryType, PaymentMethod } from '../types'
 import { getMapboxToken } from '../mapboxToken'
+import { fetchAddressByCep } from '../cep'
 import { buildWhatsAppUrl } from '../whatsapp'
 import { getStoreStatus, getScheduleSlots, formatScheduled } from '../hours'
 import { extractLogoBackground } from '../logoColor'
@@ -287,7 +288,7 @@ function MenuView() {
     setLocked({ street: !!street, neighborhood: !!neighborhood, city: !!city })
   }
 
-  // Busca o endereço pelo CEP: ViaCEP traz rua/bairro/cidade; se falhar, tenta o Mapbox (cidade/bairro)
+  // Busca o endereço pelo CEP (ViaCEP; Mapbox como reserva) e aplica no formulário
   const lookupCep = async (digits: string) => {
     const requestId = ++cepRequestRef.current
     const stale = () => requestId !== cepRequestRef.current
@@ -295,66 +296,23 @@ function MenuView() {
     setCepMessage('Buscando endereço...')
     applyAddress('', '', '')
 
-    // 1) ViaCEP
-    try {
-      const res = await fetch(`https://viacep.com.br/ws/${digits}/json/`)
-      if (res.ok) {
-        const data = await res.json()
-        if (stale()) return
-        if (data && !data.erro) {
-          const street = (data.logradouro || '').trim()
-          const neighborhood = (data.bairro || '').trim()
-          const city = data.localidade && data.uf ? `${data.localidade} - ${data.uf}` : (data.localidade || '')
-          applyAddress(street, neighborhood, city)
-          setCepStatus('ok')
-          if (street) {
-            setCepMessage('Endereço encontrado! Informe o número e o complemento.')
-            setTimeout(() => numberInputRef.current?.focus(), 50)
-          } else {
-            setCepMessage('CEP localizado. Informe a rua e o número.')
-          }
-          return
-        }
-      }
-    } catch {
-      if (stale()) return
+    const found = await fetchAddressByCep(digits, getMapboxToken(), stale)
+    if (stale()) return
+    if (!found) {
+      setCepStatus('error')
+      setCepMessage('Não encontramos esse CEP. Preencha o endereço manualmente.')
+      return
     }
-
-    // 2) Reserva: Mapbox (só cidade/bairro para CEPs do Brasil)
-    const token = getMapboxToken()
-    if (token) {
-      try {
-        const formatted = digits.slice(0, 5) + '-' + digits.slice(5)
-        const url =
-          'https://api.mapbox.com/search/geocode/v6/forward' +
-          `?q=${encodeURIComponent(formatted)}&country=br&language=pt&limit=1&types=postcode,street,address` +
-          `&access_token=${encodeURIComponent(token)}`
-        const res = await fetch(url)
-        if (stale()) return
-        if (res.ok) {
-          const data = await res.json()
-          if (stale()) return
-          const feature = data?.features?.[0]
-          const ctx = feature?.properties?.context || {}
-          const street = ctx.address?.street_name || ctx.street?.name || ''
-          const neighborhood = ctx.neighborhood?.name || ctx.locality?.name || ''
-          const cityName = ctx.place?.name || ctx.district?.name || ''
-          const uf = ctx.region?.region_code || ''
-          const city = cityName && uf ? `${cityName} - ${uf}` : cityName
-          if (street || neighborhood || city) {
-            applyAddress(street, neighborhood, city)
-            setCepStatus('ok')
-            setCepMessage('CEP localizado só em parte. Complete a rua e informe o número.')
-            return
-          }
-        }
-      } catch {
-        if (stale()) return
-      }
+    applyAddress(found.street, found.neighborhood, found.city)
+    setCepStatus('ok')
+    if (found.source === 'mapbox') {
+      setCepMessage('CEP localizado só em parte. Complete a rua e informe o número.')
+    } else if (found.street) {
+      setCepMessage('Endereço encontrado! Informe o número e o complemento.')
+      setTimeout(() => numberInputRef.current?.focus(), 50)
+    } else {
+      setCepMessage('CEP localizado. Informe a rua e o número.')
     }
-
-    setCepStatus('error')
-    setCepMessage('Não encontramos esse CEP. Preencha o endereço manualmente.')
   }
 
   const handleCepChange = (value: string) => {

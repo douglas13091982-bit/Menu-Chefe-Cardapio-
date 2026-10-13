@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState, useCallback } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import LoginForm from './LoginForm'
 import { BRAND } from './brand'
+import { fetchPlatformSettings } from '../services/platform'
 import { moneyCents, fmtDate, daysLeft, effectiveStatus, STATUS_LABEL, STATUS_COLOR, isServable } from './format'
 
 const cls = 'w-full border border-gray-300 rounded-lg px-3 py-2 text-sm'
@@ -401,11 +402,11 @@ export default function SuperAdmin() {
     if (!isSuper) return setPhase('denied')
     const [st, pl] = await Promise.all([
       supabase.rpc('admin_list_stores'),
-      supabase.from('platform_settings').select('*').eq('id', 'main').maybeSingle(),
+      fetchPlatformSettings(),
     ])
     if (st.error) setError(st.error.message)
     setStores(st.data || [])
-    setPlat(pl.data || { plan_name: 'Plano', price_cents: 0, trial_days: 7, contact_whatsapp: '' })
+    setPlat(pl || { plan_name: 'Plano', price_cents: 0, trial_days: 7, contact_whatsapp: '' })
     setPhase('ready')
   }, [])
 
