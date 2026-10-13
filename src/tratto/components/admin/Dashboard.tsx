@@ -1,66 +1,93 @@
-import { useStore } from '../../context/StoreContext'
-import { formatBRL } from '../../utils'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, Legend } from 'recharts'
-import { useMemo } from 'react'
+import { useStore } from "../../context/StoreContext";
+import { formatBRL } from "../../utils";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
+} from "recharts";
+import { useMemo } from "react";
 
 function Dashboard() {
-  const { orders, products, categories } = useStore()
+  const { orders, products, categories } = useStore();
 
   const stats = useMemo(() => {
-    const completedOrders = orders.filter(o => o.status === 'completed')
-    const totalRevenue = completedOrders.reduce((sum, o) => sum + o.total, 0)
-    const pendingOrders = orders.filter(o => o.status === 'pending').length
-    const avgTicket = completedOrders.length > 0 ? totalRevenue / completedOrders.length : 0
+    const completedOrders = orders.filter((o) => o.status === "completed");
+    const totalRevenue = completedOrders.reduce((sum, o) => sum + o.total, 0);
+    const pendingOrders = orders.filter((o) => o.status === "pending").length;
+    const avgTicket = completedOrders.length > 0 ? totalRevenue / completedOrders.length : 0;
 
     // Daily sales for last 7 days
-    const last7Days = []
+    const last7Days = [];
     for (let i = 6; i >= 0; i--) {
-      const date = new Date()
-      date.setDate(date.getDate() - i)
-      const dateStr = date.toISOString().split('T')[0] ?? ''
-      const dayOrders = completedOrders.filter(o => o.createdAt.startsWith(dateStr))
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toISOString().split("T")[0] ?? "";
+      const dayOrders = completedOrders.filter((o) => o.createdAt.startsWith(dateStr));
       last7Days.push({
-        date: date.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit' }),
+        date: date.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit" }),
         vendas: parseFloat(dayOrders.reduce((sum, o) => sum + o.total, 0).toFixed(2)),
-        pedidos: dayOrders.length
-      })
+        pedidos: dayOrders.length,
+      });
     }
 
     // Sales by category
-    const categorySales = categories.map(cat => {
-      const catProducts = products.filter(p => p.categoryId === cat.id)
-      const catRevenue = completedOrders.reduce((sum, order) => {
-        return sum + order.items.reduce((itemSum, item) => {
-          if (catProducts.find(p => p.id === item.product.id)) {
-            return itemSum + (item.product.price * item.quantity)
-          }
-          return itemSum
-        }, 0)
-      }, 0)
-      return { name: cat.name, value: parseFloat(catRevenue.toFixed(2)), icon: cat.icon }
-    }).filter(c => c.value > 0)
+    const categorySales = categories
+      .map((cat) => {
+        const catProducts = products.filter((p) => p.categoryId === cat.id);
+        const catRevenue = completedOrders.reduce((sum, order) => {
+          return (
+            sum +
+            order.items.reduce((itemSum, item) => {
+              if (catProducts.find((p) => p.id === item.product.id)) {
+                return itemSum + item.product.price * item.quantity;
+              }
+              return itemSum;
+            }, 0)
+          );
+        }, 0);
+        return { name: cat.name, value: parseFloat(catRevenue.toFixed(2)), icon: cat.icon };
+      })
+      .filter((c) => c.value > 0);
 
     // Top products
-    const productSales: { [key: string]: { name: string; quantity: number; revenue: number } } = {}
-    completedOrders.forEach(order => {
-      order.items.forEach(item => {
+    const productSales: { [key: string]: { name: string; quantity: number; revenue: number } } = {};
+    completedOrders.forEach((order) => {
+      order.items.forEach((item) => {
         const entry = (productSales[item.product.id] ??= {
           name: item.product.name,
           quantity: 0,
           revenue: 0,
-        })
-        entry.quantity += item.quantity
-        entry.revenue += item.product.price * item.quantity
-      })
-    })
+        });
+        entry.quantity += item.quantity;
+        entry.revenue += item.product.price * item.quantity;
+      });
+    });
     const topProducts = Object.values(productSales)
       .sort((a, b) => b.revenue - a.revenue)
-      .slice(0, 5)
+      .slice(0, 5);
 
-    return { totalRevenue, completedOrders: completedOrders.length, pendingOrders, avgTicket, last7Days, categorySales, topProducts }
-  }, [orders, products, categories])
+    return {
+      totalRevenue,
+      completedOrders: completedOrders.length,
+      pendingOrders,
+      avgTicket,
+      last7Days,
+      categorySales,
+      topProducts,
+    };
+  }, [orders, products, categories]);
 
-  const COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#8b5cf6']
+  const COLORS = ["#ef4444", "#f97316", "#eab308", "#22c55e", "#3b82f6", "#8b5cf6"];
 
   return (
     <div className="space-y-6">
@@ -71,10 +98,30 @@ function Dashboard() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard title="Faturamento Total" value={formatBRL(stats.totalRevenue)} icon="💰" color="green" />
-        <StatCard title="Pedidos Completos" value={stats.completedOrders.toString()} icon="✅" color="blue" />
-        <StatCard title="Pedidos Pendentes" value={stats.pendingOrders.toString()} icon="⏳" color="orange" />
-        <StatCard title="Ticket Médio" value={formatBRL(stats.avgTicket)} icon="📈" color="purple" />
+        <StatCard
+          title="Faturamento Total"
+          value={formatBRL(stats.totalRevenue)}
+          icon="💰"
+          color="green"
+        />
+        <StatCard
+          title="Pedidos Completos"
+          value={stats.completedOrders.toString()}
+          icon="✅"
+          color="blue"
+        />
+        <StatCard
+          title="Pedidos Pendentes"
+          value={stats.pendingOrders.toString()}
+          icon="⏳"
+          color="orange"
+        />
+        <StatCard
+          title="Ticket Médio"
+          value={formatBRL(stats.avgTicket)}
+          icon="📈"
+          color="purple"
+        />
       </div>
 
       {/* Charts Row */}
@@ -87,7 +134,7 @@ function Dashboard() {
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis dataKey="date" tick={{ fontSize: 12 }} />
               <YAxis tick={{ fontSize: 12 }} />
-              <Tooltip formatter={(value: number) => [formatBRL(value), 'Vendas']} />
+              <Tooltip formatter={(value: number) => [formatBRL(value), "Vendas"]} />
               <Bar dataKey="vendas" fill="#ef4444" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
@@ -102,7 +149,13 @@ function Dashboard() {
               <XAxis dataKey="date" tick={{ fontSize: 12 }} />
               <YAxis tick={{ fontSize: 12 }} />
               <Tooltip />
-              <Line type="monotone" dataKey="pedidos" stroke="#f97316" strokeWidth={3} dot={{ fill: '#f97316', r: 5 }} />
+              <Line
+                type="monotone"
+                dataKey="pedidos"
+                stroke="#f97316"
+                strokeWidth={3}
+                dot={{ fill: "#f97316", r: 5 }}
+              />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -116,12 +169,20 @@ function Dashboard() {
           {stats.categorySales.length > 0 ? (
             <ResponsiveContainer width="100%" height={250}>
               <PieChart>
-                <Pie data={stats.categorySales} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label={({ name, icon }) => `${icon} ${name}`}>
+                <Pie
+                  data={stats.categorySales}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={80}
+                  label={({ name, icon }) => `${icon} ${name}`}
+                >
                   {stats.categorySales.map((_, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value: number) => [formatBRL(value), 'Vendas']} />
+                <Tooltip formatter={(value: number) => [formatBRL(value), "Vendas"]} />
                 <Legend />
               </PieChart>
             </ResponsiveContainer>
@@ -136,22 +197,32 @@ function Dashboard() {
         <div className="bg-white rounded-xl shadow-sm p-5">
           <h3 className="font-bold text-gray-800 mb-4">Top 5 Produtos</h3>
           <div className="space-y-3">
-            {stats.topProducts.length > 0 ? stats.topProducts.map((product, index) => (
-              <div key={index} className="flex items-center gap-3">
-                <span className={`w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold ${
-                  index === 0 ? 'bg-yellow-500' : index === 1 ? 'bg-gray-400' : index === 2 ? 'bg-orange-600' : 'bg-gray-300'
-                }`}>
-                  {index + 1}
-                </span>
-                <div className="flex-1">
-                  <p className="font-medium text-gray-800 text-sm">{product.name}</p>
-                  <p className="text-xs text-gray-500">{product.quantity} vendidos</p>
+            {stats.topProducts.length > 0 ? (
+              stats.topProducts.map((product, index) => (
+                <div key={index} className="flex items-center gap-3">
+                  <span
+                    className={`w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold ${
+                      index === 0
+                        ? "bg-yellow-500"
+                        : index === 1
+                          ? "bg-gray-400"
+                          : index === 2
+                            ? "bg-orange-600"
+                            : "bg-gray-300"
+                    }`}
+                  >
+                    {index + 1}
+                  </span>
+                  <div className="flex-1">
+                    <p className="font-medium text-gray-800 text-sm">{product.name}</p>
+                    <p className="text-xs text-gray-500">{product.quantity} vendidos</p>
+                  </div>
+                  <span className="text-green-700 font-bold text-sm">
+                    {formatBRL(product.revenue)}
+                  </span>
                 </div>
-                <span className="text-green-700 font-bold text-sm">
-                  {formatBRL(product.revenue)}
-                </span>
-              </div>
-            )) : (
+              ))
+            ) : (
               <p className="text-gray-400 text-center py-8">Nenhum produto vendido ainda</p>
             )}
           </div>
@@ -173,7 +244,7 @@ function Dashboard() {
               </tr>
             </thead>
             <tbody>
-              {orders.slice(0, 5).map(order => (
+              {orders.slice(0, 5).map((order) => (
                 <tr key={order.id} className="border-b last:border-0">
                   <td className="py-3 font-medium">{order.id}</td>
                   <td className="py-3">{order.customerName}</td>
@@ -181,7 +252,9 @@ function Dashboard() {
                   <td className="py-3">
                     <StatusBadge status={order.status} />
                   </td>
-                  <td className="py-3 text-gray-500">{new Date(order.createdAt).toLocaleDateString('pt-BR')}</td>
+                  <td className="py-3 text-gray-500">
+                    {new Date(order.createdAt).toLocaleDateString("pt-BR")}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -189,47 +262,59 @@ function Dashboard() {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-function StatCard({ title, value, icon, color }: { title: string; value: string; icon: string; color: string }) {
+function StatCard({
+  title,
+  value,
+  icon,
+  color,
+}: {
+  title: string;
+  value: string;
+  icon: string;
+  color: string;
+}) {
   const colorClasses: { [key: string]: string } = {
-    green: 'bg-green-50 border-green-200',
-    blue: 'bg-blue-50 border-blue-200',
-    orange: 'bg-orange-50 border-orange-200',
-    purple: 'bg-purple-50 border-purple-200'
-  }
+    green: "bg-green-50 border-green-200",
+    blue: "bg-blue-50 border-blue-200",
+    orange: "bg-orange-50 border-orange-200",
+    purple: "bg-purple-50 border-purple-200",
+  };
   return (
-    <div className={`rounded-xl border p-4 ${colorClasses[color] || 'bg-gray-50 border-gray-200'}`}>
+    <div className={`rounded-xl border p-4 ${colorClasses[color] || "bg-gray-50 border-gray-200"}`}>
       <div className="flex items-center justify-between">
         <span className="text-2xl">{icon}</span>
       </div>
       <p className="text-lg md:text-xl font-bold text-gray-800 mt-2">{value}</p>
       <p className="text-xs text-gray-500 mt-1">{title}</p>
     </div>
-  )
+  );
 }
 
 function StatusBadge({ status }: { status: string }) {
   const styles: { [key: string]: string } = {
-    pending: 'bg-yellow-100 text-yellow-700',
-    preparing: 'bg-blue-100 text-blue-700',
-    delivering: 'bg-purple-100 text-purple-700',
-    completed: 'bg-green-100 text-green-700',
-    cancelled: 'bg-red-100 text-red-700'
-  }
+    pending: "bg-yellow-100 text-yellow-700",
+    preparing: "bg-blue-100 text-blue-700",
+    delivering: "bg-purple-100 text-purple-700",
+    completed: "bg-green-100 text-green-700",
+    cancelled: "bg-red-100 text-red-700",
+  };
   const labels: { [key: string]: string } = {
-    pending: 'Pendente',
-    preparing: 'Preparando',
-    delivering: 'Entregando',
-    completed: 'Concluído',
-    cancelled: 'Cancelado'
-  }
+    pending: "Pendente",
+    preparing: "Preparando",
+    delivering: "Entregando",
+    completed: "Concluído",
+    cancelled: "Cancelado",
+  };
   return (
-    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${styles[status] || 'bg-gray-100 text-gray-700'}`}>
+    <span
+      className={`px-2 py-0.5 rounded-full text-xs font-medium ${styles[status] || "bg-gray-100 text-gray-700"}`}
+    >
       {labels[status] || status}
     </span>
-  )
+  );
 }
 
-export default Dashboard
+export default Dashboard;
