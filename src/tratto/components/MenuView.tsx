@@ -389,11 +389,14 @@ function MenuView() {
     setShowCheckout(true)
   }
 
+  const placingRef = useRef(false)
   const placeOrder = () => {
-    if (!canPlaceOrder) return
+    if (!canPlaceOrder || placingRef.current) return
+    placingRef.current = true // evita pedido duplicado por clique duplo
+    setTimeout(() => { placingRef.current = false }, 1500)
     const now = new Date().toISOString()
     const order: Order = {
-      id: '#' + Date.now().toString(36).slice(-5).toUpperCase() + Math.floor(Math.random() * 36).toString(36).toUpperCase(),
+      id: '#' + Date.now().toString(36).slice(-6).toUpperCase() + Math.floor(Math.random() * 1296).toString(36).toUpperCase().padStart(2, '0'),
       items: cart,
       total: totalPrice,
       deliveryFee: checkoutDeliveryFee,

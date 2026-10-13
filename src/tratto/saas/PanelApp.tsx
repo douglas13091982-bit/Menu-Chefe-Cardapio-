@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { StoreProvider } from "../context/StoreContext";
 import AdminPanel from "../components/admin/AdminPanel";
@@ -110,10 +110,7 @@ function SignupForm({ onCreated, onSwitch }) {
     if (data.session) {
       const msg = await createStore(name.trim(), slug);
       setLoading(false);
-      if (msg) {
-        lsSet(PENDING_KEY, { name: name.trim(), slug });
-        return onCreated();
-      }
+      if (msg) lsSet(PENDING_KEY, { name: name.trim(), slug, error: msg });
       return onCreated();
     }
     lsSet(PENDING_KEY, { name: name.trim(), slug });
@@ -164,12 +161,41 @@ function SignupForm({ onCreated, onSwitch }) {
   );
 }
 
+function NewPassword({ onDone }) {
+  const [pw, setPw] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const submit = async (e) => {
+    e.preventDefault();
+    if (pw.length < 6) return setError("A senha precisa ter pelo menos 6 caracteres.");
+    setLoading(true);
+    setError("");
+    const { error: err } = await supabase.auth.updateUser({ password: pw });
+    setLoading(false);
+    if (err) return setError("Não foi possível salvar a nova senha: " + err.message);
+    onDone();
+  };
+  return (
+    <form onSubmit={submit} className="auth-form space-y-3">
+      <h1 className="auth-title text-xl font-bold">Definir nova senha</h1>
+      <label className="auth-label block text-sm font-medium">
+        Nova senha
+        <input type="password" required minLength={6} autoComplete="new-password" className={cls} value={pw} onChange={(e) => setPw(e.target.value)} />
+      </label>
+      {error && <p className="auth-error text-sm">{error}</p>}
+      <button disabled={loading} className="auth-primary w-full disabled:opacity-60 font-semibold rounded-lg py-2.5 text-sm">
+        {loading ? "Salvando…" : "Salvar nova senha"}
+      </button>
+    </form>
+  );
+}
+
 function NoStore({ onCreated, onLogout }) {
   const pending = lsGet(PENDING_KEY) || {};
   const [name, setName] = useState(pending.name || "");
   const [slug, setSlug] = useState(pending.slug || "");
   const [touched, setTouched] = useState(!!pending.slug);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(pending.error || "");
   const [loading, setLoading] = useState(false);
   const submit = async (e) => {
     e.preventDefault();
@@ -399,6 +425,8 @@ function PanelShell({ store, status, isSuper, contact, plan, onLogout }) {
 
 export default function PanelApp() {
   const [phase, setPhase] = useState("loading");
+  const phaseRef = useRef(phase);
+  phaseRef.current = phase;
   const [store, setStore] = useState(null);
   const [isSuper, setIsSuper] = useState(false);
   const [contact, setContact] = useState("");
@@ -410,6 +438,7 @@ export default function PanelApp() {
   );
 
   const refresh = useCallback(async () => {
+    if (phaseRef.current === "recovery") return;
     const {
       data: { session },
     } = await supabase.auth.getSession();
@@ -435,6 +464,7 @@ export default function PanelApp() {
           lsSet(PENDING_KEY, null);
           return refresh();
         }
+        lsSet(PENDING_KEY, { ...pending, error: msg });
       }
       setStore(null);
       setPhase("nostore");
@@ -454,7 +484,8 @@ export default function PanelApp() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((ev) => {
-      if (ev === "SIGNED_IN" || ev === "SIGNED_OUT") refresh();
+      if (ev === "PASSWORD_RECOVERY") setPhase("recovery");
+      else if ((ev === "SIGNED_IN" || ev === "SIGNED_OUT") && phaseRef.current !== "recovery") refresh();
     });
     return () => subscription.unsubscribe();
   }, [refresh]);
@@ -471,6 +502,12 @@ export default function PanelApp() {
       <div className="min-h-screen flex items-center justify-center text-sm text-gray-500">
         Carregando…
       </div>
+    );
+  if (phase === "recovery")
+    return (
+      <Shell>
+        <NewPassword onDone={() => { phaseRef.current = "loading"; setPhase("loading"); refresh(); }} />
+      </Shell>
     );
   if (phase === "auth") {
     return (

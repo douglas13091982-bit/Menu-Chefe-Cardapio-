@@ -25,7 +25,7 @@ function validate(raw: any): Input {
   if (d.action === 'add') {
     out.email = String(d.email || '').trim().toLowerCase()
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(out.email)) throw new Error('E-mail inválido.')
-    out.password = d.password ? String(d.password) : undefined
+    if (d.password) out.password = String(d.password)
     out.name = String(d.name || '').slice(0, 80)
     if (!out.role) out.role = 'staff'
   }
@@ -83,7 +83,10 @@ export const teamAction = createServerFn({ method: 'POST' })
           email_confirm: true,
           user_metadata: { name: data.name || '' },
         })
-        if (error || !cu?.user) throw new Error(error?.message || 'Não foi possível criar o acesso.')
+        if (error || !cu?.user) {
+          const exists = /already|registered|exists/i.test(error?.message || '')
+          throw new Error(exists ? 'Esse e-mail já tem conta. Tente adicionar novamente.' : error?.message || 'Não foi possível criar o acesso.')
+        }
         userId = cu.user.id
         created = true
       }

@@ -129,7 +129,7 @@ function StoresTab({ plat, reload, stores }) {
   }
   const extendTrial = (s) => {
     const base = Math.max(Date.now(), s.trial_ends_at ? new Date(s.trial_ends_at).getTime() : 0)
-    return run(supabase.from('stores').update({ status: 'trial', trial_ends_at: new Date(base + 7 * 86400000).toISOString() }).eq('id', s.id))
+    return run(supabase.from('stores').update({ status: 'trial', trial_ends_at: new Date(base + (plat.trial_days || 7) * 86400000).toISOString() }).eq('id', s.id))
   }
   const cancel = (s) => { if (confirm(`Cancelar a assinatura de ${s.name}? O cardápio sai do ar.`)) run(supabase.from('stores').update({ status: 'cancelled' }).eq('id', s.id)) }
   const remove = (s) => {
