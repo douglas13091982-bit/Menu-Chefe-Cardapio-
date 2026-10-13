@@ -6,7 +6,7 @@ import LoginForm from "./LoginForm";
 import { effectiveStatus, isServable } from "./format";
 import { Shell, SignupForm, NewPassword, NoStore, createStore } from "./panel/AuthScreens";
 import { Blocked } from "./panel/Billing";
-import PanelShell from "./panel/PanelShell";
+import { PanelShell } from "./panel/PanelShell";
 import { getPendingStore, setPendingStore } from "./panel/pendingStore";
 
 export default function PanelApp() {
