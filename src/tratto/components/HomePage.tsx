@@ -4,9 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { ArrowRight, Check, ChefHat, ClipboardList, Globe2, Smartphone, Store, Zap } from "lucide-react";
 
 const features = [
-  { icon: Smartphone, title: "Cardápio que funciona no celular", description: "Uma experiência rápida e intuitiva para seus clientes pedirem de qualquer lugar." },
-  { icon: ClipboardList, title: "Pedidos organizados", description: "Receba e acompanhe os pedidos em um painel simples, sem confusão." },
-  { icon: Store, title: "Sua marca, seu endereço", description: "Tenha um link exclusivo para compartilhar no Instagram, WhatsApp e Google." },
+  { icon: Smartphone, title: "Cardápio digital", description: "Uma vitrine bonita, rápida e fácil de usar em qualquer celular." },
+  { icon: ClipboardList, title: "Pedidos organizados", description: "Acompanhe cada pedido por etapa, do recebimento até a entrega." },
+  { icon: Store, title: "Sua marca em destaque", description: "Compartilhe um link exclusivo da sua loja nas redes e no WhatsApp." },
+  { icon: Zap, title: "Mais agilidade", description: "Reduza trocas de mensagens e deixe o cliente montar o próprio pedido." },
+  { icon: Globe2, title: "Acesse de qualquer lugar", description: "Gerencie sua operação online, sem depender de um computador específico." },
+  { icon: ChefHat, title: "Controle na cozinha", description: "Visualize os pedidos com clareza e mantenha a equipe alinhada." },
 ];
 
 const included = [
@@ -36,7 +39,8 @@ export function HomePage() {
             <span className="truncate text-lg font-bold tracking-tight">{plan?.system_name || "Tratto Digital Menu"}</span>
           </Link>
           <nav className="flex items-center gap-3">
-            <a href="#recursos" className="hidden text-sm font-medium text-slate-600 hover:text-slate-950 sm:inline">Recursos</a>
+            <a href="#recursos" className="hidden text-sm font-medium text-slate-600 hover:text-slate-950 sm:inline">Funcionalidades</a>
+            <a href="#experiencia" className="hidden text-sm font-medium text-slate-600 hover:text-slate-950 md:inline">Como funciona</a>
             <a href="#planos" className="hidden text-sm font-medium text-slate-600 hover:text-slate-950 sm:inline">Planos</a>
             <Link to="/tratto" className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">Ver demonstração</Link>
             <a href="/painel" className="hidden rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 sm:inline">Entrar</a>
@@ -45,25 +49,25 @@ export function HomePage() {
         </div>
       </header>
 
-      <section className="relative overflow-hidden bg-[#14284b] text-white">
+      <section className="relative overflow-hidden bg-[#f7f9fc] text-[#10264b]">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(201,35,58,0.35),transparent_48%)]" /><div className="pointer-events-none absolute inset-y-0 right-0 w-1/3 border-l border-white/5 bg-white/[0.02]" />
-        <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-5 py-20 sm:px-8 sm:py-28 lg:grid-cols-[1.05fr_.95fr]">
+        <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-5 py-14 sm:px-8 sm:py-20 lg:grid-cols-[.95fr_1.05fr]">
           <div>
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3.5 py-2 text-sm font-medium text-white"><Zap size={15} /> Seu restaurante pronto para receber pedidos online</div>
-            <h1 className="max-w-2xl text-4xl font-bold leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl">Seu cardápio digital. <span className="text-[#ff5368]">Seu negócio no controle.</span></h1>
-            <p className="mt-6 max-w-xl text-lg leading-8 text-blue-100/80">Crie um cardápio profissional para sua lanchonete, hamburgueria ou restaurante. Organize produtos e pedidos em um só lugar, com um link exclusivo para sua loja.</p>
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#dce4ef] bg-white px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-[#14284b] shadow-sm"><span className="h-2 w-2 rounded-full bg-[#c9233a]" /> Cardápio digital para o seu negócio</div>
+            <h1 className="max-w-2xl text-4xl font-extrabold leading-[1.06] tracking-tight text-[#10264b] sm:text-5xl lg:text-6xl">Transforme seu cardápio em <span className="text-[#c9233a]">mais vendas.</span></h1>
+            <p className="mt-6 max-w-xl text-base leading-8 text-slate-600 sm:text-lg">O Tratto Smart Menu reúne cardápio digital, pedidos online e painel administrativo em uma plataforma simples para sua equipe e prática para seus clientes.</p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <a href="/cadastro" className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#c9233a] px-6 py-3.5 font-semibold text-white shadow-lg shadow-[#c9233a]/20 transition hover:bg-[#a7192d]">Começar teste grátis <ArrowRight size={18} /></a>
-              <a href="#recursos" className="inline-flex items-center justify-center rounded-xl border border-[#dce4ef] px-6 py-3.5 font-semibold text-slate-700 transition hover:bg-slate-50">Conhecer recursos</a>
+              <Link to="/tratto" className="inline-flex items-center justify-center rounded-xl border border-[#14284b] bg-white px-6 py-3.5 font-semibold text-[#14284b] transition hover:bg-slate-50">Ver demonstração</Link>
             </div>
-            <div className="mt-8 flex flex-wrap gap-x-5 gap-y-2 text-sm text-slate-500">
+            <div className="mt-8 flex flex-wrap gap-x-5 gap-y-2 text-sm text-slate-600">
               <span className="inline-flex items-center gap-2"><Check size={16} className="text-[#ff5368]" /> Fácil de configurar</span>
               <span className="inline-flex items-center gap-2"><Check size={16} className="text-[#ff5368]" /> Feito para celular</span>
               <span className="inline-flex items-center gap-2"><Check size={16} className="text-[#ff5368]" /> Sem comissão por pedido na plataforma</span>
             </div>
           </div>
-          <div className="mx-auto w-full max-w-lg">
-            <div className="rounded-3xl border border-white/70 bg-white p-4 text-[#14284b] shadow-2xl shadow-black/30 sm:p-6">
+          <div className="mx-auto w-full max-w-xl">
+            <div className="rounded-[1.75rem] border border-[#dce4ef] bg-white p-4 text-[#14284b] shadow-[0_30px_90px_-35px_rgba(16,38,75,0.35)] sm:p-6">
               <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                 <div><p className="text-xs font-semibold uppercase tracking-wider text-[#c9233a]">Demonstração</p><h2 className="mt-1 text-lg font-bold">Painel do restaurante</h2></div>
                 <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">Online</span>
@@ -81,18 +85,44 @@ export function HomePage() {
                   </div>
                 ))}
               </div>
-              <div className="mt-4 flex items-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm text-white"><Globe2 size={17} className="text-[#ff5368]" /><span className="text-slate-300">seusite.com/</span><span className="font-semibold">sua-loja</span></div>
+              <div className="mt-4 flex items-center gap-2 rounded-xl bg-[#10264b] px-4 py-3 text-sm text-white"><Globe2 size={17} className="text-[#ff5368]" /><span className="text-blue-100/80">tratto.com/</span><span className="font-semibold">sua-loja</span><span className="ml-auto rounded-lg bg-[#c9233a] px-3 py-1.5 text-xs font-bold">Abrir loja</span></div>
               <p className="mt-3 text-center text-xs text-slate-400">Ilustração demonstrativa da plataforma</p>
             </div>
           </div>
         </div>
       </section>
 
-      <section id="recursos" className="border-y border-[#dce4ef] bg-white">
+      <section id="experiencia" className="border-y border-[#dce4ef] bg-white">
+        <div className="mx-auto grid max-w-7xl items-center gap-12 px-5 py-16 sm:px-8 lg:grid-cols-[.85fr_1.15fr] lg:py-20">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[.18em] text-[#c9233a]">Cardápio do cliente</p>
+            <h2 className="mt-3 text-3xl font-extrabold leading-tight tracking-tight text-[#10264b] sm:text-4xl">Uma experiência de compra simples e deliciosa.</h2>
+            <p className="mt-5 leading-7 text-slate-600">Seu cliente acessa pelo celular, encontra os produtos com facilidade e monta o pedido em poucos toques. Sem aplicativo para instalar.</p>
+            <ul className="mt-7 space-y-4 text-sm text-slate-700">
+              {["Visual adaptado para celular", "Categorias e produtos bem organizados", "Fotos, descrições e preços em destaque", "Pedido rápido e intuitivo"].map(item => <li key={item} className="flex items-center gap-3"><span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#fff0f2] text-[#c9233a]"><Check size={15} /></span>{item}</li>)}
+            </ul>
+            <Link to="/tratto" className="mt-8 inline-flex items-center gap-2 font-bold text-[#c9233a] hover:gap-3 transition-all">Explorar demonstração <ArrowRight size={17} /></Link>
+          </div>
+          <div className="relative mx-auto w-full max-w-xl">
+            <div className="absolute -inset-4 rounded-[2rem] bg-gradient-to-br from-[#e7edf7] via-white to-[#fce8eb]" />
+            <div className="relative mx-auto max-w-sm rounded-[2.25rem] border-[7px] border-[#10264b] bg-white p-3 shadow-2xl">
+              <div className="mx-auto mb-4 h-1.5 w-16 rounded-full bg-slate-200" />
+              <div className="rounded-2xl bg-[#10264b] p-4 text-white"><p className="text-[10px] font-bold uppercase tracking-[.2em] text-red-200">Cardápio da casa</p><p className="mt-2 text-xl font-extrabold">Feito na hora. Feito pra você.</p><p className="mt-1 text-xs text-blue-100/80">Hambúrgueres • porções • bebidas</p></div>
+              <div className="mt-4 flex gap-2 overflow-hidden">{["Todos","Hambúrgueres","Porções"].map((cat,i)=><span key={cat} className={`shrink-0 rounded-full px-3 py-1.5 text-[10px] font-bold ${i===0?"bg-[#c9233a] text-white":"bg-slate-100 text-slate-600"}`}>{cat}</span>)}</div>
+              <div className="mt-4 space-y-3">
+                {[["Smash da casa","Pão brioche, queijo e molho especial","R$ 28,90","🍔"],["Batata crocante","Porção individual","R$ 14,90","🍟"],["Combo clássico","Hambúrguer + batata + bebida","R$ 39,90","🥤"]].map(([name,desc,price,emoji])=><div key={name} className="flex items-center gap-3 rounded-xl border border-slate-100 p-3"><div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-[#f4f6fa] text-2xl">{emoji}</div><div className="min-w-0 flex-1"><p className="text-sm font-bold text-[#10264b]">{name}</p><p className="mt-1 text-[10px] leading-4 text-slate-500">{desc}</p><p className="mt-1 text-xs font-extrabold text-[#c9233a]">{price}</p></div><span className="rounded-lg bg-[#c9233a] px-2.5 py-2 text-[10px] font-bold text-white">Adicionar</span></div>)}
+              </div>
+              <div className="mt-4 rounded-xl bg-[#10264b] p-3 text-center text-xs font-bold text-white">Ver pedido <span className="ml-2 rounded-full bg-[#c9233a] px-2 py-1">3 itens</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="recursos" className="border-y border-[#dce4ef] bg-[#f7f9fc]">
         <div className="mx-auto max-w-7xl px-5 py-20 sm:px-8">
           <div className="mx-auto max-w-2xl text-center"><p className="text-sm font-bold uppercase tracking-widest text-[#c9233a]">Tudo em um só lugar</p><h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">Mais praticidade para vender</h2><p className="mt-4 leading-7 text-slate-600">Uma ferramenta simples para organizar a operação e deixar o pedido mais fácil para o cliente.</p></div>
-          <div className="mt-12 grid gap-5 md:grid-cols-3">
-            {features.map(({ icon: Icon, title, description }) => <article key={title} className="rounded-2xl border border-[#dce4ef] bg-white p-7 shadow-sm"><div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#fff0f2] text-[#c9233a]"><Icon size={23} /></div><h3 className="mt-5 text-lg font-bold">{title}</h3><p className="mt-2 leading-7 text-slate-600">{description}</p></article>)}
+          <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {features.map(({ icon: Icon, title, description }) => <article key={title} className="group rounded-2xl border border-[#dce4ef] bg-white p-6 shadow-sm transition duration-200 hover:-translate-y-1 hover:border-[#c9233a]/40 hover:shadow-xl hover:shadow-[#14284b]/5 sm:p-7"><div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#10264b] text-white transition group-hover:bg-[#c9233a]"><Icon size={23} /></div><h3 className="mt-5 text-lg font-bold">{title}</h3><p className="mt-2 leading-7 text-slate-600">{description}</p></article>)}
           </div>
         </div>
       </section>
@@ -105,7 +135,7 @@ export function HomePage() {
         </div>
       </section>
 
-      <section id="comecar" className="bg-[#14284b] text-white">
+      <section id="comecar" className="relative overflow-hidden bg-[#10264b] text-white"><div className="pointer-events-none absolute -right-20 -top-24 h-80 w-80 rounded-full border-[40px] border-white/5" />
         <div className="mx-auto grid max-w-7xl gap-8 px-5 py-16 sm:px-8 md:grid-cols-[1fr_auto] md:items-center">
           <div><p className="text-sm font-bold uppercase tracking-widest text-[#ff5368]">Próximo passo</p><h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">Seu cardápio digital começa aqui.</h2><p className="mt-3 max-w-2xl leading-7 text-slate-300">Crie sua conta, monte seu cardápio e comece a receber pedidos pelo WhatsApp. O teste é grátis e não pede cartão de crédito.</p></div>
           <div className="flex flex-col gap-3 sm:flex-row"><a href="/cadastro" className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#c9233a] px-5 py-3.5 font-semibold text-white transition hover:bg-[#a7192d]">Criar minha loja <ArrowRight size={18} /></a><Link to="/tratto" className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-5 py-3.5 font-semibold text-slate-950 transition hover:bg-slate-100">Ver demonstração</Link>{wa && <a href={`https://wa.me/${wa.startsWith("55") ? wa : "55" + wa}`} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center rounded-xl border border-slate-600 px-5 py-3.5 font-semibold text-white transition hover:bg-slate-800">Falar no WhatsApp</a>}</div>
