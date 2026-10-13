@@ -21,17 +21,16 @@ const lsSet = (k, v) => {
     v ? localStorage.setItem(k, JSON.stringify(v)) : localStorage.removeItem(k);
   } catch {}
 };
-const cls =
-  "w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#d9273f]/30";
+const cls = "auth-input";
 
 function Shell({ children }) {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#fff7f5] to-[#f6e9e4] flex items-center justify-center p-4">
+    <div className="auth-shell min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <a href="/" className="block text-center text-2xl font-extrabold text-[#782d25] mb-6">
+        <a href="/" className="auth-brand block text-center text-2xl font-extrabold mb-6">
           {BRAND}
         </a>
-        <div className="bg-white rounded-2xl shadow-xl p-6">{children}</div>
+        <div className="auth-card rounded-2xl p-6">{children}</div>
       </div>
     </div>
   );
@@ -45,7 +44,7 @@ async function createStore(name, slug) {
 function StoreFields({ name, setName, slug, setSlug, touched, setTouched }) {
   return (
     <>
-      <label className="block text-sm font-medium text-gray-700">
+      <label className="auth-label block text-sm font-medium">
         Nome da loja
         <input
           className={cls}
@@ -58,10 +57,10 @@ function StoreFields({ name, setName, slug, setSlug, touched, setTouched }) {
           }}
         />
       </label>
-      <label className="block text-sm font-medium text-gray-700">
+      <label className="auth-label block text-sm font-medium">
         Endereço do cardápio
-        <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden text-sm">
-          <span className="px-2 text-gray-400 bg-gray-50 py-2.5 whitespace-nowrap">/</span>
+        <div className="auth-slug-wrap flex items-center rounded-lg overflow-hidden text-sm">
+          <span className="auth-slug-prefix px-2 py-2.5 whitespace-nowrap">/</span>
           <input
             className="flex-1 px-2 py-2.5 outline-none min-w-0"
             required
@@ -125,11 +124,11 @@ function SignupForm({ onCreated, onSwitch }) {
   };
 
   return (
-    <form onSubmit={submit} className="space-y-3">
-      <h1 className="text-xl font-bold text-gray-900">Criar minha loja</h1>
-      <p className="text-sm text-gray-500 -mt-1">Teste grátis, sem cartão de crédito.</p>
+    <form onSubmit={submit} className="auth-form space-y-3">
+      <h1 className="auth-title text-xl font-bold">Criar minha loja</h1>
+      <p className="auth-subtitle text-sm -mt-1">Teste grátis, sem cartão de crédito.</p>
       <StoreFields {...{ name, setName, slug, setSlug, touched, setTouched }} />
-      <label className="block text-sm font-medium text-gray-700">
+      <label className="auth-label block text-sm font-medium">
         Seu e-mail
         <input
           type="email"
@@ -139,7 +138,7 @@ function SignupForm({ onCreated, onSwitch }) {
           onChange={(e) => setEmail(e.target.value)}
         />
       </label>
-      <label className="block text-sm font-medium text-gray-700">
+      <label className="auth-label block text-sm font-medium">
         Senha
         <input
           type="password"
@@ -150,15 +149,15 @@ function SignupForm({ onCreated, onSwitch }) {
           onChange={(e) => setPassword(e.target.value)}
         />
       </label>
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      {info && <p className="text-sm text-green-700">{info}</p>}
+      {error && <p className="auth-error text-sm">{error}</p>}
+      {info && <p className="auth-success text-sm">{info}</p>}
       <button
         disabled={loading}
-        className="w-full bg-[#d9273f] hover:bg-[#c01f35] disabled:opacity-60 text-white font-semibold rounded-lg py-2.5 text-sm"
+        className="auth-primary w-full disabled:opacity-60 font-semibold rounded-lg py-2.5 text-sm"
       >
         {loading ? "Criando…" : "Criar loja e começar o teste"}
       </button>
-      <button type="button" onClick={onSwitch} className="w-full text-sm text-gray-600 underline">
+      <button type="button" onClick={onSwitch} className="auth-link w-full text-sm underline">
         Já tenho conta
       </button>
     </form>
@@ -183,11 +182,11 @@ function NoStore({ onCreated, onLogout }) {
     onCreated();
   };
   return (
-    <form onSubmit={submit} className="space-y-3">
-      <h1 className="text-xl font-bold text-gray-900">Falta pouco!</h1>
-      <p className="text-sm text-gray-500 -mt-1">Dê um nome e um endereço para o seu cardápio.</p>
+    <form onSubmit={submit} className="auth-form space-y-3">
+      <h1 className="auth-title text-xl font-bold">Falta pouco!</h1>
+      <p className="auth-subtitle text-sm -mt-1">Dê um nome e um endereço para o seu cardápio.</p>
       <StoreFields {...{ name, setName, slug, setSlug, touched, setTouched }} />
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="auth-error text-sm">{error}</p>}
       <button
         disabled={loading}
         className="w-full bg-[#d9273f] text-white font-semibold rounded-lg py-2.5 text-sm disabled:opacity-60"
@@ -273,7 +272,7 @@ function Blocked({ store, status, contact, plan, onLogout }) {
   const wa = String(contact || "").replace(/\D/g, "");
   return (
     <Shell>
-      <h1 className="text-xl font-bold text-gray-900">{store.name}</h1>
+      <h1 className="auth-title text-xl font-bold">{store.name}</h1>
       <p className="text-sm text-gray-600 mt-2">
         {msg} O cardápio está fora do ar para os clientes até a regularização. Seus produtos e
         pedidos continuam guardados.
@@ -483,7 +482,7 @@ export default function PanelApp() {
             <LoginForm title="Entrar no painel" subtitle="Acesse a sua loja" onDone={refresh} />
             <button
               onClick={() => setMode("signup")}
-              className="w-full text-sm text-[#d9273f] font-semibold mt-3"
+              className="auth-link w-full text-sm font-semibold mt-3"
             >
               Criar minha loja grátis
             </button>

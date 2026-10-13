@@ -2026,3 +2026,86 @@ main .rounded-2xl {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Autenticação no mesmo universo visual da home institucional. */
+.auth-shell {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  color: #f5f6f7;
+  background:
+    linear-gradient(90deg, rgba(5, 7, 9, 0.9), rgba(5, 7, 9, 0.48)),
+    url('/tratto-hero-background.jpg') center / cover,
+    #08090b;
+}
+.auth-shell::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: radial-gradient(circle at 78% 48%, rgba(237, 37, 45, 0.2), transparent 34%);
+}
+.auth-shell > div {
+  position: relative;
+  z-index: 1;
+}
+.auth-brand {
+  color: #fff;
+  letter-spacing: -0.045em;
+  text-shadow: 0 5px 24px rgba(0,0,0,.35);
+}
+.auth-brand::before {
+  content: '◆';
+  display: inline-block;
+  margin-right: 9px;
+  color: #ed252d;
+  font-size: 0.66em;
+  vertical-align: 0.12em;
+}
+.auth-card {
+  border: 1px solid rgba(255,255,255,.15);
+  background: rgba(12, 15, 18, .86);
+  box-shadow: 0 28px 80px rgba(0,0,0,.42), 0 0 0 8px rgba(255,255,255,.025);
+  backdrop-filter: blur(18px);
+}
+.auth-title { color: #f8f9fa; letter-spacing: -0.04em; }
+.auth-subtitle { color: #aeb5bd; }
+.auth-label { color: #d9dde1; }
+.auth-input {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  border: 1px solid rgba(255,255,255,.16);
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: #f8f9fa;
+  background: rgba(255,255,255,.06);
+  outline: none;
+  transition: border-color .2s ease, box-shadow .2s ease, background .2s ease;
+}
+.auth-input::placeholder { color: #7d8790; }
+.auth-input:focus {
+  border-color: rgba(237,37,45,.85);
+  background: rgba(255,255,255,.09);
+  box-shadow: 0 0 0 3px rgba(237,37,45,.16);
+}
+.auth-slug-wrap { border: 1px solid rgba(255,255,255,.16); background: rgba(255,255,255,.06); margin-top: 6px; }
+.auth-slug-prefix { color: #8d969f; background: rgba(255,255,255,.04); }
+.auth-slug-wrap .auth-input { margin-top: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+.auth-primary {
+  margin-top: 8px;
+  border: 0;
+  color: #fff;
+  background: #ed252d;
+  box-shadow: 0 10px 24px rgba(237,37,45,.2);
+  transition: background .2s ease, transform .2s ease, box-shadow .2s ease;
+}
+.auth-primary:hover { background: #ff4548; transform: translateY(-1px); box-shadow: 0 13px 28px rgba(237,37,45,.3); }
+.auth-link { color: #f1757a; }
+.auth-link:hover { color: #ffafb2; }
+.auth-error { color: #ff8b91; }
+.auth-success { color: #78df91; }
+@media (max-width: 640px) {
+  .auth-shell { padding: 20px 16px; }
+  .auth-card { padding: 22px !important; }
+}
