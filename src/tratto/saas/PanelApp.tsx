@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { fetchPlatformSettings } from "../services/platform";
+import { fetchPlatformSettings, fetchPlatformBilling } from "../services/platform";
 import LoginForm from "./LoginForm";
 import { effectiveStatus, isServable } from "./format";
 import { Shell, SignupForm, NewPassword, NoStore, createStore } from "./panel/AuthScreens";
@@ -37,7 +37,7 @@ export default function PanelApp() {
     const [sup, mem, plat] = await Promise.all([
       supabase.rpc("is_super_admin"),
       supabase.from("store_members").select("store_id").eq("user_id", session.user.id).limit(1),
-      fetchPlatformSettings(),
+      Promise.all([fetchPlatformSettings(), fetchPlatformBilling()]).then(([pub, bill]) => (pub || bill ? { ...pub, ...bill } : null)),
     ]);
     setIsSuper(!!sup.data);
     setContact(plat?.contact_whatsapp || "");
