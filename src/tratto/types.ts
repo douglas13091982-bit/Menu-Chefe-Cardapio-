@@ -77,6 +77,10 @@ export interface StoreConfig {
   closeTime: string
   weeklyHours?: DayHours[]
   pickupEnabled?: boolean
+  /** Pix da loja: com a chave preenchida, o cliente vê o QR Code ao finalizar um pedido pago com Pix. */
+  pixKey?: string
+  pixHolder?: string
+  pixCity?: string
   schedulingEnabled?: boolean
   schedulingDays?: number
   schedulingSlotMinutes?: number

@@ -393,6 +393,28 @@ function SettingsPanel() {
             )}
           </div>
 
+          <div className="mt-5 pt-4 border-t space-y-3">
+            <div>
+              <p className="text-sm font-medium text-gray-800">Pix da loja</p>
+              <p className="text-xs text-gray-500 mt-0.5">Quando o cliente escolher pagar com Pix, ele vê o QR Code e o "copia e cola" com o valor do pedido ao finalizar. Deixe a chave em branco para enviar a chave pelo WhatsApp.</p>
+            </div>
+            <label className="block text-xs text-gray-600">Chave Pix (CPF/CNPJ, e-mail, celular ou aleatória)
+              <input className="mt-1 w-full border rounded-lg px-3 py-2 text-sm" value={formData.pixKey ?? ''}
+                onChange={e => setFormData(prev => ({ ...prev, pixKey: e.target.value }))} />
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <label className="block text-xs text-gray-600">Nome do recebedor (como no banco)
+                <input maxLength={25} className="mt-1 w-full border rounded-lg px-3 py-2 text-sm" value={formData.pixHolder ?? ''}
+                  placeholder={formData.name || ''}
+                  onChange={e => setFormData(prev => ({ ...prev, pixHolder: e.target.value }))} />
+              </label>
+              <label className="block text-xs text-gray-600">Cidade
+                <input maxLength={15} className="mt-1 w-full border rounded-lg px-3 py-2 text-sm" value={formData.pixCity ?? ''}
+                  onChange={e => setFormData(prev => ({ ...prev, pixCity: e.target.value }))} />
+              </label>
+            </div>
+          </div>
+
           <div className="mt-5 pt-4 border-t">
             <label className="relative inline-flex items-center cursor-pointer">
               <input

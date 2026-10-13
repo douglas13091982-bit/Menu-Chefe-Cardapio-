@@ -5,6 +5,8 @@ import { useStore } from '../context/StoreContext'
 import { Product, CartItem, ProductAddOn, Order, DeliveryType, PaymentMethod } from '../types'
 import { getMapboxToken } from '../mapboxToken'
 import { fetchAddressByCep } from '../cep'
+import { pixPayload } from '../pix'
+import PixQrCode from './PixQrCode'
 import { buildWhatsAppUrl } from '../whatsapp'
 import { getStoreStatus, getScheduleSlots, formatScheduled } from '../hours'
 import { extractLogoBackground } from '../logoColor'
@@ -1424,7 +1426,9 @@ function MenuView() {
               )}
               {paymentMethod === 'pix' && (
                 <p style={{ fontSize: '12px', color: '#6b7280', backgroundColor: '#f9fafb', padding: '10px 12px', borderRadius: '10px', margin: '0 0 18px 0' }}>
-                  Você receberá a chave PIX pelo WhatsApp ({config.phone || 'telefone da loja'}) após finalizar o pedido.
+                  {config.pixKey
+                    ? 'Ao finalizar o pedido você verá o QR Code do Pix para pagar.'
+                    : `Você receberá a chave PIX pelo WhatsApp (${config.phone || 'telefone da loja'}) após finalizar o pedido.`}
                 </p>
               )}
               {paymentMethod === 'cash' && (
@@ -1527,6 +1531,8 @@ function MenuView() {
             borderRadius: '20px',
             width: '100%',
             maxWidth: '400px',
+            maxHeight: '92vh',
+            overflowY: 'auto',
             padding: '28px 20px',
             textAlign: 'center',
             animation: 'slideUp 0.3s ease-out'
@@ -1563,6 +1569,23 @@ function MenuView() {
                 🧾 Total: <strong>{fmt(orderPlaced.total + orderPlaced.deliveryFee - (orderPlaced.discount || 0))}</strong>
               </p>
             </div>
+            {orderPlaced.paymentMethod === 'pix' && config.pixKey && (
+              <div style={{ backgroundColor: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '14px', marginBottom: '18px' }}>
+                <p style={{ fontSize: '14px', fontWeight: 700, color: '#1f2937', margin: '0 0 10px' }}>
+                  Pague com Pix: {fmt(orderPlaced.total + orderPlaced.deliveryFee - (orderPlaced.discount || 0))}
+                </p>
+                <PixQrCode
+                  payload={pixPayload(
+                    config.pixKey,
+                    config.pixHolder || config.name || '',
+                    config.pixCity || '',
+                    Math.round((orderPlaced.total + orderPlaced.deliveryFee - (orderPlaced.discount || 0)) * 100),
+                  )}
+                  pixKey={config.pixKey}
+                  holder={config.pixHolder || config.name}
+                />
+              </div>
+            )}
             {whatsappUrl ? (
               <>
                 <button
