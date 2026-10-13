@@ -99,13 +99,38 @@ export function HomePage() {
 
   useEffect(() => {
     let alive = true;
-    fetchPlatformSettings().then((settings) => {
+
+    const refreshPlatformSettings = async () => {
+      const settings = await fetchPlatformSettings();
       if (alive && settings) setPlan(settings);
-    });
+    };
+
+    void refreshPlatformSettings();
+
+    // Atualiza a identidade da Home ao voltar para a aba depois de salvar no Super Admin.
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") {
+        void refreshPlatformSettings();
+      }
+    };
+
+    window.addEventListener("focus", refreshWhenVisible);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+
     return () => {
       alive = false;
+      window.removeEventListener("focus", refreshWhenVisible);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
     };
   }, []);
+
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      document.title = plan?.system_name
+        ? `${plan.system_name} | Cardápio digital para restaurantes`
+        : "Cardápio digital para restaurantes";
+    }
+  }, [plan?.system_name]);
 
   const waLink = whatsappUrl(plan?.contact_whatsapp);
   const priceCents = Number(plan?.price_cents);
