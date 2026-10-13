@@ -389,6 +389,153 @@ function PlatformTab({ plat, reload }) {
   )
 }
 
+
+function ImageMigrationTab() {
+  const [busy, setBusy] = useState(false)
+  const [progress, setProgress] = useState({ scanned: 0, converted: 0, skipped: 0, failed: 0, originalBytes: 0, finalBytes: 0 })
+  const [message, setMessage] = useState('')
+  const [errors, setErrors] = useState<string[]>([])
+
+  const migrate = async () => {
+    if (busy) return
+    const confirmed = confirm('Converter as imagens antigas dos produtos de todas as lojas acessíveis para WebP? A rotina atualiza apenas a imagem dentro dos dados do produto, preserva os demais campos e pode ser executada novamente para continuar.')
+    if (!confirmed) return
+    setBusy(true)
+    setMessage('Iniciando leitura dos produtos…')
+    setErrors([])
+    setProgress({ scanned: 0, converted: 0, skipped: 0, failed: 0, originalBytes: 0, finalBytes: 0 })
+
+    const totals = { scanned: 0, converted: 0, skipped: 0, failed: 0, originalBytes: 0, finalBytes: 0 }
+    const errorList: string[] = []
+    const pageSize = 25
+    let offset = 0
+    let stop = false
+
+    try {
+      while (!stop) {
+        const { data: rows, error } = await supabase
+          .from('products')
+          .select('store_id,id,data')
+          .order('store_id', { ascending: true })
+          .order('id', { ascending: true })
+          .range(offset, offset + pageSize - 1)
+
+        if (error) throw new Error('Não foi possível listar os produtos. Verifique as permissões do super admin: ' + error.message)
+        if (!rows?.length) break
+
+        for (const row of rows) {
+          totals.scanned++
+          try {
+            const product = typeof row.data === 'string' ? JSON.parse(row.data) : row.data
+            const image = product?.image
+            if (typeof image !== 'string' || !image.startsWith('data:image/')) {
+              totals.skipped++
+              continue
+            }
+            if (image.startsWith('data:image/webp;')) {
+              totals.skipped++
+              continue
+            }
+
+            const response = await fetch(image)
+            const blob = await response.blob()
+            if (!blob.type.startsWith('image/') || blob.size === 0 || blob.size > 15 * 1024 * 1024) {
+              totals.skipped++
+              continue
+            }
+
+            const compressed = await compressImageToWebP(blob, {
+              maxWidth: 1200,
+              maxHeight: 1200,
+              quality: 0.8,
+            })
+            const output = compressed.dataUrl
+            if (!output || !output.startsWith('data:image/webp;')) {
+              totals.skipped++
+              errorList.push('Produto ' + row.id + ': o navegador não conseguiu gerar WebP; imagem original mantida.')
+            } else {
+              const oldBytes = image.length * 0.75
+              const newBytes = output.length * 0.75
+              if (newBytes >= oldBytes) {
+                totals.skipped++
+              } else {
+                const updatedProduct = { ...product, image: output }
+                const { error: updateError } = await supabase
+                  .from('products')
+                  .update({ data: updatedProduct })
+                  .eq('store_id', row.store_id)
+                  .eq('id', row.id)
+                if (updateError) throw updateError
+                totals.converted++
+                totals.originalBytes += oldBytes
+                totals.finalBytes += newBytes
+              }
+            }
+          } catch (err: any) {
+            totals.failed++
+            errorList.push('Produto ' + row.id + ': ' + (err?.message || 'falha desconhecida'))
+          }
+          setProgress({ ...totals })
+          if (errorList.length) setErrors(errorList.slice(-8))
+        }
+        offset += rows.length
+        setMessage('Analisados ' + totals.scanned + ' produtos…')
+        if (rows.length < pageSize) stop = true
+      }
+
+      setProgress({ ...totals })
+      setMessage('Concluído. ' + totals.converted + ' imagens convertidas; ' + totals.skipped + ' ignoradas; ' + totals.failed + ' falhas.')
+    } catch (err: any) {
+      setMessage('Migração interrompida: ' + (err?.message || 'erro inesperado') + '. Você pode executar novamente; imagens já convertidas serão ignoradas.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const savedBytes = Math.max(0, progress.originalBytes - progress.finalBytes)
+  const formatBytes = (bytes: number) => bytes < 1024 * 1024
+    ? Math.round(bytes / 1024) + ' KB'
+    : (bytes / (1024 * 1024)).toFixed(2) + ' MB'
+
+  return (
+    <section className="bg-white rounded-2xl border p-5 sm:p-6 space-y-5">
+      <div>
+        <h2 className="text-lg font-bold text-gray-900">Otimização das imagens dos cardápios</h2>
+        <p className="text-sm text-gray-500 mt-1">Converte imagens antigas armazenadas diretamente nos dados dos produtos para WebP, reduzindo dimensões para até 1200 × 1200 px. Os demais dados do produto não são alterados.</p>
+      </div>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {[
+          ['Analisados', progress.scanned],
+          ['Convertidos', progress.converted],
+          ['Ignorados', progress.skipped],
+          ['Falhas', progress.failed],
+        ].map(([label, value]) => (
+          <div key={label} className="rounded-xl border bg-gray-50 p-4">
+            <p className="text-xs text-gray-500">{label}</p>
+            <p className="text-2xl font-bold mt-1 tabular-nums">{value}</p>
+          </div>
+        ))}
+      </div>
+      {progress.converted > 0 && (
+        <p className="text-sm text-green-700">Redução estimada nas imagens convertidas: {formatBytes(savedBytes)}.</p>
+      )}
+      {message && <p className="text-sm text-gray-700" role="status">{message}</p>}
+      {errors.length > 0 && (
+        <div className="rounded-lg bg-amber-50 border border-amber-200 p-3">
+          <p className="text-sm font-semibold text-amber-900">Avisos recentes</p>
+          <ul className="mt-2 list-disc pl-5 space-y-1 text-xs text-amber-900">{errors.map((item, index) => <li key={index}>{item}</li>)}</ul>
+        </div>
+      )}
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+        <button type="button" onClick={migrate} disabled={busy} className="bg-gray-900 disabled:opacity-50 text-white font-semibold rounded-lg px-4 py-2.5 text-sm">
+          {busy ? 'Convertendo imagens…' : 'Iniciar migração de imagens'}
+        </button>
+        <p className="text-xs text-gray-500">Processamento em lotes de 25 produtos. Imagens remotas e WebP existentes são ignoradas. Se houver falha, você pode executar novamente.</p>
+      </div>
+    </section>
+  )
+}
+
 export default function SuperAdmin() {
   const [phase, setPhase] = useState('loading')
   const [stores, setStores] = useState([])
@@ -431,7 +578,7 @@ export default function SuperAdmin() {
       </div>
     )
   }
-  const tabs = [['stores', 'Lojas e assinaturas'], ['payments', 'Pagamentos'], ['platform', 'Identidade e plataforma']]
+  const tabs = [['stores', 'Lojas e assinaturas'], ['payments', 'Pagamentos'], ['platform', 'Identidade e plataforma'], ['images', 'Imagens dos cardápios']]
   return (
     <div className="min-h-screen bg-gray-100">
       <header className="bg-white border-b px-4 sm:px-6 h-14 flex items-center justify-between">
@@ -448,6 +595,7 @@ export default function SuperAdmin() {
         {tab === 'stores' && <StoresTab stores={stores} plat={plat} reload={load} />}
         {tab === 'payments' && <PaymentsTab stores={stores} />}
         {tab === 'platform' && <PlatformTab plat={plat} reload={load} />}
+        {tab === 'images' && <ImageMigrationTab />}
       </main>
     </div>
   )
