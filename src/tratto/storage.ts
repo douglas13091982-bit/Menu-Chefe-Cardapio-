@@ -46,25 +46,44 @@ const str = (v: unknown, fallback = ''): string => (typeof v === 'string' ? v : 
 const num = (v: unknown, fallback = 0): number => (typeof v === 'number' && Number.isFinite(v) ? v : fallback)
 const bool = (v: unknown, fallback = false): boolean => (typeof v === 'boolean' ? v : fallback)
 
+/** Lê uma propriedade de um registro validado sem violar `noPropertyAccessFromIndexSignature`. */
+const prop = (v: Record<string, unknown>, key: string): unknown => v[key]
+
+/** Retorna a propriedade como string quando validada, ou o fallback. */
+const strProp = (v: Record<string, unknown>, key: string, fallback = ''): string => {
+  const value = prop(v, key)
+  return typeof value === 'string' ? value : fallback
+}
+
+/** Normaliza adicionais de produto vindos do storage. */
+function normalizeAddOns(raw: unknown): import('./types').ProductAddOn[] {
+  if (!Array.isArray(raw)) return []
+  return raw
+    .filter(isRecord)
+    .filter(a => typeof prop(a, 'id') === 'string' && typeof prop(a, 'name') === 'string')
+    .map(a => ({ id: prop(a, 'id') as string, name: prop(a, 'name') as string, price: num(prop(a, 'price'), 0) }))
+}
+
 /** Normaliza um produto vindo do storage; retorna null se for irrecuperável. */
 export function normalizeProduct(v: unknown): import('./types').Product | null {
-  if (!isRecord(v) || typeof v.id !== 'string' || typeof v.name !== 'string') return null
-  return {
-    id: v.id,
-    name: v.name,
-    description: str(v.description),
-    price: num(v.price, 0),
-    image: str(v.image),
-    categoryId: str(v.categoryId),
-    popular: bool(v.popular),
-    available: bool(v.available, true),
-    addOns: Array.isArray(v.addOns)
-      ? (v.addOns as unknown[])
-          .filter(isRecord)
-          .filter(a => typeof a.id === 'string' && typeof a.name === 'string')
-          .map(a => ({ id: a.id as string, name: a.name as string, price: num(a.price, 0) }))
-      : undefined,
+  if (!isRecord(v)) return null
+  const id = strProp(v, 'id')
+  const name = strProp(v, 'name')
+  if (!id || !name) return null
+  const product: import('./types').Product = {
+    id,
+    name,
+    description: str(prop(v, 'description')),
+    price: num(prop(v, 'price'), 0),
+    image: str(prop(v, 'image')),
+    categoryId: str(prop(v, 'categoryId')),
+    popular: bool(prop(v, 'popular')),
+    available: bool(prop(v, 'available'), true),
   }
+  // exactOptionalPropertyTypes: só define a chave quando houver dados válidos.
+  const addOns = normalizeAddOns(prop(v, 'addOns'))
+  if (addOns.length > 0) product.addOns = addOns
+  return product
 }
 
 export function isProductArray(v: unknown): v is import('./types').Product[] {
@@ -74,8 +93,11 @@ export function isProductArray(v: unknown): v is import('./types').Product[] {
 
 /** Normaliza uma categoria vinda do storage; retorna null se irrecuperável. */
 export function normalizeCategory(v: unknown): import('./types').Category | null {
-  if (!isRecord(v) || typeof v.id !== 'string' || typeof v.name !== 'string') return null
-  return { id: v.id, name: v.name, icon: str(v.icon, '🍔'), order: num(v.order, 0) }
+  if (!isRecord(v)) return null
+  const id = strProp(v, 'id')
+  const name = strProp(v, 'name')
+  if (!id || !name) return null
+  return { id, name, icon: str(prop(v, 'icon'), '🍔'), order: num(prop(v, 'order'), 0) }
 }
 
 export function isCategoryArray(v: unknown): v is import('./types').Category[] {
@@ -85,49 +107,53 @@ export function isCategoryArray(v: unknown): v is import('./types').Category[] {
 
 /** Normaliza um pedido vindo do storage; retorna null se irrecuperável. */
 export function normalizeOrder(v: unknown): import('./types').Order | null {
-  if (!isRecord(v) || typeof v.id !== 'string') return null
-  const items = Array.isArray(v.items)
-    ? (v.items as unknown[])
+  if (!isRecord(v)) return null
+  const orderId = strProp(v, 'id')
+  if (!orderId) return null
+  const items: import('./types').CartItem[] = Array.isArray(prop(v, 'items'))
+    ? (prop(v, 'items') as unknown[])
         .map(rawItem => {
           if (!isRecord(rawItem)) return null
-          const product = normalizeProduct(rawItem.product)
+          const product = normalizeProduct(rawItem['product'])
           if (!product) return null
-          return {
+          const item: import('./types').CartItem = {
             product,
-            quantity: Math.max(1, Math.round(num(rawItem.quantity, 1))),
-            observation: typeof rawItem.observation === 'string' ? rawItem.observation : undefined,
-            selectedAddOns: Array.isArray(rawItem.selectedAddOns)
-              ? (rawItem.selectedAddOns as unknown[])
-                  .filter(isRecord)
-                  .filter(a => typeof a.id === 'string' && typeof a.name === 'string')
-                  .map(a => ({ id: a.id as string, name: a.name as string, price: num(a.price, 0) }))
-              : undefined,
+            quantity: Math.max(1, Math.round(num(rawItem['quantity'], 1))),
           }
+          // exactOptionalPropertyTypes: só define chaves opcionais quando válidas.
+          if (typeof rawItem['observation'] === 'string') item.observation = rawItem['observation']
+          const addOns = normalizeAddOns(rawItem['selectedAddOns'])
+          if (addOns.length > 0) item.selectedAddOns = addOns
+          return item
         })
         .filter((x): x is NonNullable<typeof x> => x !== null)
     : []
   const statuses = ['pending', 'preparing', 'delivering', 'completed', 'cancelled'] as const
-  const status = statuses.includes(v.status as (typeof statuses)[number])
-    ? (v.status as import('./types').Order['status'])
+  const status = statuses.includes(v['status'] as (typeof statuses)[number])
+    ? (v['status'] as import('./types').Order['status'])
     : 'pending'
-  return {
-    id: v.id,
+  const order: import('./types').Order = {
+    id: orderId,
     items,
-    total: num(v.total, 0),
-    deliveryFee: num(v.deliveryFee, 0),
+    total: num(v['total'], 0),
+    deliveryFee: num(v['deliveryFee'], 0),
     status,
-    customerName: str(v.customerName),
-    customerPhone: str(v.customerPhone),
-    customerAddress: str(v.customerAddress),
-    deliveryType: v.deliveryType === 'pickup' || v.deliveryType === 'delivery' ? v.deliveryType : undefined,
-    paymentMethod:
-      v.paymentMethod === 'card' || v.paymentMethod === 'pix' || v.paymentMethod === 'cash'
-        ? v.paymentMethod
-        : undefined,
-    changeFor: typeof v.changeFor === 'number' && Number.isFinite(v.changeFor) ? v.changeFor : undefined,
-    createdAt: str(v.createdAt, new Date().toISOString()),
-    updatedAt: str(v.updatedAt, new Date().toISOString()),
+    customerName: str(v['customerName']),
+    customerPhone: str(v['customerPhone']),
+    customerAddress: str(v['customerAddress']),
+    createdAt: str(v['createdAt'], new Date().toISOString()),
+    updatedAt: str(v['updatedAt'], new Date().toISOString()),
   }
+  if (v['deliveryType'] === 'pickup' || v['deliveryType'] === 'delivery') {
+    order.deliveryType = v['deliveryType']
+  }
+  if (v['paymentMethod'] === 'card' || v['paymentMethod'] === 'pix' || v['paymentMethod'] === 'cash') {
+    order.paymentMethod = v['paymentMethod']
+  }
+  if (typeof v['changeFor'] === 'number' && Number.isFinite(v['changeFor'])) {
+    order.changeFor = v['changeFor']
+  }
+  return order
 }
 
 export function isOrderArray(v: unknown): v is import('./types').Order[] {
@@ -138,19 +164,21 @@ export function isOrderArray(v: unknown): v is import('./types').Order[] {
 /** Normaliza a configuração da loja, preenchendo campos ausentes com defaults. */
 export function normalizeConfig(v: unknown, defaults: import('./types').StoreConfig): import('./types').StoreConfig {
   if (!isRecord(v)) return defaults
-  return {
+  const config: import('./types').StoreConfig = {
     ...defaults,
-    name: str(v.name, defaults.name),
-    subtitle: str(v.subtitle, defaults.subtitle),
-    logoUrl: typeof v.logoUrl === 'string' && v.logoUrl ? v.logoUrl : undefined,
-    phone: str(v.phone, defaults.phone),
-    address: str(v.address, defaults.address),
-    deliveryFee: num(v.deliveryFee, defaults.deliveryFee),
-    minOrder: num(v.minOrder, defaults.minOrder),
-    openTime: str(v.openTime, defaults.openTime),
-    closeTime: str(v.closeTime, defaults.closeTime),
-    isOpen: bool(v.isOpen, defaults.isOpen),
+    name: str(v['name'], defaults.name),
+    subtitle: str(v['subtitle'], defaults.subtitle),
+    phone: str(v['phone'], defaults.phone),
+    address: str(v['address'], defaults.address),
+    deliveryFee: num(v['deliveryFee'], defaults.deliveryFee),
+    minOrder: num(v['minOrder'], defaults.minOrder),
+    openTime: str(v['openTime'], defaults.openTime),
+    closeTime: str(v['closeTime'], defaults.closeTime),
+    isOpen: bool(v['isOpen'], defaults.isOpen),
   }
+  // exactOptionalPropertyTypes: só define logoUrl quando for string não vazia.
+  if (typeof v['logoUrl'] === 'string' && v['logoUrl']) config.logoUrl = v['logoUrl']
+  return config
 }
 
 /** Normaliza zonas de entrega; descarta entradas inválidas. */
@@ -158,17 +186,17 @@ export function normalizeDeliveryZones(v: unknown): import('./types').DeliveryZo
   if (!Array.isArray(v)) return null
   const zones = (v as unknown[])
     .filter(isRecord)
-    .filter(z => typeof z.id === 'string' && typeof z.name === 'string')
+    .filter(z => typeof prop(z, 'id') === 'string' && typeof prop(z, 'name') === 'string')
     .map(z => ({
-      id: z.id as string,
-      name: z.name as string,
-      price: num(z.price, 0),
-      estimatedTime: str(z.estimatedTime),
-      coordinates: Array.isArray(z.coordinates)
-        ? (z.coordinates as unknown[])
+      id: prop(z, 'id') as string,
+      name: prop(z, 'name') as string,
+      price: num(prop(z, 'price'), 0),
+      estimatedTime: str(prop(z, 'estimatedTime')),
+      coordinates: Array.isArray(prop(z, 'coordinates'))
+        ? (prop(z, 'coordinates') as unknown[])
             .filter(isRecord)
-            .filter(c => typeof c.lat === 'number' && typeof c.lng === 'number')
-            .map(c => ({ lat: c.lat as number, lng: c.lng as number }))
+            .filter(c => typeof prop(c, 'lat') === 'number' && typeof prop(c, 'lng') === 'number')
+            .map(c => ({ lat: prop(c, 'lat') as number, lng: prop(c, 'lng') as number }))
         : [],
     }))
   return zones.length > 0 || v.length === 0 ? zones : null

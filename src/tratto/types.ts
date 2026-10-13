@@ -30,6 +30,11 @@ export interface CartItem {
   selectedAddOns?: ProductAddOn[]
 }
 
+/** Chave que identifica univocamente a linha do carrinho (produto + adicionais). */
+export function cartItemKey(productId: string, addOnIds?: readonly string[]): string {
+  return productId + '|' + [...(addOnIds ?? [])].sort().join(',')
+}
+
 export type DeliveryType = 'pickup' | 'delivery'
 export type PaymentMethod = 'card' | 'pix' | 'cash'
 

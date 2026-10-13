@@ -1,13 +1,25 @@
-// @ts-nocheck -- código original migrado sem alterações de lógica
 import { useState, useRef, useEffect } from 'react'
 import { useStore } from '../context/StoreContext'
-import { Product, CartItem, ProductAddOn, Order, DeliveryType, PaymentMethod } from '../types'
+import type { Product, CartItem, Order, DeliveryType, PaymentMethod } from '../types'
+import { cartItemKey } from '../types'
 
 const fmt = (v: number) => `R$ ${v.toFixed(2).replace('.', ',')}`
 
 // preço unitário do item do carrinho (produto + adicionais selecionados)
 const getItemUnitPrice = (item: CartItem) =>
   item.product.price + (item.selectedAddOns || []).reduce((sum, a) => sum + a.price, 0)
+
+/** Quantidade total de um produto no carrinho (soma todas as linhas com adicionais diferentes). */
+const getCartQtyForProduct = (cart: CartItem[], productId: string) =>
+  cart.filter(item => item.product.id === productId).reduce((sum, item) => sum + item.quantity, 0)
+
+/** Existe uma linha exatamente com esta combinação de produto + adicionais? */
+const hasExactCartItem = (cart: CartItem[], productId: string, addOnIds: readonly string[]) =>
+  cart.some(
+    item =>
+      cartItemKey(item.product.id, (item.selectedAddOns || []).map(a => a.id)) ===
+      cartItemKey(productId, addOnIds),
+  )
 
 function MenuView() {
   const { config, products, categories, deliveryZones, addOrder } = useStore()
@@ -29,23 +41,51 @@ function MenuView() {
   const [orderPlaced, setOrderPlaced] = useState<Order | null>(null)
   const sectionRefs = useRef<{ [key: string]: HTMLElement | null }>({})
 
-  // Detect mobile
+  // Detect mobile (matchMedia acompanha giro de tela/resize com mais precisão)
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 640)
-    checkMobile()
-    window.addEventListener('resize', checkMobile)
-    return () => window.removeEventListener('resize', checkMobile)
+    const mql = window.matchMedia('(max-width: 639px)')
+    const sync = () => setIsMobile(mql.matches)
+    sync()
+    mql.addEventListener('change', sync)
+    return () => mql.removeEventListener('change', sync)
   }, [])
+
+  // Bloqueia o scroll do fundo enquanto um modal estiver aberto
+  const anyModalOpen = showCart || showCheckout || showProductModal || orderPlaced !== null
+  useEffect(() => {
+    if (!anyModalOpen) return
+    const previous = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = previous
+    }
+  }, [anyModalOpen])
+
+  // Fecha o modal visível com ESC
+  useEffect(() => {
+    if (!anyModalOpen) return
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return
+      if (orderPlaced) setOrderPlaced(null)
+      else if (showCheckout) setShowCheckout(false)
+      else if (showCart) setShowCart(false)
+      else if (showProductModal) setShowProductModal(false)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [anyModalOpen, orderPlaced, showCheckout, showCart, showProductModal])
 
   const addToCart = (product: Product, addOnIds: string[] = [], incQty = false) => {
     const chosenAddOns = (product.addOns || []).filter(a => addOnIds.includes(a.id))
     setCart(prev => {
-      const keyOf = (item: CartItem) =>
-        item.product.id + '|' + [...(item.selectedAddOns || [])].map(a => a.id).sort().join(',')
-      const key = product.id + '|' + chosenAddOns.map(a => a.id).sort().join(',')
-      const existing = prev.find(item => keyOf(item) === key)
+      const key = cartItemKey(product.id, chosenAddOns.map(a => a.id))
+      const existing = prev.find(item => cartItemKey(item.product.id, (item.selectedAddOns || []).map(a => a.id)) === key)
       if (existing) {
-        return prev.map(item => keyOf(item) === key ? { ...item, quantity: item.quantity + (incQty ? 1 : 0) } : item)
+        return prev.map(item =>
+          cartItemKey(item.product.id, (item.selectedAddOns || []).map(a => a.id)) === key
+            ? { ...item, quantity: item.quantity + (incQty ? 1 : 0) }
+            : item,
+        )
       }
       return [...prev, { product, quantity: 1, selectedAddOns: chosenAddOns }]
     })
@@ -53,15 +93,14 @@ function MenuView() {
 
   const removeFromCart = (productId: string, addOnIds?: string[]) => {
     setCart(prev => {
-      const targetKey = addOnIds
-        ? productId + '|' + [...addOnIds].sort().join(',')
-        : undefined
+      const targetKey = addOnIds ? cartItemKey(productId, addOnIds) : undefined
       // se passou os adicionais, mexe exatamente naquele item; senão remove o último desse produto
       for (let i = prev.length - 1; i >= 0; i--) {
-        const k = prev[i].product.id + '|' + [...(prev[i].selectedAddOns || [])].map(a => a.id).sort().join(',')
-        if (targetKey ? k === targetKey : prev[i].product.id === productId) {
-          if (prev[i].quantity > 1) {
-            return prev.map((item, idx) => idx === i ? { ...item, quantity: item.quantity - 1 } : item)
+        const item = prev[i]!
+        const k = cartItemKey(item.product.id, (item.selectedAddOns || []).map(a => a.id))
+        if (targetKey ? k === targetKey : item.product.id === productId) {
+          if (item.quantity > 1) {
+            return prev.map((it, idx) => (idx === i ? { ...it, quantity: it.quantity - 1 } : it))
           }
           return prev.filter((_, idx) => idx !== i)
         }
@@ -70,10 +109,7 @@ function MenuView() {
     })
   }
 
-  const getCartQuantity = (productId: string) => {
-    const item = cart.find(item => item.product.id === productId)
-    return item ? item.quantity : 0
-  }
+  const getCartQuantity = (productId: string) => getCartQtyForProduct(cart, productId)
 
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0)
   const totalPrice = cart.reduce((sum, item) => sum + getItemUnitPrice(item) * item.quantity, 0)
@@ -91,7 +127,9 @@ function MenuView() {
     customerName.trim() !== '' &&
     customerPhone.trim() !== '' &&
     paymentMethod !== '' &&
-    (deliveryType === 'pickup' || customerAddress.trim() !== '')
+    (deliveryType === 'pickup' || customerAddress.trim() !== '') &&
+    config.isOpen &&
+    totalPrice >= config.minOrder
 
   const openCheckout = () => {
     setShowCart(false)
@@ -100,6 +138,10 @@ function MenuView() {
 
   const placeOrder = () => {
     if (!canPlaceOrder) return
+    // Sanidade: loja fechada não aceita novos pedidos (o botão também fica desabilitado na UI).
+    if (!config.isOpen) return
+    // Pedido mínimo configurável — evita pedidos abaixo do valor estabelecido na loja.
+    if (totalPrice < config.minOrder) return
     const now = new Date().toISOString()
     const order: Order = {
       id: '#' + Math.floor(1000 + Math.random() * 9000),
@@ -123,6 +165,8 @@ function MenuView() {
     setPaymentMethod('')
     setChangeFor('')
     setCustomerAddress('')
+    setCustomerName('')
+    setCustomerPhone('')
   }
 
   const scrollToCategory = (categoryId: string) => {
@@ -343,8 +387,9 @@ function MenuView() {
             WebkitOverflowScrolling: 'touch',
             scrollbarWidth: 'none',
             msOverflowStyle: 'none'
-          }}>
-            <style>{`div::-webkit-scrollbar { display: none; }`}</style>
+          }}
+          className="menu-category-scroll"
+        >
             {sortedCategories.map(cat => (
               <button
                 key={cat.id}
@@ -560,14 +605,8 @@ function MenuView() {
             overflow: 'hidden',
             display: 'flex',
             flexDirection: 'column',
-            animation: 'slideUp 0.3s ease-out'
+            animation: 'tratto-slide-up 0.3s ease-out'
           }}>
-            <style>{`
-              @keyframes slideUp {
-                from { transform: translateY(100%); }
-                to { transform: translateY(0); }
-              }
-            `}</style>
             {/* Handle bar for mobile */}
             {isMobile && (
               <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 4px' }}>
@@ -600,7 +639,7 @@ function MenuView() {
             </div>
             <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '16px' : '20px' }}>
               {cart.map(item => (
-                <div key={item.product.id + '|' + (item.selectedAddOns || []).map(a => a.id).sort().join(',')} style={{
+                <div key={cartItemKey(item.product.id, (item.selectedAddOns || []).map(a => a.id))} style={{
                   display: 'flex',
                   alignItems: 'center',
                   gap: '12px',
@@ -723,20 +762,35 @@ function MenuView() {
               <p style={{ color: '#9ca3af', fontSize: '11px', margin: '0 0 10px 0', textAlign: 'center' }}>
                 🛵 Entrega ou retirada e forma de pagamento você escolhe a seguir
               </p>
+              {!config.isOpen && (
+                <p style={{ color: '#dc2626', fontSize: '12px', fontWeight: 600, margin: '0 0 10px 0', textAlign: 'center' }}>
+                  🔴 A loja está fechada no momento. Volte em outro horário!
+                </p>
+              )}
+              {config.isOpen && totalPrice < config.minOrder && cart.length > 0 && (
+                <p style={{ color: '#d97706', fontSize: '12px', fontWeight: 600, margin: '0 0 10px 0', textAlign: 'center' }}>
+                  Pedido mínimo de {fmt(config.minOrder)} — faltam {fmt(config.minOrder - totalPrice)}
+                </p>
+              )}
               <button
                 onClick={openCheckout}
-                disabled={cart.length === 0}
+                disabled={!config.isOpen || cart.length === 0 || totalPrice < config.minOrder}
                 style={{
                   width: '100%',
-                  backgroundColor: cart.length === 0 ? '#d1d5db' : '#ef4444',
+                  backgroundColor:
+                    !config.isOpen || cart.length === 0 || totalPrice < config.minOrder ? '#d1d5db' : '#ef4444',
                   color: 'white',
                   borderRadius: '12px',
                   padding: '14px',
                   fontWeight: 'bold',
                   fontSize: '15px',
                   border: 'none',
-                  cursor: cart.length === 0 ? 'not-allowed' : 'pointer',
-                  boxShadow: cart.length === 0 ? 'none' : '0 4px 12px rgba(239, 68, 68, 0.3)'
+                  cursor:
+                    !config.isOpen || cart.length === 0 || totalPrice < config.minOrder ? 'not-allowed' : 'pointer',
+                  boxShadow:
+                    !config.isOpen || cart.length === 0 || totalPrice < config.minOrder
+                      ? 'none'
+                      : '0 4px 12px rgba(239, 68, 68, 0.3)',
                 }}
               >
                 Finalizar pedido
@@ -770,7 +824,7 @@ function MenuView() {
             overflow: 'hidden',
             display: 'flex',
             flexDirection: 'column',
-            animation: 'slideUp 0.3s ease-out'
+            animation: 'tratto-slide-up 0.3s ease-out'
           }}>
             {isMobile && (
               <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 4px' }}>
@@ -967,7 +1021,13 @@ function MenuView() {
               </div>
               {!canPlaceOrder && (
                 <p style={{ fontSize: '11px', color: '#9ca3af', textAlign: 'center', margin: '0 0 8px 0' }}>
-                  Preencha nome, telefone{deliveryType === 'delivery' ? ', endereço' : ''} e forma de pagamento
+                  {!config.isOpen
+                    ? '🔴 A loja está fechada no momento.'
+                    : totalPrice < config.minOrder
+                      ? `Pedido mínimo de ${fmt(config.minOrder)} — faltam ${fmt(config.minOrder - totalPrice)}.`
+                      : 'Preencha nome, telefone' +
+                        (deliveryType === 'delivery' ? ', endereço' : '') +
+                        ' e forma de pagamento'}
                 </p>
               )}
               <button
@@ -1013,7 +1073,7 @@ function MenuView() {
             maxWidth: '400px',
             padding: '28px 20px',
             textAlign: 'center',
-            animation: 'slideUp 0.3s ease-out'
+            animation: 'tratto-slide-up 0.3s ease-out'
           }}>
             <div style={{
               width: '64px', height: '64px', borderRadius: '50%', backgroundColor: '#dcfce7',
@@ -1078,7 +1138,7 @@ function MenuView() {
             overflow: 'hidden',
             display: 'flex',
             flexDirection: 'column',
-            animation: 'slideUp 0.3s ease-out'
+            animation: 'tratto-slide-up 0.3s ease-out'
           }}>
             {/* Handle bar for mobile */}
             {isMobile && (
@@ -1185,25 +1245,31 @@ function MenuView() {
                   R$ {modalItemTotal.toFixed(2).replace('.', ',')}
                 </span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <button
-                    onClick={() => removeFromCart(selectedProduct.id, selectedAddOns)}
-                    style={{
-                      width: '38px',
-                      height: '38px',
-                      borderRadius: '50%',
-                      border: '2px solid #ef4444',
-                      color: '#ef4444',
-                      backgroundColor: 'white',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '16px',
-                      fontWeight: 'bold'
-                    }}
-                  >
-                    −
-                  </button>
+                  {/* A linha "−" só aparece (e só decrementa) quando existe exatamente a
+                      combinação produto + adicionais selecionada no modal — corrige o bug em
+                      que o "−" removia uma linha de adicionais diferentes da escolhida. */}
+                  {getCartQtyForProduct(cart, selectedProduct.id) > 0 &&
+                    hasExactCartItem(cart, selectedProduct.id, selectedAddOns) && (
+                    <button
+                      onClick={() => removeFromCart(selectedProduct.id, selectedAddOns)}
+                      style={{
+                        width: '38px',
+                        height: '38px',
+                        borderRadius: '50%',
+                        border: '2px solid #ef4444',
+                        color: '#ef4444',
+                        backgroundColor: 'white',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '16px',
+                        fontWeight: 'bold'
+                      }}
+                    >
+                      −
+                    </button>
+                  )}
                   <span style={{ width: '24px', textAlign: 'center', fontWeight: 'bold', fontSize: '18px' }}>
                     {getCartQuantity(selectedProduct.id)}
                   </span>
