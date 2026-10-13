@@ -1,15 +1,21 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowRight, Check, ChefHat, ClipboardList, Globe2, Smartphone, Store, Zap } from "lucide-react";
+import { ArrowRight, Bell, Check, ChefHat, ClipboardList, Clock, Globe2, PlayCircle, Search, ShieldCheck, ShoppingBag, Smartphone, Store, Zap } from "lucide-react";
 
 const features = [
   { icon: Smartphone, title: "Cardápio digital", description: "Uma vitrine bonita, rápida e fácil de usar em qualquer celular." },
-  { icon: ClipboardList, title: "Pedidos organizados", description: "Acompanhe cada pedido por etapa, do recebimento até a entrega." },
-  { icon: Store, title: "Sua marca em destaque", description: "Compartilhe um link exclusivo da sua loja nas redes e no WhatsApp." },
-  { icon: Zap, title: "Mais agilidade", description: "Reduza trocas de mensagens e deixe o cliente montar o próprio pedido." },
-  { icon: Globe2, title: "Acesse de qualquer lugar", description: "Gerencie sua operação online, sem depender de um computador específico." },
-  { icon: ChefHat, title: "Controle na cozinha", description: "Visualize os pedidos com clareza e mantenha a equipe alinhada." },
+  { icon: ClipboardList, title: "Pedidos em tempo real", description: "Acompanhe cada pedido por etapa, do recebimento até a entrega." },
+  { icon: Store, title: "Sua marca em destaque", description: "Link exclusivo da sua loja para Instagram, WhatsApp e Google." },
+  { icon: ShoppingBag, title: "Pedido de balcão", description: "Lance pedidos manuais no painel com cliente e forma de pagamento." },
+  { icon: Clock, title: "Agendamento", description: "Com a loja fechada, o cliente agenda entrega ou retirada." },
+  { icon: Globe2, title: "Acesse de qualquer lugar", description: "Gerencie sua operação online, pelo celular ou computador." },
+];
+
+const steps = [
+  ["1", "Crie sua conta", "Cadastre sua loja em poucos minutos, sem cartão de crédito."],
+  ["2", "Monte seu cardápio", "Adicione categorias, produtos e fotos, ou importe de outro lugar."],
+  ["3", "Compartilhe o link", "Receba pedidos pelo seu link exclusivo e acompanhe no painel."],
 ];
 
 const included = [
@@ -20,6 +26,14 @@ const included = [
   "Link exclusivo para sua loja",
 ];
 
+const orders = [
+  ["#1058", "Clássico Smash + Batata", "Aguardando", "R$ 49,90", "text-emerald-400"],
+  ["#1057", "BBQ Bacon + Refrigerante", "Preparando", "R$ 44,90", "text-red-400"],
+  ["#1056", "Cheese Salada + Suco", "Pronto", "R$ 36,90", "text-sky-400"],
+];
+
+const phoneItems = [["Clássico Smash", "R$ 29,90"], ["BBQ Bacon", "R$ 34,90"], ["Batata Crocante", "R$ 19,90"]];
+
 export function HomePage() {
   const [plan, setPlan] = useState<{ system_name?: string; logo_url?: string | null; plan_name: string; price_cents: number; trial_days: number; contact_whatsapp: string } | null>(null);
   useEffect(() => {
@@ -28,120 +42,130 @@ export function HomePage() {
   }, []);
   const wa = String(plan?.contact_whatsapp || "").replace(/\D/g, "");
   const price = plan ? "R$ " + (plan.price_cents / 100).toFixed(2).replace(".", ",") : null;
+  const name = plan?.system_name || "Tratto Digital Menu";
+  const cta = "inline-flex items-center justify-center gap-2 rounded-lg bg-red-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-red-600/30 transition hover:bg-red-500";
   return (
-    <main className="min-h-screen bg-[#f4f7fc] text-[#14284b]">
-      <header className="sticky top-0 z-20 border-b border-[#dce4ef] bg-white/95 shadow-sm backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 sm:px-8">
-          <Link to="/" className="flex items-center gap-3 min-w-0" aria-label={(plan?.system_name || "Tratto Digital Menu") + " início"}>
+    <main className="min-h-screen bg-[#08080a] text-white">
+      <header className="sticky top-0 z-20 border-b border-white/5 bg-[#08080a]/85 backdrop-blur">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-4 sm:px-8">
+          <Link to="/" className="flex min-w-0 items-center gap-3" aria-label={name + " início"}>
             {plan?.logo_url
-              ? <img src={plan.logo_url} alt="" className="h-10 w-10 rounded-xl object-contain" />
-              : <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#c9233a] text-white"><ChefHat size={22} /></span>}
-            <span className="truncate text-lg font-bold tracking-tight">{plan?.system_name || "Tratto Digital Menu"}</span>
+              ? <img src={plan.logo_url} alt="" className="h-11 w-11 rounded-full object-contain" />
+              : <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-red-600 text-white"><ChefHat size={24} /></span>}
+            <span className="truncate text-lg font-bold tracking-tight">{name}</span>
           </Link>
-          <nav className="flex items-center gap-3">
-            <a href="#recursos" className="hidden text-sm font-medium text-slate-600 hover:text-slate-950 sm:inline">Funcionalidades</a>
-            <a href="#experiencia" className="hidden text-sm font-medium text-slate-600 hover:text-slate-950 md:inline">Como funciona</a>
-            <a href="#planos" className="hidden text-sm font-medium text-slate-600 hover:text-slate-950 sm:inline">Planos</a>
-            <Link to="/tratto" className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">Ver demonstração</Link>
-            <a href="/painel" className="hidden rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 sm:inline">Entrar</a>
-            <a href="/cadastro" className="rounded-lg bg-[#c9233a] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#a7192d]">Começar grátis</a>
+          <nav className="hidden items-center gap-8 text-sm font-medium text-slate-200 lg:flex">
+            <a href="#recursos" className="hover:text-white">Funcionalidades</a>
+            <a href="#planos" className="hover:text-white">Planos</a>
+            <a href="#como-funciona" className="hover:text-white">Como funciona</a>
           </nav>
+          <div className="flex items-center gap-2">
+            <a href="/painel" className="px-3 py-2 text-sm font-semibold text-slate-200 hover:text-white">Entrar</a>
+            <a href="/cadastro" className={cta}>Começar teste grátis <ArrowRight size={16} /></a>
+          </div>
         </div>
       </header>
 
-      <section className="relative overflow-hidden bg-[#f7f9fc] text-[#10264b]">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(201,35,58,0.35),transparent_48%)]" /><div className="pointer-events-none absolute inset-y-0 right-0 w-1/3 border-l border-white/5 bg-white/[0.02]" />
-        <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-5 py-14 sm:px-8 sm:py-20 lg:grid-cols-[.95fr_1.05fr]">
+      <section className="relative overflow-hidden">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_65%_40%,rgba(220,38,38,0.35),transparent_55%)]" />
+        <div className="relative mx-auto grid max-w-7xl items-center gap-10 px-5 py-14 sm:px-8 sm:py-20 lg:grid-cols-[.9fr_1.1fr]">
           <div>
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#dce4ef] bg-white px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-[#14284b] shadow-sm"><span className="h-2 w-2 rounded-full bg-[#c9233a]" /> Cardápio digital para o seu negócio</div>
-            <h1 className="max-w-2xl text-4xl font-extrabold leading-[1.06] tracking-tight text-[#10264b] sm:text-5xl lg:text-6xl">Transforme seu cardápio em <span className="text-[#c9233a]">mais vendas.</span></h1>
-            <p className="mt-6 max-w-xl text-base leading-8 text-slate-600 sm:text-lg">O Tratto Smart Menu reúne cardápio digital, pedidos online e painel administrativo em uma plataforma simples para sua equipe e prática para seus clientes.</p>
+            <h1 className="text-4xl font-extrabold leading-[1.08] tracking-tight sm:text-5xl lg:text-6xl">Seu cardápio digital.<br />Seu negócio no <span className="text-red-600">controle.</span></h1>
+            <svg viewBox="0 0 300 12" className="mt-3 h-3 w-72 text-red-600" fill="none" preserveAspectRatio="none"><path d="M2 8 C 70 2, 180 2, 298 6" stroke="currentColor" strokeWidth="3" strokeLinecap="round" /></svg>
+            <p className="mt-7 max-w-md text-base leading-8 text-slate-300 sm:text-lg">Cardápio digital completo para restaurantes, bares e lanchonetes. Atualize, gerencie e acompanhe tudo em tempo real. Feito para o Brasil.</p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <a href="/cadastro" className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#c9233a] px-6 py-3.5 font-semibold text-white shadow-lg shadow-[#c9233a]/20 transition hover:bg-[#a7192d]">Começar teste grátis <ArrowRight size={18} /></a>
-              <Link to="/tratto" className="inline-flex items-center justify-center rounded-xl border border-[#14284b] bg-white px-6 py-3.5 font-semibold text-[#14284b] transition hover:bg-slate-50">Ver demonstração</Link>
+              <a href="/cadastro" className={cta}>Começar teste grátis <ArrowRight size={16} /></a>
+              <Link to="/tratto" className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/20 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10">Ver demonstração <PlayCircle size={18} /></Link>
             </div>
-            <div className="mt-8 flex flex-wrap gap-x-5 gap-y-2 text-sm text-slate-600">
-              <span className="inline-flex items-center gap-2"><Check size={16} className="text-[#ff5368]" /> Fácil de configurar</span>
-              <span className="inline-flex items-center gap-2"><Check size={16} className="text-[#ff5368]" /> Feito para celular</span>
-              <span className="inline-flex items-center gap-2"><Check size={16} className="text-[#ff5368]" /> Sem comissão por pedido na plataforma</span>
+            <div className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-slate-300">
+              <span className="inline-flex items-center gap-2"><ShieldCheck size={18} className="text-red-500" /> Sem taxa de setup</span>
+              <span className="inline-flex items-center gap-2"><Clock size={18} className="text-red-500" /> Ative em minutos</span>
+              <span className="inline-flex items-center gap-2"><span className="text-base">🇧🇷</span> Feito para o Brasil</span>
             </div>
           </div>
-          <div className="mx-auto w-full max-w-xl">
-            <div className="rounded-[1.75rem] border border-[#dce4ef] bg-white p-4 text-[#14284b] shadow-[0_30px_90px_-35px_rgba(16,38,75,0.35)] sm:p-6">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                <div><p className="text-xs font-semibold uppercase tracking-wider text-[#c9233a]">Demonstração</p><h2 className="mt-1 text-lg font-bold">Painel do restaurante</h2></div>
-                <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">Online</span>
+
+          <div className="relative mx-auto h-[430px] w-full max-w-[640px] sm:h-[480px]">
+            <div className="absolute right-0 top-4 w-[88%] rounded-t-2xl border border-white/10 bg-[#101013] p-3 shadow-2xl shadow-black/60">
+              <div className="flex items-center justify-between border-b border-white/5 pb-2">
+                <div className="flex items-center gap-2 text-xs font-semibold"><span className="flex h-6 w-6 items-center justify-center rounded-full bg-red-600"><ChefHat size={13} /></span>Búrguer & Cia<span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] text-emerald-400">● Online</span></div>
+                <div className="flex gap-3 text-slate-400"><Search size={14} /><Bell size={14} /></div>
               </div>
-              <div className="mt-5 grid grid-cols-2 gap-3">
-                <div className="rounded-2xl bg-slate-50 p-4"><p className="text-sm text-slate-500">Pedidos hoje</p><p className="mt-2 text-3xl font-bold">24</p><p className="mt-1 text-xs text-emerald-700">Acompanhe em tempo real</p></div>
-                <div className="rounded-2xl bg-slate-50 p-4"><p className="text-sm text-slate-500">Cardápio</p><p className="mt-2 text-3xl font-bold">Ativo</p><p className="mt-1 text-xs text-slate-500">Link pronto para compartilhar</p></div>
+              <div className="grid grid-cols-[110px_1fr] gap-3 pt-3">
+                <div className="hidden space-y-1 text-[11px] text-slate-400 sm:block">
+                  {["Visão geral", "Pedidos", "Cardápio", "Mesas", "Avaliações", "Relatórios", "Configurações"].map((x, i) => <div key={x} className={`rounded-md px-2 py-1.5 ${i === 0 ? "bg-red-600 text-white" : ""}`}>{x}</div>)}
+                </div>
+                <div className="col-span-2 sm:col-span-1">
+                  <p className="text-sm font-bold">Pedidos em tempo real</p>
+                  <div className="mt-2 space-y-2">
+                    {orders.map(([id, items, st, total, c]) => (
+                      <div key={id} className="rounded-lg border border-white/5 bg-white/[0.03] p-2.5 text-[11px]">
+                        <div className="flex justify-between"><b>Pedido {id}</b><span className={c}>● {st}</span></div>
+                        <div className="mt-1 flex justify-between text-slate-400"><span>{items}</span><b className="text-white">{total}</b></div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-2 grid grid-cols-3 gap-2 text-[10px] text-slate-400">
+                    <div className="rounded-lg bg-white/[0.03] p-2">Pedidos hoje<b className="block text-sm text-white">28</b></div>
+                    <div className="rounded-lg bg-white/[0.03] p-2">Faturamento<b className="block text-sm text-white">R$ 1.842,50</b></div>
+                    <div className="rounded-lg bg-white/[0.03] p-2">Preparo<b className="block text-sm text-white">18 min</b></div>
+                  </div>
+                </div>
               </div>
-              <div className="mt-4 space-y-3">
-                {[["Novo pedido", "Combo da casa · 2 itens", "Aguardando"], ["Em preparo", "Smash clássico · 1 item", "Preparando"], ["Pronto para retirada", "Batata + bebida · 2 itens", "Pronto"]].map(([title, detail, status], i) => (
-                  <div key={title} className="flex items-center gap-3 rounded-xl border border-slate-100 p-3.5">
-                    <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${i === 0 ? "bg-[#fff0f2] text-[#c9233a]" : "bg-slate-100 text-slate-600"}`}><ClipboardList size={19} /></div>
-                    <div className="min-w-0 flex-1"><p className="text-sm font-semibold">{title}</p><p className="mt-0.5 truncate text-xs text-slate-500">{detail}</p></div>
-                    <span className="text-xs font-medium text-slate-500">{status}</span>
+            </div>
+            <div className="absolute -bottom-1 right-[-2%] h-3 w-[96%] rounded-b-2xl bg-gradient-to-b from-slate-600 to-slate-800" />
+            <div className="absolute bottom-0 left-0 z-10 w-[40%] min-w-[190px] rounded-[2rem] border-[5px] border-slate-800 bg-[#0c0c0f] p-3 shadow-2xl shadow-black/70">
+              <div className="mx-auto mb-2 h-4 w-16 rounded-full bg-black" />
+              <div className="flex items-center justify-between text-sm font-bold">Cardápio <span className="relative"><ShoppingBag size={15} /><i className="absolute -right-2 -top-2 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-600 text-[8px] not-italic">2</i></span></div>
+              <div className="mt-2 flex items-center gap-1 rounded-md bg-white/5 px-2 py-1.5 text-[10px] text-slate-400"><Search size={11} />Buscar no cardápio...</div>
+              <div className="mt-2 flex gap-1 text-[9px]">{["Destaques", "Hambúrgueres", "Porções"].map(x => <span key={x} className="rounded-full bg-white/10 px-2 py-1">{x}</span>)}</div>
+              <div className="mt-2 space-y-2">
+                {phoneItems.map(([n, p]) => (
+                  <div key={n} className="flex items-center gap-2 rounded-lg bg-white/[0.04] p-2">
+                    <div className="h-12 w-12 shrink-0 rounded-lg bg-gradient-to-br from-amber-500 via-red-700 to-amber-900" />
+                    <div className="text-[11px]"><b>{n}</b><p className="mt-0.5 text-[9px] text-slate-400">Feito na hora, com ingredientes selecionados.</p><b>{p}</b></div>
                   </div>
                 ))}
               </div>
-              <div className="mt-4 flex items-center gap-2 rounded-xl bg-[#10264b] px-4 py-3 text-sm text-white"><Globe2 size={17} className="text-[#ff5368]" /><span className="text-blue-100/80">tratto.com/</span><span className="font-semibold">sua-loja</span><span className="ml-auto rounded-lg bg-[#c9233a] px-3 py-1.5 text-xs font-bold">Abrir loja</span></div>
-              <p className="mt-3 text-center text-xs text-slate-400">Ilustração demonstrativa da plataforma</p>
             </div>
           </div>
         </div>
       </section>
 
-      <section id="experiencia" className="border-y border-[#dce4ef] bg-white">
-        <div className="mx-auto grid max-w-7xl items-center gap-12 px-5 py-16 sm:px-8 lg:grid-cols-[.85fr_1.15fr] lg:py-20">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[.18em] text-[#c9233a]">Cardápio do cliente</p>
-            <h2 className="mt-3 text-3xl font-extrabold leading-tight tracking-tight text-[#10264b] sm:text-4xl">Uma experiência de compra simples e deliciosa.</h2>
-            <p className="mt-5 leading-7 text-slate-600">Seu cliente acessa pelo celular, encontra os produtos com facilidade e monta o pedido em poucos toques. Sem aplicativo para instalar.</p>
-            <ul className="mt-7 space-y-4 text-sm text-slate-700">
-              {["Visual adaptado para celular", "Categorias e produtos bem organizados", "Fotos, descrições e preços em destaque", "Pedido rápido e intuitivo"].map(item => <li key={item} className="flex items-center gap-3"><span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#fff0f2] text-[#c9233a]"><Check size={15} /></span>{item}</li>)}
-            </ul>
-            <Link to="/tratto" className="mt-8 inline-flex items-center gap-2 font-bold text-[#c9233a] hover:gap-3 transition-all">Explorar demonstração <ArrowRight size={17} /></Link>
-          </div>
-          <div className="relative mx-auto w-full max-w-xl">
-            <div className="absolute -inset-4 rounded-[2rem] bg-gradient-to-br from-[#e7edf7] via-white to-[#fce8eb]" />
-            <div className="relative mx-auto max-w-sm rounded-[2.25rem] border-[7px] border-[#10264b] bg-white p-3 shadow-2xl">
-              <div className="mx-auto mb-4 h-1.5 w-16 rounded-full bg-slate-200" />
-              <div className="rounded-2xl bg-[#10264b] p-4 text-white"><p className="text-[10px] font-bold uppercase tracking-[.2em] text-red-200">Cardápio da casa</p><p className="mt-2 text-xl font-extrabold">Feito na hora. Feito pra você.</p><p className="mt-1 text-xs text-blue-100/80">Hambúrgueres • porções • bebidas</p></div>
-              <div className="mt-4 flex gap-2 overflow-hidden">{["Todos","Hambúrgueres","Porções"].map((cat,i)=><span key={cat} className={`shrink-0 rounded-full px-3 py-1.5 text-[10px] font-bold ${i===0?"bg-[#c9233a] text-white":"bg-slate-100 text-slate-600"}`}>{cat}</span>)}</div>
-              <div className="mt-4 space-y-3">
-                {[["Smash da casa","Pão brioche, queijo e molho especial","R$ 28,90","🍔"],["Batata crocante","Porção individual","R$ 14,90","🍟"],["Combo clássico","Hambúrguer + batata + bebida","R$ 39,90","🥤"]].map(([name,desc,price,emoji])=><div key={name} className="flex items-center gap-3 rounded-xl border border-slate-100 p-3"><div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-[#f4f6fa] text-2xl">{emoji}</div><div className="min-w-0 flex-1"><p className="text-sm font-bold text-[#10264b]">{name}</p><p className="mt-1 text-[10px] leading-4 text-slate-500">{desc}</p><p className="mt-1 text-xs font-extrabold text-[#c9233a]">{price}</p></div><span className="rounded-lg bg-[#c9233a] px-2.5 py-2 text-[10px] font-bold text-white">Adicionar</span></div>)}
-              </div>
-              <div className="mt-4 rounded-xl bg-[#10264b] p-3 text-center text-xs font-bold text-white">Ver pedido <span className="ml-2 rounded-full bg-[#c9233a] px-2 py-1">3 itens</span></div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section id="recursos" className="border-y border-[#dce4ef] bg-[#f7f9fc]">
+      <section id="recursos" className="border-t border-white/5 bg-[#0d0d10]">
         <div className="mx-auto max-w-7xl px-5 py-20 sm:px-8">
-          <div className="mx-auto max-w-2xl text-center"><p className="text-sm font-bold uppercase tracking-widest text-[#c9233a]">Tudo em um só lugar</p><h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">Mais praticidade para vender</h2><p className="mt-4 leading-7 text-slate-600">Uma ferramenta simples para organizar a operação e deixar o pedido mais fácil para o cliente.</p></div>
-          <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {features.map(({ icon: Icon, title, description }) => <article key={title} className="group rounded-2xl border border-[#dce4ef] bg-white p-6 shadow-sm transition duration-200 hover:-translate-y-1 hover:border-[#c9233a]/40 hover:shadow-xl hover:shadow-[#14284b]/5 sm:p-7"><div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#10264b] text-white transition group-hover:bg-[#c9233a]"><Icon size={23} /></div><h3 className="mt-5 text-lg font-bold">{title}</h3><p className="mt-2 leading-7 text-slate-600">{description}</p></article>)}
+          <div className="mx-auto max-w-2xl text-center"><p className="text-sm font-bold uppercase tracking-widest text-red-500">Tudo em um só lugar</p><h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">Mais praticidade para vender</h2></div>
+          <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+            {features.map(({ icon: Icon, title, description }) => <article key={title} className="rounded-2xl border border-white/10 bg-white/[0.03] p-7"><div className="flex h-12 w-12 items-center justify-center rounded-xl bg-red-600/15 text-red-500"><Icon size={23} /></div><h3 className="mt-5 text-lg font-bold">{title}</h3><p className="mt-2 leading-7 text-slate-400">{description}</p></article>)}
           </div>
         </div>
       </section>
 
-      <section id="planos" className="mx-auto max-w-7xl px-5 py-20 sm:px-8">
-        <div className="mx-auto max-w-2xl text-center"><p className="text-sm font-bold uppercase tracking-widest text-[#c9233a]">Planos simples</p><h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">Comece no seu ritmo</h2><p className="mt-4 text-slate-600">Experimente a plataforma antes de escolher a assinatura ideal para seu negócio.</p></div>
-        <div className="mx-auto mt-10 grid max-w-4xl gap-5 md:grid-cols-2">
-          <article className="rounded-2xl border border-[#dce4ef] p-7"><p className="text-sm font-semibold text-slate-500">Teste grátis{plan ? ` por ${plan.trial_days} dias` : ""}</p><p className="mt-3 text-4xl font-bold">R$ 0</p><p className="mt-2 text-sm text-slate-500">Para conhecer a plataforma</p><ul className="mt-6 space-y-3">{["Configure sua loja", "Cadastre produtos e categorias", "Conheça o painel de pedidos"].map(x => <li key={x} className="flex gap-2 text-sm text-slate-700"><Check size={17} className="shrink-0 text-emerald-600" />{x}</li>)}</ul><a href="/cadastro" className="mt-7 inline-flex w-full items-center justify-center rounded-xl border border-[#dce4ef] px-4 py-3 font-semibold hover:bg-slate-50">Iniciar teste grátis</a></article>
-          <article className="relative rounded-2xl border-2 border-[#c9233a] p-7 shadow-lg shadow-[#c9233a]/10"><span className="absolute right-5 top-5 rounded-full bg-[#fff0f2] px-3 py-1 text-xs font-bold text-[#a7192d]">Plano principal</span><p className="text-sm font-semibold text-slate-500">Assinatura</p><p className="mt-3 text-4xl font-bold">{price ?? "—"}<span className="text-base font-medium text-slate-500">/mês</span></p><p className="mt-2 text-sm text-slate-500">{plan?.plan_name || "Assinatura"} · sem fidelidade</p><ul className="mt-6 space-y-3">{included.map(x => <li key={x} className="flex gap-2 text-sm text-slate-700"><Check size={17} className="shrink-0 text-emerald-600" />{x}</li>)}</ul><a href="/cadastro" className="mt-7 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#c9233a] px-4 py-3 font-semibold text-white hover:bg-[#a7192d]">Quero começar <ArrowRight size={17} /></a></article>
+      <section id="como-funciona" className="mx-auto max-w-7xl px-5 py-20 sm:px-8">
+        <div className="mx-auto max-w-2xl text-center"><p className="text-sm font-bold uppercase tracking-widest text-red-500">Como funciona</p><h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">No ar em 3 passos</h2></div>
+        <div className="mt-12 grid gap-5 md:grid-cols-3">
+          {steps.map(([n, t, d]) => <article key={n} className="rounded-2xl border border-white/10 p-7"><span className="flex h-10 w-10 items-center justify-center rounded-full bg-red-600 font-bold">{n}</span><h3 className="mt-4 text-lg font-bold">{t}</h3><p className="mt-2 leading-7 text-slate-400">{d}</p></article>)}
         </div>
       </section>
 
-      <section id="comecar" className="relative overflow-hidden bg-[#10264b] text-white"><div className="pointer-events-none absolute -right-20 -top-24 h-80 w-80 rounded-full border-[40px] border-white/5" />
-        <div className="mx-auto grid max-w-7xl gap-8 px-5 py-16 sm:px-8 md:grid-cols-[1fr_auto] md:items-center">
-          <div><p className="text-sm font-bold uppercase tracking-widest text-[#ff5368]">Próximo passo</p><h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">Seu cardápio digital começa aqui.</h2><p className="mt-3 max-w-2xl leading-7 text-slate-300">Crie sua conta, monte seu cardápio e comece a receber pedidos pelo WhatsApp. O teste é grátis e não pede cartão de crédito.</p></div>
-          <div className="flex flex-col gap-3 sm:flex-row"><a href="/cadastro" className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#c9233a] px-5 py-3.5 font-semibold text-white transition hover:bg-[#a7192d]">Criar minha loja <ArrowRight size={18} /></a><Link to="/tratto" className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-5 py-3.5 font-semibold text-slate-950 transition hover:bg-slate-100">Ver demonstração</Link>{wa && <a href={`https://wa.me/${wa.startsWith("55") ? wa : "55" + wa}`} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center rounded-xl border border-slate-600 px-5 py-3.5 font-semibold text-white transition hover:bg-slate-800">Falar no WhatsApp</a>}</div>
+      <section id="planos" className="border-t border-white/5 bg-[#0d0d10]">
+        <div className="mx-auto max-w-7xl px-5 py-20 sm:px-8">
+          <div className="mx-auto max-w-2xl text-center"><p className="text-sm font-bold uppercase tracking-widest text-red-500">Planos simples</p><h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">Comece no seu ritmo</h2></div>
+          <div className="mx-auto mt-10 grid max-w-4xl gap-5 md:grid-cols-2">
+            <article className="rounded-2xl border border-white/10 p-7"><p className="text-sm font-semibold text-slate-400">Teste grátis{plan ? ` por ${plan.trial_days} dias` : ""}</p><p className="mt-3 text-4xl font-bold">R$ 0</p><ul className="mt-6 space-y-3">{["Configure sua loja", "Cadastre produtos e categorias", "Conheça o painel de pedidos"].map(x => <li key={x} className="flex gap-2 text-sm text-slate-300"><Check size={17} className="shrink-0 text-emerald-400" />{x}</li>)}</ul><a href="/cadastro" className="mt-7 inline-flex w-full items-center justify-center rounded-lg border border-white/20 px-4 py-3 font-semibold hover:bg-white/10">Iniciar teste grátis</a></article>
+            <article className="relative rounded-2xl border-2 border-red-600 bg-red-600/5 p-7"><span className="absolute right-5 top-5 rounded-full bg-red-600 px-3 py-1 text-xs font-bold">Plano principal</span><p className="text-sm font-semibold text-slate-400">Assinatura</p><p className="mt-3 text-4xl font-bold">{price ?? "—"}<span className="text-base font-medium text-slate-400">/mês</span></p><p className="mt-2 text-sm text-slate-400">{plan?.plan_name || "Assinatura"} · sem fidelidade</p><ul className="mt-6 space-y-3">{included.map(x => <li key={x} className="flex gap-2 text-sm text-slate-300"><Check size={17} className="shrink-0 text-emerald-400" />{x}</li>)}</ul><a href="/cadastro" className={cta + " mt-7 w-full"}>Quero começar <ArrowRight size={17} /></a></article>
+          </div>
         </div>
       </section>
-      <footer className="border-t border-slate-800 bg-slate-950 px-5 py-6 text-center text-sm text-slate-400">© {new Date().getFullYear()} Tratto Digital Menu. Cardápios digitais para negócios locais.</footer>
+
+      <section className="relative overflow-hidden">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(220,38,38,0.25),transparent_60%)]" />
+        <div className="relative mx-auto max-w-3xl px-5 py-20 text-center sm:px-8">
+          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Seu cardápio digital começa aqui.</h2>
+          <p className="mt-4 leading-7 text-slate-300">Crie sua conta, monte seu cardápio e comece a receber pedidos. O teste é grátis e não pede cartão de crédito.</p>
+          <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row"><a href="/cadastro" className={cta}>Criar minha loja <ArrowRight size={17} /></a>{wa && <a href={`https://wa.me/${wa.startsWith("55") ? wa : "55" + wa}`} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center rounded-lg border border-white/20 px-5 py-3 text-sm font-semibold hover:bg-white/10">Falar no WhatsApp</a>}</div>
+        </div>
+      </section>
+      <footer className="border-t border-white/5 px-5 py-6 text-center text-sm text-slate-500">© {new Date().getFullYear()} {name}. Cardápios digitais para negócios locais.</footer>
     </main>
   );
 }
