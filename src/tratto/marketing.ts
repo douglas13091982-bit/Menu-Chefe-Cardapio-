@@ -1,81 +1,67 @@
-// Configurações de marketing (localStorage, chave store_marketing)
+// Configurações de marketing no banco: Pixel ID em store_settings (público) e token em store_secrets (só admin)
+import { supabase } from '@/integrations/supabase/client'
+import { getCurrentStoreId } from './tenant'
+
 export interface MarketingConfig {
-  pixelId: string;
-  accessToken: string;
+  pixelId: string
+  accessToken: string
 }
 
-export const MARKETING_KEY = "store_marketing";
-
-/**
- * Lê as configurações de marketing.
- * O token da API de Conversões é um segredo de SERVIDOR e por isso nunca é
- * exposto na interface pública: apenas o Pixel ID pode ser lido aqui.
- */
-export function loadMarketing(): Pick<MarketingConfig, "pixelId"> {
+export async function loadPixelId(storeId: string = getCurrentStoreId()): Promise<string> {
+  if (!storeId) return ''
   try {
-    const stored = localStorage.getItem(MARKETING_KEY);
-    if (stored) {
-      const parsed: unknown = JSON.parse(stored);
-      if (parsed && typeof parsed === "object") {
-        const pixelId = (parsed as Record<string, unknown>)["pixelId"];
-        return { pixelId: typeof pixelId === "string" ? pixelId : String(pixelId ?? "") };
-      }
-    }
+    const { data } = await supabase.from('store_settings').select('marketing_pixel_id').eq('store_id', storeId).maybeSingle()
+    return String(data?.marketing_pixel_id || '')
   } catch {
-    /* JSON corrompido: segue sem configuração */
+    return ''
   }
-  return { pixelId: "" };
 }
 
-export function saveMarketing(data: MarketingConfig) {
+export async function loadMarketing(): Promise<MarketingConfig> {
+  const pixelId = await loadPixelId()
+  let accessToken = ''
   try {
-    localStorage.setItem(MARKETING_KEY, JSON.stringify(data));
-  } catch {
-    throw new Error("Não foi possível salvar (armazenamento indisponível).");
-  }
+    const { data } = await supabase.from('store_secrets').select('facebook_access_token').eq('store_id', getCurrentStoreId()).maybeSingle()
+    accessToken = String(data?.facebook_access_token || '')
+  } catch {}
+  return { pixelId, accessToken }
 }
 
-let loadedPixelId: string | null = null;
-
-type FbqFn = ((...args: unknown[]) => void) & {
-  callMethod?: (...args: unknown[]) => void;
-  queue: unknown[][];
-  push: unknown;
-  loaded: boolean;
-  version: string;
-};
-
-declare global {
-  interface Window {
-    fbq?: FbqFn;
-    _fbq?: FbqFn;
-  }
+// Retorna uma mensagem de erro, ou null se salvou
+export async function saveMarketing(data: MarketingConfig): Promise<string | null> {
+  const now = new Date().toISOString()
+  const a = await supabase.from('store_settings').upsert({ store_id: getCurrentStoreId(), marketing_pixel_id: data.pixelId || null, updated_at: now })
+  if (a.error) return a.error.message
+  const b = await supabase.from('store_secrets').upsert({ store_id: getCurrentStoreId(), facebook_access_token: data.accessToken || null, updated_at: now })
+  if (b.error) return b.error.message
+  return null
 }
+
+let loadedPixelId: string | null = null
 
 // Carrega o Meta Pixel (fbq) e dispara PageView. Não faz nada se não houver Pixel ID.
-export function trackMenuPageView() {
-  const { pixelId } = loadMarketing();
-  if (!/^\d+$/.test(pixelId)) return;
-  const w = window;
+export async function trackMenuPageView(storeId?: string) {
+  const pixelId = await loadPixelId(storeId)
+  if (!/^\d+$/.test(pixelId)) return
+  const w = window as any
   if (!w.fbq) {
-    const n = function (...args: unknown[]) {
-      if (n.callMethod) n.callMethod(...args);
-      else n.queue.push(args);
-    } as FbqFn;
-    w.fbq = n;
-    if (!w._fbq) w._fbq = n;
-    n.push = n;
-    n.loaded = true;
-    n.version = "2.0";
-    n.queue = [];
-    const s = document.createElement("script");
-    s.async = true;
-    s.src = "https://connect.facebook.net/en_US/fbevents.js";
-    document.head.appendChild(s);
+    const n: any = function (...args: any[]) {
+      n.callMethod ? n.callMethod.apply(n, args) : n.queue.push(args)
+    }
+    w.fbq = n
+    if (!w._fbq) w._fbq = n
+    n.push = n
+    n.loaded = true
+    n.version = '2.0'
+    n.queue = []
+    const s = document.createElement('script')
+    s.async = true
+    s.src = 'https://connect.facebook.net/en_US/fbevents.js'
+    document.head.appendChild(s)
   }
   if (loadedPixelId !== pixelId) {
-    w.fbq("init", pixelId);
-    loadedPixelId = pixelId;
+    w.fbq('init', pixelId)
+    loadedPixelId = pixelId
   }
-  w.fbq("track", "PageView");
+  w.fbq('track', 'PageView')
 }

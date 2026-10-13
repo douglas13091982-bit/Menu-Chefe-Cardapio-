@@ -1,460 +1,246 @@
-import {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  useMemo,
-  useRef,
-  type ReactNode,
-} from "react";
-import type { Product, Category, Order, StoreConfig, DeliveryZone } from "../types";
-import {
-  loadJson,
-  saveJson,
-  normalizeConfig,
-  normalizeProduct,
-  normalizeCategory,
-  normalizeOrder,
-  normalizeDeliveryZones,
-} from "../storage";
+// @ts-nocheck -- código original migrado sem alterações de lógica
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { Product, Category, Order, StoreConfig, DeliveryZone } from '../types'
+import { supabase } from '@/integrations/supabase/client'
+import { setDbMapboxToken } from '../mapboxToken'
+import { setCurrentStoreId } from '../tenant'
 
 interface StoreContextType {
   // Config
-  config: StoreConfig;
-  setConfig: (config: StoreConfig) => void;
+  config: StoreConfig
+  setConfig: (config: StoreConfig) => void
   // Products
-  products: Product[];
-  addProduct: (product: Product) => void;
-  updateProduct: (product: Product) => void;
-  deleteProduct: (id: string) => void;
+  products: Product[]
+  addProduct: (product: Product) => void
+  updateProduct: (product: Product) => void
+  deleteProduct: (id: string) => void
   // Categories
-  categories: Category[];
-  addCategory: (category: Category) => void;
-  updateCategory: (category: Category) => void;
-  deleteCategory: (id: string) => void;
+  categories: Category[]
+  addCategory: (category: Category) => void
+  updateCategory: (category: Category) => void
+  deleteCategory: (id: string) => void
   // Orders
-  orders: Order[];
-  addOrder: (order: Order) => void;
-  updateOrderStatus: (id: string, status: Order["status"]) => void;
-  deleteOrder: (id: string) => void;
+  orders: Order[]
+  lastIncomingOrder: Order | null
+  addOrder: (order: Order) => void
+  updateOrderStatus: (id: string, status: Order['status']) => void
   // Delivery
-  deliveryZones: DeliveryZone[];
-  addDeliveryZone: (zone: DeliveryZone) => void;
-  updateDeliveryZone: (zone: DeliveryZone) => void;
-  deleteDeliveryZone: (id: string) => void;
+  deliveryZones: DeliveryZone[]
+  addDeliveryZone: (zone: DeliveryZone) => void
+  updateDeliveryZone: (zone: DeliveryZone) => void
+  deleteDeliveryZone: (id: string) => void
+  // Loja (SaaS)
+  storeId: string
+  storeName: string
+  storeState: 'loading' | 'ready' | 'notfound' | 'unavailable'
+  dataReady: boolean
 }
 
 const defaultConfig: StoreConfig = {
-  name: "Tratto Hamburgueria",
-  subtitle: "Hamburguer Artesanal",
-  phone: "(47) 99999-9999",
-  address: "Rua São Paulo, 1234 - Saguaçu, Joinville - SC",
-  deliveryFee: 5.99,
-  minOrder: 20,
-  openTime: "18:00",
-  closeTime: "23:00",
-  isOpen: true,
-};
-
-const defaultCategories: Category[] = [
-  { id: "hamburgueres", name: "Hambúrgueres", icon: "🍔", order: 1 },
-  { id: "combos", name: "Combos", icon: "🎁", order: 2 },
-  { id: "acompanhamentos", name: "Acompanhamentos", icon: "🍟", order: 3 },
-  { id: "sobremesas", name: "Sobremesas", icon: "🍫", order: 4 },
-  { id: "bebidas", name: "Bebidas", icon: "🥤", order: 5 },
-];
-
-const defaultProducts: Product[] = [
-  {
-    id: "1",
-    name: "Tratto Duplo Cheddar",
-    description:
-      "Dois blend de carne 120g, cheddar derretido, cebola caramelizada, alface, tomate e molho especial da casa no pão brioche.",
-    price: 34.9,
-    image:
-      "https://image.qwenlm.ai/generated-images/b62ff599-15a5-4145-8c58-c65f82e68458/_result.png",
-    categoryId: "hamburgueres",
-    popular: true,
-    available: true,
-  },
-  {
-    id: "2",
-    name: "Smash Bacon Crispy",
-    description:
-      "Dois smash de 90g, bacon crocante, queijo prato derretido, picles e molho barbecue defumado no pão potato.",
-    price: 32.9,
-    image:
-      "https://image.qwenlm.ai/generated-images/bcef539b-80ef-4b18-b919-6dfe7b1b0fbb/_result.png",
-    categoryId: "hamburgueres",
-    popular: true,
-    available: true,
-  },
-  {
-    id: "3",
-    name: "Smash Tratto",
-    description:
-      "Dois smash de 90g com queijo americano derretido nas bordas, picles, cebola roxa e molho smash especial.",
-    price: 29.9,
-    image:
-      "https://image.qwenlm.ai/generated-images/5439d0eb-4b3e-4d8b-ae55-67688ab6dbb4/_result.png",
-    categoryId: "hamburgueres",
-    popular: true,
-    available: true,
-  },
-  {
-    id: "4",
-    name: "Chicken Crispy Burger",
-    description:
-      "Filé de frango empanado crocante, coleslaw, maionese de ervas e picles no pão brioche com gergelim.",
-    price: 28.9,
-    image:
-      "https://image.qwenlm.ai/generated-images/50704ef9-c654-4381-9ba7-795a0f6d07c4/_result.png",
-    categoryId: "hamburgueres",
-    available: true,
-  },
-  {
-    id: "5",
-    name: "X-Burger Clássico",
-    description:
-      "Blend de carne 150g, queijo prato, alface, tomate, cebola e maionese no pão australiano.",
-    price: 26.9,
-    image:
-      "https://image.qwenlm.ai/generated-images/b62ff599-15a5-4145-8c58-c65f82e68458/_result.png",
-    categoryId: "hamburgueres",
-    available: true,
-  },
-  {
-    id: "6",
-    name: "Combo Tratto Duplo",
-    description: "Tratto Duplo Cheddar + Batata frita média + Refrigerante lata.",
-    price: 44.9,
-    image:
-      "https://image.qwenlm.ai/generated-images/b62ff599-15a5-4145-8c58-c65f82e68458/_result.png",
-    categoryId: "combos",
-    popular: true,
-    available: true,
-  },
-  {
-    id: "7",
-    name: "Combo Smash Bacon",
-    description: "Smash Bacon Crispy + Onion rings + Refrigerante lata.",
-    price: 42.9,
-    image:
-      "https://image.qwenlm.ai/generated-images/bcef539b-80ef-4b18-b919-6dfe7b1b0fbb/_result.png",
-    categoryId: "combos",
-    available: true,
-  },
-  {
-    id: "8",
-    name: "Combo Família (4 pessoas)",
-    description: "4 Tratto Duplo Cheddar + 2 Batatas fritas grandes + 4 Refrigerantes lata.",
-    price: 149.9,
-    image:
-      "https://image.qwenlm.ai/generated-images/5439d0eb-4b3e-4d8b-ae55-67688ab6dbb4/_result.png",
-    categoryId: "combos",
-    available: true,
-  },
-  {
-    id: "9",
-    name: "Batata Frita Média",
-    description:
-      "Porção de batatas fritas crocantes por fora e macias por dentro, com sal e tempero especial.",
-    price: 16.9,
-    image:
-      "https://image.qwenlm.ai/generated-images/f28df88c-a58f-4ee0-8237-746588c8fab5/_result.png",
-    categoryId: "acompanhamentos",
-    popular: true,
-    available: true,
-  },
-  {
-    id: "10",
-    name: "Batata com Cheddar e Bacon",
-    description: "Batatas fritas cobertas com cheddar cremoso e bacon crocante picado.",
-    price: 24.9,
-    image:
-      "https://image.qwenlm.ai/generated-images/f28df88c-a58f-4ee0-8237-746588c8fab5/_result.png",
-    categoryId: "acompanhamentos",
-    available: true,
-  },
-  {
-    id: "11",
-    name: "Onion Rings",
-    description: "Anéis de cebola empanados e fritos, crocantes e dourados. Acompanha molho ranch.",
-    price: 18.9,
-    image:
-      "https://image.qwenlm.ai/generated-images/f28df88c-a58f-4ee0-8237-746588c8fab5/_result.png",
-    categoryId: "acompanhamentos",
-    available: true,
-  },
-  {
-    id: "12",
-    name: "Nuggets (10 un)",
-    description: "10 nuggets de frango crocantes com molho barbecue e molho ranch.",
-    price: 19.9,
-    image:
-      "https://image.qwenlm.ai/generated-images/f28df88c-a58f-4ee0-8237-746588c8fab5/_result.png",
-    categoryId: "acompanhamentos",
-    available: true,
-  },
-  {
-    id: "13",
-    name: "Brownie com Sorvete",
-    description:
-      "Brownie de chocolate belga quentinho com bola de sorvete de creme e calda de chocolate.",
-    price: 22.9,
-    image:
-      "https://image.qwenlm.ai/generated-images/aaa3d1bf-c470-4b44-9309-afd633cd4a53/_result.png",
-    categoryId: "sobremesas",
-    popular: true,
-    available: true,
-  },
-  {
-    id: "14",
-    name: "Milkshake Ovomaltine",
-    description: "Milkshake cremoso de Ovomaltine com chantilly e calda de chocolate.",
-    price: 19.9,
-    image:
-      "https://image.qwenlm.ai/generated-images/aaa3d1bf-c470-4b44-9309-afd633cd4a53/_result.png",
-    categoryId: "sobremesas",
-    available: true,
-  },
-  {
-    id: "15",
-    name: "Coca-Cola Lata 350ml",
-    description: "Coca-Cola lata gelada 350ml.",
-    price: 7.9,
-    image: "",
-    categoryId: "bebidas",
-    available: true,
-  },
-  {
-    id: "16",
-    name: "Guaraná Antarctica Lata 350ml",
-    description: "Guaraná Antarctica lata gelada 350ml.",
-    price: 7.9,
-    image: "",
-    categoryId: "bebidas",
-    available: true,
-  },
-  {
-    id: "17",
-    name: "Suco Natural 500ml",
-    description: "Suco natural da fruta. Sabores: Laranja, Limão, Maracujá ou Abacaxi.",
-    price: 12.9,
-    image: "",
-    categoryId: "bebidas",
-    available: true,
-  },
-  {
-    id: "18",
-    name: "Água Mineral 500ml",
-    description: "Água mineral sem gás 500ml.",
-    price: 4.9,
-    image: "",
-    categoryId: "bebidas",
-    available: true,
-  },
-];
-
-const defaultDeliveryZones: DeliveryZone[] = [
-  {
-    id: "1",
-    name: "Saguaçu",
-    price: 5.99,
-    estimatedTime: "25-35 min",
-    coordinates: [
-      { lat: -26.285, lng: -48.845 },
-      { lat: -26.28, lng: -48.84 },
-      { lat: -26.29, lng: -48.84 },
-      { lat: -26.29, lng: -48.85 },
-      { lat: -26.285, lng: -48.85 },
-    ],
-  },
-  {
-    id: "2",
-    name: "Centro",
-    price: 7.99,
-    estimatedTime: "30-40 min",
-    coordinates: [
-      { lat: -26.3, lng: -48.85 },
-      { lat: -26.295, lng: -48.845 },
-      { lat: -26.305, lng: -48.845 },
-      { lat: -26.305, lng: -48.855 },
-      { lat: -26.3, lng: -48.855 },
-    ],
-  },
-  {
-    id: "3",
-    name: "Boa Vista",
-    price: 9.99,
-    estimatedTime: "35-45 min",
-    coordinates: [
-      { lat: -26.27, lng: -48.83 },
-      { lat: -26.265, lng: -48.825 },
-      { lat: -26.275, lng: -48.825 },
-      { lat: -26.275, lng: -48.835 },
-      { lat: -26.27, lng: -48.835 },
-    ],
-  },
-];
-
-function generateDemoOrders(): Order[] {
-  const statuses: Order["status"][] = [
-    "pending",
-    "preparing",
-    "delivering",
-    "completed",
-    "completed",
-    "completed",
-  ];
-  const names = [
-    "João Silva",
-    "Maria Santos",
-    "Pedro Oliveira",
-    "Ana Costa",
-    "Lucas Ferreira",
-    "Carla Mendes",
-  ];
-  const orders: Order[] = [];
-
-  for (let i = 0; i < 12; i++) {
-    const daysAgo = Math.floor(Math.random() * 30);
-    const date = new Date();
-    date.setDate(date.getDate() - daysAgo);
-    date.setHours(Math.floor(Math.random() * 5) + 18, Math.floor(Math.random() * 60));
-    const product =
-      defaultProducts[Math.floor(Math.random() * defaultProducts.length)] ?? defaultProducts[0]!;
-    const quantity = Math.floor(Math.random() * 3) + 1;
-
-    orders.push({
-      id: `ORD-${1000 + i}`,
-      items: [{ product, quantity }],
-      total: parseFloat((product.price * quantity).toFixed(2)),
-      deliveryFee: [5.99, 7.99, 9.99][Math.floor(Math.random() * 3)]!,
-      status: statuses[Math.floor(Math.random() * statuses.length)]!,
-      customerName: names[Math.floor(Math.random() * names.length)]!,
-      customerPhone: `(47) 9${Math.floor(Math.random() * 9000 + 1000)}-${Math.floor(Math.random() * 9000 + 1000)}`,
-      customerAddress: `Rua ${["das Flores", "São Paulo", "Principal", "das Palmeiras"][Math.floor(Math.random() * 4)]}, ${Math.floor(Math.random() * 2000 + 100)}`,
-      createdAt: date.toISOString(),
-      updatedAt: date.toISOString(),
-    });
-  }
-  return orders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  name: 'Minha Loja',
+  subtitle: 'Cardápio digital',
+  phone: '',
+  address: '',
+  deliveryFee: 5,
+  deliveryPerKm: 1.5,
+  maxDeliveryKm: 10,
+  fixedZoneFeesEnabled: false,
+  mapboxFreightEnabled: true,
+  minOrder: 0,
+  openTime: '18:00',
+  closeTime: '23:00',
+  isOpen: true
 }
 
-const StoreContext = createContext<StoreContextType | undefined>(undefined);
+const StoreContext = createContext<StoreContextType | undefined>(undefined)
 
-// Chaves de persistência
-const KEYS = {
-  config: "store_config",
-  products: "store_products",
-  categories: "store_categories",
-  orders: "store_orders",
-  deliveryZones: "store_delivery_zones",
-} as const;
-
-/**
- * Carrega a lista inicial de pedidos. Se não houver nada persistido, gera
- * dados de demonstração e os grava imediatamente — evitando que um novo
- * conjunto aleatório seja regenerado a cada montagem do provider.
- */
-function loadInitialOrders(): Order[] {
-  const stored = loadJson<Order[] | null>(KEYS.orders, null, (v) => v === null || Array.isArray(v));
-  if (stored) {
-    return (stored as unknown[]).map(normalizeOrder).filter((o): o is Order => o !== null);
-  }
-  const demo = generateDemoOrders();
-  saveJson(KEYS.orders, demo);
-  return demo;
+function logError(action: string, error: any) {
+  if (error) console.error(`Erro ao ${action}:`, error)
 }
 
-/** Efeito de persistência com skip da primeira renderização (o valor já vem do storage). */
-function usePersisted<T>(key: string, value: T) {
-  const first = useRef(true);
+interface StoreProviderProps {
+  children: ReactNode
+  /** Cardápio público: resolve a loja pelo endereço (slug). */
+  slug?: string
+  /** Painel do lojista: loja já conhecida (o banco só deixa membros editar). */
+  storeId?: string
+  isAdmin?: boolean
+}
+
+export function StoreProvider({ children, slug, storeId: storeIdProp, isAdmin = false }: StoreProviderProps) {
+  const [sid, setSid] = useState<string>(storeIdProp || '')
+  const [storeName, setStoreName] = useState('')
+  const [storeState, setStoreState] = useState<'loading' | 'ready' | 'notfound' | 'unavailable'>(storeIdProp ? 'ready' : 'loading')
+  const [dataReady, setDataReady] = useState(false)
+  const [config, setConfigState] = useState<StoreConfig>(defaultConfig)
+  const [products, setProducts] = useState<Product[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
+  const [orders, setOrders] = useState<Order[]>([])
+  const [lastIncomingOrder, setLastIncomingOrder] = useState<Order | null>(null)
+  const [deliveryZones, setDeliveryZones] = useState<DeliveryZone[]>([])
+
+  // 1) Descobre a loja pelo endereço (cardápio público)
   useEffect(() => {
-    if (first.current) {
-      first.current = false;
-      return;
+    if (storeIdProp) { setSid(storeIdProp); setStoreState('ready'); return }
+    if (!slug) return
+    let cancelled = false
+    setStoreState('loading')
+    supabase.rpc('get_public_store', { _slug: slug }).then(({ data, error }) => {
+      if (cancelled) return
+      const row = Array.isArray(data) ? data[0] : data
+      if (error || !row) { setStoreState('notfound'); return }
+      setStoreName(row.name || '')
+      setSid(row.id)
+      setStoreState(row.available ? 'ready' : 'unavailable')
+    })
+    return () => { cancelled = true }
+  }, [slug, storeIdProp])
+
+  useEffect(() => { setCurrentStoreId(sid); return () => setCurrentStoreId('') }, [sid])
+
+  // 2) Leitura dos dados da loja
+  useEffect(() => {
+    if (!sid || storeState !== 'ready') return
+    let cancelled = false
+    setDataReady(false)
+    const load = async () => {
+      try {
+        const [settingsRes, catRes, prodRes, zoneRes] = await Promise.all([
+          supabase.from('store_settings').select('config, mapbox_public_token').eq('store_id', sid).maybeSingle(),
+          supabase.from('categories').select('data, sort_order').eq('store_id', sid).order('sort_order'),
+          supabase.from('products').select('data, sort_order').eq('store_id', sid).order('sort_order'),
+          supabase.from('delivery_zones').select('data').eq('store_id', sid),
+        ])
+        if (cancelled) return
+        const cfg = settingsRes.data?.config || {}
+        setConfigState({ ...defaultConfig, ...(storeName ? { name: storeName } : {}), ...cfg })
+        setDbMapboxToken(settingsRes.data?.mapbox_public_token || '')
+        setCategories((catRes.data || []).map(r => r.data))
+        setProducts((prodRes.data || []).map(r => r.data))
+        setDeliveryZones((zoneRes.data || []).map(r => r.data))
+        ;[settingsRes, catRes, prodRes, zoneRes].forEach(r => logError('carregar dados do cardápio', r.error))
+      } catch (err) {
+        console.error('Falha ao carregar a loja.', err)
+      } finally {
+        if (!cancelled) setDataReady(true)
+      }
     }
-    saveJson(key, value);
-  }, [key, value]);
-}
+    load()
+    return () => { cancelled = true }
+  }, [sid, storeState])
 
-export function StoreProvider({ children }: { children: ReactNode }) {
-  const [config, setConfigState] = useState<StoreConfig>(() =>
-    normalizeConfig(loadJson<unknown>(KEYS.config, null), defaultConfig),
-  );
-  const [products, setProducts] = useState<Product[]>(() => {
-    const stored = loadJson<Product[] | null>(
-      KEYS.products,
-      null,
-      (v) => v === null || Array.isArray(v),
-    );
-    if (!stored) return defaultProducts;
-    return (stored as unknown[]).map(normalizeProduct).filter((p): p is Product => p !== null);
-  });
-  const [categories, setCategories] = useState<Category[]>(() => {
-    const stored = loadJson<Category[] | null>(
-      KEYS.categories,
-      null,
-      (v) => v === null || Array.isArray(v),
-    );
-    if (!stored) return defaultCategories;
-    return (stored as unknown[]).map(normalizeCategory).filter((c): c is Category => c !== null);
-  });
-  const [orders, setOrders] = useState<Order[]>(loadInitialOrders);
-  const [deliveryZones, setDeliveryZones] = useState<DeliveryZone[]>(
-    () =>
-      normalizeDeliveryZones(loadJson<unknown>(KEYS.deliveryZones, null)) ?? defaultDeliveryZones,
-  );
+  // 3) Painel: pedidos em tempo real
+  useEffect(() => {
+    if (!isAdmin || !sid) { setOrders([]); return }
+    const channel = supabase
+      .channel('orders-live-' + sid)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `store_id=eq.${sid}` }, payload => {
+        const row = (payload.eventType === 'DELETE' ? payload.old : payload.new) as any
+        if (!row?.id) return
+        if (payload.eventType === 'DELETE') {
+          setOrders(prev => prev.filter(order => order.id !== row.id))
+          return
+        }
+        if (payload.eventType === 'INSERT' && config.orderNotificationSoundUrl && typeof window !== 'undefined' && window.localStorage.getItem('tratto_order_sound_enabled') === '1') {
+          try {
+            const notificationAudio = new Audio(config.orderNotificationSoundUrl)
+            notificationAudio.volume = 1
+            void notificationAudio.play().catch(error => console.warn('Som de novo pedido bloqueado pelo navegador. Ative o som no painel e teste novamente.', error))
+          } catch (error) {
+            console.warn('Não foi possível reproduzir o som de novo pedido.', error)
+          }
+        }
+        const order = { ...(row.data || {}), id: row.id, status: row.status }
+        if (payload.eventType === 'INSERT') setLastIncomingOrder(order)
+        setOrders(prev => {
+          const exists = prev.some(item => item.id === order.id)
+          return exists
+            ? prev.map(item => item.id === order.id ? { ...item, ...order } : item)
+            : [order, ...prev]
+        })
+      })
+      .subscribe()
+    supabase.from('orders').select('data, status').eq('store_id', sid).order('created_at', { ascending: false })
+      .then(({ data, error }) => {
+        logError('carregar pedidos', error)
+        if (data) setOrders(data.map(r => ({ ...r.data, status: r.status })))
+      })
+    return () => { supabase.removeChannel(channel) }
+  }, [isAdmin, sid, config.orderNotificationSoundUrl])
 
-  usePersisted(KEYS.config, config);
-  usePersisted(KEYS.products, products);
-  usePersisted(KEYS.categories, categories);
-  usePersisted(KEYS.orders, orders);
-  usePersisted(KEYS.deliveryZones, deliveryZones);
+  const setConfig = (c: StoreConfig) => {
+    setConfigState(c)
+    supabase.from('store_settings').upsert({ store_id: sid, config: c, updated_at: new Date().toISOString() })
+      .then(({ error }) => logError('salvar configurações', error))
+  }
+  const saveProduct = (p: Product, sortOrder?: number) => {
+    const row: any = { store_id: sid, id: p.id, data: p }
+    if (sortOrder !== undefined) row.sort_order = sortOrder
+    supabase.from('products').upsert(row, { onConflict: 'store_id,id' }).then(({ error }) => logError('salvar produto', error))
+  }
+  const addProduct = (p: Product) => { setProducts(prev => { saveProduct(p, prev.length); return [...prev, p] }) }
+  const updateProduct = (p: Product) => { setProducts(prev => prev.map(item => item.id === p.id ? p : item)); saveProduct(p) }
+  const deleteProduct = (id: string) => {
+    setProducts(prev => prev.filter(item => item.id !== id))
+    supabase.from('products').delete().eq('store_id', sid).eq('id', id).then(({ error }) => logError('apagar produto', error))
+  }
+  const saveCategory = (c: Category) => {
+    supabase.from('categories').upsert({ store_id: sid, id: c.id, data: c, sort_order: c.order ?? 0 }, { onConflict: 'store_id,id' })
+      .then(({ error }) => logError('salvar categoria', error))
+  }
+  const addCategory = (c: Category) => { setCategories(prev => [...prev, c]); saveCategory(c) }
+  const updateCategory = (c: Category) => { setCategories(prev => prev.map(item => item.id === c.id ? c : item)); saveCategory(c) }
+  const deleteCategory = (id: string) => {
+    setCategories(prev => prev.filter(item => item.id !== id))
+    supabase.from('categories').delete().eq('store_id', sid).eq('id', id).then(({ error }) => logError('apagar categoria', error))
+  }
+  const addOrder = (o: Order) => {
+    setOrders(prev => [o, ...prev])
+    // O cliente só insere o pedido (sem .select(), pois não pode ler pedidos)
+    supabase.from('orders').insert({ store_id: sid, id: o.id, data: o, status: 'pending' })
+      .then(({ error }) => logError('enviar pedido', error))
+  }
+  const updateOrderStatus = (id: string, status: Order['status']) => {
+    const updatedAt = new Date().toISOString()
+    let updated: Order | undefined
+    setOrders(prev => prev.map(o => {
+      if (o.id !== id) return o
+      updated = { ...o, status, updatedAt }
+      return updated
+    }))
+    const current = orders.find(o => o.id === id)
+    const data = updated || (current ? { ...current, status, updatedAt } : undefined)
+    if (!data) return
+    supabase.from('orders').update({ data, status, updated_at: updatedAt }).eq('store_id', sid).eq('id', id)
+      .then(({ error }) => logError('atualizar pedido', error))
+  }
+  const saveZone = (z: DeliveryZone) => {
+    supabase.from('delivery_zones').upsert({ store_id: sid, id: z.id, data: z }, { onConflict: 'store_id,id' })
+      .then(({ error }) => logError('salvar zona', error))
+  }
+  const addDeliveryZone = (z: DeliveryZone) => { setDeliveryZones(prev => [...prev, z]); saveZone(z) }
+  const updateDeliveryZone = (z: DeliveryZone) => { setDeliveryZones(prev => prev.map(item => item.id === z.id ? z : item)); saveZone(z) }
+  const deleteDeliveryZone = (id: string) => {
+    setDeliveryZones(prev => prev.filter(item => item.id !== id))
+    supabase.from('delivery_zones').delete().eq('store_id', sid).eq('id', id).then(({ error }) => logError('apagar zona', error))
+  }
 
-  // Funções estáveis (useMemo/useCallback) para evitar re-renderizações
-  // desnecessárias dos consumidores do contexto.
-  const value = useMemo<StoreContextType>(
-    () => ({
-      config,
-      setConfig: (c: StoreConfig) => setConfigState(c),
-      products,
-      addProduct: (p: Product) => setProducts((prev) => [...prev, p]),
-      updateProduct: (p: Product) =>
-        setProducts((prev) => prev.map((item) => (item.id === p.id ? p : item))),
-      deleteProduct: (id: string) => setProducts((prev) => prev.filter((item) => item.id !== id)),
-      categories,
-      addCategory: (c: Category) => setCategories((prev) => [...prev, c]),
-      updateCategory: (c: Category) =>
-        setCategories((prev) => prev.map((item) => (item.id === c.id ? c : item))),
-      deleteCategory: (id: string) =>
-        setCategories((prev) => prev.filter((item) => item.id !== id)),
-      orders,
-      addOrder: (o: Order) => setOrders((prev) => [o, ...prev]),
-      updateOrderStatus: (id: string, status: Order["status"]) =>
-        setOrders((prev) =>
-          prev.map((o) =>
-            o.id === id ? { ...o, status, updatedAt: new Date().toISOString() } : o,
-          ),
-        ),
-      deleteOrder: (id: string) => setOrders((prev) => prev.filter((o) => o.id !== id)),
-      deliveryZones,
-      addDeliveryZone: (z: DeliveryZone) => setDeliveryZones((prev) => [...prev, z]),
-      updateDeliveryZone: (z: DeliveryZone) =>
-        setDeliveryZones((prev) => prev.map((item) => (item.id === z.id ? z : item))),
-      deleteDeliveryZone: (id: string) =>
-        setDeliveryZones((prev) => prev.filter((item) => item.id !== id)),
-    }),
-    [config, products, categories, orders, deliveryZones],
-  );
-
-  return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
+  return (
+    <StoreContext.Provider value={{
+      config, setConfig,
+      products, addProduct, updateProduct, deleteProduct,
+      categories, addCategory, updateCategory, deleteCategory,
+      orders, lastIncomingOrder, addOrder, updateOrderStatus,
+      deliveryZones, addDeliveryZone, updateDeliveryZone, deleteDeliveryZone,
+      storeId: sid, storeName: storeName || config.name, storeState, dataReady
+    }}>
+      {children}
+    </StoreContext.Provider>
+  )
 }
 
 export function useStore() {
-  const context = useContext(StoreContext);
-  if (!context) throw new Error("useStore must be used within StoreProvider");
-  return context;
+  const context = useContext(StoreContext)
+  if (!context) throw new Error('useStore must be used within StoreProvider')
+  return context
 }

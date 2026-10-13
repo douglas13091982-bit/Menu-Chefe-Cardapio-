@@ -1,43 +1,31 @@
-import { useState } from "react";
-import { getSavedMapboxToken, setSavedMapboxToken } from "../../mapboxToken";
+import { useState } from 'react'
+import { CheckCircle2, MapPin } from 'lucide-react'
+import { getSavedMapboxToken, setSavedMapboxToken } from '../../mapboxToken'
 
 function MapboxIntegration() {
-  const [token, setToken] = useState(getSavedMapboxToken());
-  const [savedToken, setSavedToken] = useState(getSavedMapboxToken());
-  const [show, setShow] = useState(false);
-  const [message, setMessage] = useState("");
+  const [token, setToken] = useState(getSavedMapboxToken())
+  const [savedToken, setSavedToken] = useState(getSavedMapboxToken())
+  const [show, setShow] = useState(false)
+  const [message, setMessage] = useState('')
 
   const flash = (msg: string) => {
-    setMessage(msg);
-    setTimeout(() => setMessage(""), 3000);
-  };
-
-  const isSecret = /^sk\./.test(token.trim());
+    setMessage(msg)
+    setTimeout(() => setMessage(''), 3000)
+  }
 
   const handleSave = () => {
-    const t = token.trim();
-    // Validação de formato: apenas tokens públicos (pk.) são aceitos;
-    // tokens secretos (sk.) nunca devem ser colados aqui.
-    if (t && !/^pk\.[A-Za-z0-9._-]+$/.test(t)) {
-      flash('Token inválido: use um token público do Mapbox (começa com "pk.")');
-      return;
-    }
-    try {
-      setSavedMapboxToken(t);
-    } catch {
-      flash("Não foi possível salvar o token (armazenamento indisponível)");
-      return;
-    }
-    setSavedToken(t);
-    flash(t ? "Token do Mapbox salvo!" : "Token do Mapbox removido!");
-  };
+    const t = token.trim()
+    setSavedMapboxToken(t)
+    setSavedToken(t)
+    flash(t ? 'Token do Mapbox salvo!' : 'Token do Mapbox removido!')
+  }
 
   const handleRemove = () => {
-    setSavedMapboxToken("");
-    setToken("");
-    setSavedToken("");
-    flash("Token do Mapbox removido!");
-  };
+    setSavedMapboxToken('')
+    setToken('')
+    setSavedToken('')
+    flash('Token do Mapbox removido!')
+  }
 
   return (
     <div className="space-y-4">
@@ -45,7 +33,7 @@ function MapboxIntegration() {
 
       {message && (
         <div className="bg-green-50 border border-green-200 text-green-700 rounded-lg p-3 flex items-center gap-2">
-          <span>✅</span>
+          <CheckCircle2 size={18} />
           <span className="text-sm font-medium">{message}</span>
         </div>
       )}
@@ -53,53 +41,36 @@ function MapboxIntegration() {
       <div className="bg-white rounded-xl shadow-sm p-6">
         <div className="flex items-center justify-between gap-2 mb-4 flex-wrap">
           <h3 className="font-bold text-gray-800 flex items-center gap-2">
-            <span>🗺️</span> Mapbox (mapa de entrega)
+            <MapPin size={18} className="text-[#d9273f]" /> Mapbox (mapa de entrega)
           </h3>
           {savedToken ? (
-            <span className="text-xs font-medium px-3 py-1 rounded-full bg-green-50 text-green-700 border border-green-200">
-              Mapbox conectado ✅
-            </span>
+            <span className="text-xs font-medium px-3 py-1 rounded-full bg-green-50 text-green-700 border border-green-200"><CheckCircle2 size={14} className="inline mr-1" /> Mapbox conectado </span>
           ) : (
-            <span className="text-xs font-medium px-3 py-1 rounded-full bg-gray-100 text-gray-600 border border-gray-200">
-              Mapbox não configurado
-            </span>
+            <span className="text-xs font-medium px-3 py-1 rounded-full bg-gray-100 text-gray-600 border border-gray-200">Mapbox não configurado</span>
           )}
         </div>
 
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Token público do Mapbox
-        </label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Token público do Mapbox</label>
         <div className="relative">
           <input
-            type={show ? "text" : "password"}
+            type={show ? 'text' : 'password'}
             value={token}
-            onChange={(e) => setToken(e.target.value.slice(0, 500))}
+            onChange={e => setToken(e.target.value.slice(0, 500))}
             className="w-full border rounded-lg px-4 py-2.5 pr-20 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
             placeholder="pk.eyJ1Ijoi..."
             autoComplete="off"
           />
           <button
             type="button"
-            onClick={() => setShow((v) => !v)}
+            onClick={() => setShow(v => !v)}
             className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-medium text-red-600 hover:text-red-700 px-2 py-1"
           >
-            {show ? "Ocultar" : "Mostrar"}
+            {show ? 'Ocultar' : 'Mostrar'}
           </button>
         </div>
-        {isSecret && (
-          <p className="text-xs text-red-600 mt-1 font-medium">
-            ⛔ Este parece ser um token SECRETO (sk.). Nunca cole tokens secretos no navegador —
-            eles dão acesso total à sua conta Mapbox.
-          </p>
-        )}
         <p className="text-xs text-gray-500 mt-1">
-          Crie ou copie seu token público (começa com pk.) em{" "}
-          <a
-            href="https://account.mapbox.com/access-tokens"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-red-600 underline"
-          >
+          Crie ou copie seu token público (começa com pk.) em{' '}
+          <a href="https://account.mapbox.com/access-tokens" target="_blank" rel="noopener noreferrer" className="text-red-600 underline">
             account.mapbox.com/access-tokens
           </a>
         </p>
@@ -123,7 +94,7 @@ function MapboxIntegration() {
         </div>
       </div>
     </div>
-  );
+  )
 }
 
-export default MapboxIntegration;
+export default MapboxIntegration
