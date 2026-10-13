@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useStore } from "../context/StoreContext";
 import type { Product, CartItem, Order, DeliveryType, PaymentMethod } from "../types";
 import { cartItemKey } from "../types";
@@ -129,9 +129,6 @@ function MenuView() {
 
   const getCartQuantity = (productId: string) => getCartQtyForProduct(cart, productId);
 
-  const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-  const totalPrice = cart.reduce((sum, item) => sum + getItemUnitPrice(item) * item.quantity, 0);
-
   // ---- Checkout helpers ----
   const checkoutDeliveryFee = deliveryType === "delivery" ? config.deliveryFee : 0;
   const checkoutTotal = totalPrice + checkoutDeliveryFee;
@@ -211,8 +208,23 @@ function MenuView() {
     : 0;
   const modalItemTotal = (selectedProduct?.price || 0) + selectedAddOnsTotal;
 
-  const availableProducts = products.filter((p) => p.available);
-  const sortedCategories = [...categories].sort((a, b) => a.order - b.order);
+  // Memoização: evita recriar arrays ordenados/filtrados a cada tecla digitada
+  // nos campos do checkout (o componente tem muitos estados locais).
+  const availableProducts = useMemo(() => products.filter((p) => p.available), [products]);
+  const sortedCategories = useMemo(
+    () => [...categories].sort((a, b) => a.order - b.order),
+    [categories],
+  );
+  const cartTotals = useMemo(() => {
+    let items = 0;
+    let price = 0;
+    for (const item of cart) {
+      items += item.quantity;
+      price += getItemUnitPrice(item) * item.quantity;
+    }
+    return { totalItems: items, totalPrice: price };
+  }, [cart]);
+  const { totalItems, totalPrice } = cartTotals;
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "#f3f4f6" }}>
@@ -242,6 +254,8 @@ function MenuView() {
               <img
                 src={config.logoUrl}
                 alt={config.name}
+                loading="lazy"
+                decoding="async"
                 style={{
                   maxHeight: isMobile ? "110px" : "180px",
                   maxWidth: "80%",
@@ -775,6 +789,8 @@ function MenuView() {
                     <img
                       src={item.product.image}
                       alt={item.product.name}
+                      loading="lazy"
+                      decoding="async"
                       style={{
                         width: "48px",
                         height: "48px",
@@ -1572,6 +1588,8 @@ function MenuView() {
                 <img
                   src={selectedProduct.image}
                   alt={selectedProduct.name}
+                  loading="lazy"
+                  decoding="async"
                   style={{ width: "100%", height: "100%", objectFit: "cover" }}
                 />
               ) : (
@@ -1878,6 +1896,8 @@ function ProductCard({
           <img
             src={product.image}
             alt={product.name}
+            loading="lazy"
+            decoding="async"
             style={{ width: "100%", height: "100%", objectFit: "cover", minHeight: "110px" }}
           />
         ) : (

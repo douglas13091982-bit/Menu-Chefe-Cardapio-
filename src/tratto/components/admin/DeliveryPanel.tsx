@@ -1,12 +1,12 @@
-// A migração do Tratto trouxe o código sem tipos; a correção de severidade alta não
-// dependia da tipagem completa. Revalidar com `tsc` ao longo das próximas iterações.
 import { useState, useRef, useEffect } from "react";
 import { formatBRL, generateId } from "../../utils";
-import mapboxgl from "mapbox-gl";
+// Performance: o Mapbox GL (~1.8 MB) é carregado sob demanda apenas quando este
+// painel (aba Entrega do admin) é montado — nunca no carregamento do cardápio.
+import type MapboxGL from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { getMapboxToken, MAPBOX_TOKEN_EVENT } from "../../mapboxToken";
 import { useStore } from "../../context/StoreContext";
-import { DeliveryZone } from "../../types";
+import type { DeliveryZone } from "../../types";
 
 // Joinville coordinates
 const DEFAULT_CENTER = { lat: -26.3, lng: -48.85 };
@@ -324,18 +324,19 @@ function MapComponent({ zones, colors }: { zones: DeliveryZone[]; colors: string
 
     const initMap = async () => {
       try {
-        const mapboxgl = await import("mapbox-gl");
+        // Carregamento dinâmico: mantém o Mapbox GL fora do bundle inicial.
+        const mapboxgl = (await import("mapbox-gl")).default;
         // Token MapBox configurado via variável de ambiente
-        mapboxgl.default.accessToken = mapboxToken;
+        mapboxgl.accessToken = mapboxToken;
 
-        map = new mapboxgl.default.Map({
+        map = new mapboxgl.Map({
           container: mapRef.current!,
           style: "mapbox://styles/mapbox/streets-v12",
           center: [DEFAULT_CENTER.lng, DEFAULT_CENTER.lat],
           zoom: 12,
         });
 
-        map.addControl(new mapboxgl.default.NavigationControl(), "top-right");
+        map.addControl(new mapboxgl.NavigationControl(), "top-right");
 
         map.on("load", () => {
           setMapLoaded(true);
@@ -380,7 +381,7 @@ function MapComponent({ zones, colors }: { zones: DeliveryZone[]; colors: string
               });
 
               map.on("click", `zone-fill-${zone.id}`, (e: any) => {
-                new mapboxgl.default.Popup()
+                new mapboxgl.Popup()
                   .setLngLat(e.lngLat)
                   .setHTML(
                     `<div style="padding:4px"><strong>${zone.name}</strong><br>Taxa: ${formatBRL(zone.price)}<br>${zone.estimatedTime}</div>`,
@@ -393,10 +394,10 @@ function MapComponent({ zones, colors }: { zones: DeliveryZone[]; colors: string
           });
 
           // Restaurant marker
-          new mapboxgl.default.Marker({ color: "#ef4444" })
+          new mapboxgl.Marker({ color: "#ef4444" })
             .setLngLat([DEFAULT_CENTER.lng, DEFAULT_CENTER.lat])
             .setPopup(
-              new mapboxgl.default.Popup().setHTML(
+              new mapboxgl.Popup().setHTML(
                 '<div style="padding:4px"><strong>🍔 Restaurante</strong></div>',
               ),
             )

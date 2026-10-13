@@ -1,12 +1,15 @@
-import { useState } from "react";
-import { useStore } from "../../context/StoreContext";
-import Dashboard from "./Dashboard";
-import ProductsManager from "./ProductsManager";
-import CategoriesManager from "./CategoriesManager";
-import OrdersManager from "./OrdersManager";
-import SettingsPanel from "./SettingsPanel";
-import DeliveryPanel from "./DeliveryPanel";
-import MarketingPanel from "./MarketingPanel";
+import { useState, lazy, Suspense } from "react";
+
+
+// Code splitting por aba: cada painel (Recharts no Dashboard, Mapbox na Entrega)
+// vira um chunk carregado apenas quando a aba é aberta de fato.
+const Dashboard = lazy(() => import("./Dashboard"));
+const ProductsManager = lazy(() => import("./ProductsManager"));
+const CategoriesManager = lazy(() => import("./CategoriesManager"));
+const OrdersManager = lazy(() => import("./OrdersManager"));
+const SettingsPanel = lazy(() => import("./SettingsPanel"));
+const DeliveryPanel = lazy(() => import("./DeliveryPanel"));
+const MarketingPanel = lazy(() => import("./MarketingPanel"));
 
 type AdminTab =
   "dashboard" | "orders" | "products" | "categories" | "delivery" | "marketing" | "settings";
@@ -79,13 +82,25 @@ function AdminPanel() {
 
       {/* Main Content */}
       <main className="flex-1 p-4 md:p-6 overflow-auto">
-        {activeTab === "dashboard" && <Dashboard />}
-        {activeTab === "orders" && <OrdersManager />}
-        {activeTab === "products" && <ProductsManager />}
-        {activeTab === "categories" && <CategoriesManager />}
-        {activeTab === "delivery" && <DeliveryPanel />}
-        {activeTab === "marketing" && <MarketingPanel />}
-        {activeTab === "settings" && <SettingsPanel />}
+        <Suspense
+          fallback={
+            <div className="flex min-h-[200px] items-center justify-center">
+              <span
+                role="status"
+                aria-label="Carregando"
+                className="inline-block h-7 w-7 animate-spin rounded-full border-[3px] border-gray-200 border-t-red-500"
+              />
+            </div>
+          }
+        >
+          {activeTab === "dashboard" && <Dashboard />}
+          {activeTab === "orders" && <OrdersManager />}
+          {activeTab === "products" && <ProductsManager />}
+          {activeTab === "categories" && <CategoriesManager />}
+          {activeTab === "delivery" && <DeliveryPanel />}
+          {activeTab === "marketing" && <MarketingPanel />}
+          {activeTab === "settings" && <SettingsPanel />}
+        </Suspense>
       </main>
     </div>
   );

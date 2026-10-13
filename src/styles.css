@@ -197,3 +197,33 @@ body {
 .peer:checked ~ .peer-checked\:after\:translate-x-full::after {
   transform: translateX(100%);
 }
+
+/* Nav pills (App header): hover tratado via CSS em vez de handlers JS por evento */
+.nav-pill:not([data-active]):hover {
+  background-color: #e5e7eb !important;
+}
+.nav-logout:hover {
+  background-color: #fef2f2 !important;
+  color: #dc2626 !important;
+}
+
+/* Spinner do fallback de Suspense */
+@keyframes tratto-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Acessibilidade/performance: respeita usuários que preferem menos movimento */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

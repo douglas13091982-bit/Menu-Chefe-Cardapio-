@@ -1,10 +1,39 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { ADMIN_AUTH_KEY, readAuthSession } from "./utils";
 import { trackMenuPageView } from "./marketing";
 import { StoreProvider } from "./context/StoreContext";
 import MenuView from "./components/MenuView";
-import AdminPanel from "./components/admin/AdminPanel";
-import LoginScreen from "./components/LoginScreen";
+
+// Code splitting: admin e login só são baixados quando realmente exibidos.
+const AdminPanel = lazy(() => import("./components/admin/AdminPanel"));
+const LoginScreen = lazy(() => import("./components/LoginScreen"));
+
+function ViewFallback() {
+  return (
+    <div
+      style={{
+        minHeight: "60vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <span
+        aria-label="Carregando"
+        role="status"
+        style={{
+          width: 28,
+          height: 28,
+          borderRadius: "50%",
+          border: "3px solid #e5e7eb",
+          borderTopColor: "#ef4444",
+          animation: "tratto-spin 0.8s linear infinite",
+          display: "inline-block",
+        }}
+      />
+    </div>
+  );
+}
 
 type View = "menu" | "login" | "admin";
 
@@ -85,7 +114,9 @@ function App() {
   if (view === "login") {
     return (
       <StoreProvider>
-        <LoginScreen onLogin={handleLogin} onBack={() => setView("menu")} />
+        <Suspense fallback={<ViewFallback />}>
+          <LoginScreen onLogin={handleLogin} onBack={() => setView("menu")} />
+        </Suspense>
       </StoreProvider>
     );
   }
@@ -159,6 +190,8 @@ function App() {
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               <button
                 onClick={() => setView("menu")}
+                className="nav-pill"
+                data-active={view === "menu" ? "true" : undefined}
                 style={{
                   padding: "8px 14px",
                   borderRadius: "10px",
@@ -166,7 +199,7 @@ function App() {
                   fontWeight: 600,
                   border: "none",
                   cursor: "pointer",
-                  transition: "all 0.2s",
+                  transition: "background-color 0.2s, color 0.2s",
                   backgroundColor: view === "menu" ? "#ef4444" : "#f3f4f6",
                   color: view === "menu" ? "#ffffff" : "#374151",
                   boxShadow: view === "menu" ? "0 2px 4px rgba(239, 68, 68, 0.3)" : "none",
@@ -175,22 +208,14 @@ function App() {
                   gap: "6px",
                   whiteSpace: "nowrap",
                 }}
-                onMouseOver={(e) => {
-                  if (view !== "menu") {
-                    e.currentTarget.style.backgroundColor = "#e5e7eb";
-                  }
-                }}
-                onMouseOut={(e) => {
-                  if (view !== "menu") {
-                    e.currentTarget.style.backgroundColor = "#f3f4f6";
-                  }
-                }}
               >
                 <span style={{ fontSize: "16px" }}>🍔</span>
                 <span className="hidden sm:inline">Cardápio</span>
               </button>
               <button
                 onClick={handleAdminClick}
+                className="nav-pill"
+                data-active={view === "admin" ? "true" : undefined}
                 style={{
                   padding: "8px 14px",
                   borderRadius: "10px",
@@ -198,7 +223,7 @@ function App() {
                   fontWeight: 600,
                   border: "none",
                   cursor: "pointer",
-                  transition: "all 0.2s",
+                  transition: "background-color 0.2s, color 0.2s",
                   backgroundColor: view === "admin" ? "#ef4444" : "#f3f4f6",
                   color: view === "admin" ? "#ffffff" : "#374151",
                   boxShadow: view === "admin" ? "0 2px 4px rgba(239, 68, 68, 0.3)" : "none",
@@ -207,16 +232,6 @@ function App() {
                   gap: "6px",
                   whiteSpace: "nowrap",
                 }}
-                onMouseOver={(e) => {
-                  if (view !== "admin") {
-                    e.currentTarget.style.backgroundColor = "#e5e7eb";
-                  }
-                }}
-                onMouseOut={(e) => {
-                  if (view !== "admin") {
-                    e.currentTarget.style.backgroundColor = "#f3f4f6";
-                  }
-                }}
               >
                 <span style={{ fontSize: "16px" }}>⚙️</span>
                 <span className="hidden sm:inline">Admin</span>
@@ -224,6 +239,7 @@ function App() {
               {isAuthenticated && view === "admin" && (
                 <button
                   onClick={handleLogout}
+                  className="nav-pill nav-logout"
                   style={{
                     padding: "8px 12px",
                     borderRadius: "10px",
@@ -231,20 +247,12 @@ function App() {
                     fontWeight: 600,
                     border: "none",
                     cursor: "pointer",
-                    transition: "all 0.2s",
+                    transition: "background-color 0.2s, color 0.2s",
                     backgroundColor: "#f3f4f6",
                     color: "#374151",
                     display: "flex",
                     alignItems: "center",
                     gap: "6px",
-                  }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.backgroundColor = "#fef2f2";
-                    e.currentTarget.style.color = "#dc2626";
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.backgroundColor = "#f3f4f6";
-                    e.currentTarget.style.color = "#374151";
                   }}
                   title="Sair"
                 >
@@ -257,8 +265,10 @@ function App() {
         </nav>
 
         {/* Main Content */}
-        <main style={{ paddingTop: "60px" }}>
-          {view === "menu" ? <MenuView /> : <AdminPanel />}
+        <main style={{ paddingTop: "60px" }} key={view}>
+          <Suspense fallback={<ViewFallback />}>
+            {view === "menu" ? <MenuView /> : <AdminPanel />}
+          </Suspense>
         </main>
       </div>
     </StoreProvider>
