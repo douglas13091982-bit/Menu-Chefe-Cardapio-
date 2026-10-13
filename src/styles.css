@@ -389,3 +389,83 @@ button[style*="#49372e"] {
 [aria-selected="true"] {
   border-color: var(--tratto-primary);
 }
+
+
+/* TRATTO SMART MENU — identidade aprovada: azul-marinho, branco e vermelho */
+:root {
+  --tratto-ink: #14284b;
+  --tratto-muted: #61708a;
+  --tratto-line: #dce4ef;
+  --tratto-paper: #ffffff;
+  --tratto-wine: #c9233a;
+  --tratto-wine-hover: #a7192d;
+  --tratto-primary: #c9233a;
+  --tratto-primary-hover: #a7192d;
+  --tratto-primary-soft: #edf2f9;
+  --tratto-primary-ink: #14284b;
+  --background: #f5f7fb;
+  --foreground: #14284b;
+  --card: #ffffff;
+  --card-foreground: #14284b;
+  --popover: #ffffff;
+  --popover-foreground: #14284b;
+  --primary: #c9233a;
+  --primary-foreground: #ffffff;
+  --secondary: #edf2f9;
+  --secondary-foreground: #14284b;
+  --muted: #f0f3f8;
+  --muted-foreground: #61708a;
+  --accent: #e9eff8;
+  --accent-foreground: #14284b;
+  --border: #dce4ef;
+  --input: #dce4ef;
+  --ring: #c9233a;
+  --sidebar: #14284b;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #e12d45;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #203a65;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #29436b;
+  --sidebar-ring: #e12d45;
+}
+body { background: #f5f7fb; color: #14284b; }
+nav[style*="position: fixed"] {
+  background: rgba(255,255,255,.97) !important;
+  border-bottom-color: #dce4ef !important;
+  box-shadow: 0 8px 28px rgba(20,40,75,.08) !important;
+}
+nav[style*="position: fixed"] button[style*="background-color: rgb(239, 68, 68)"] {
+  background: #c9233a !important;
+  color: #fff !important;
+}
+aside {
+  background: #14284b !important;
+  color: #fff !important;
+  border-color: #29436b !important;
+}
+aside nav button { color: #eaf0fa !important; }
+aside nav button:hover,
+aside nav button[aria-current="page"],
+aside nav button[data-state="active"] {
+  background: #203a65 !important;
+  color: #fff !important;
+}
+main { color: #14284b; }
+main h1, main h2, main h3 { color: #14284b; }
+main .bg-red-500, main .hover\\:bg-red-600:hover,
+button[style*="#782d25"], button[style*="rgb(120, 45, 37)"] {
+  background-color: #c9233a !important;
+  color: #fff !important;
+}
+main input, main select, main textarea {
+  border-color: #dce4ef;
+  color: #14284b;
+}
+main .rounded-lg, main .rounded-xl, main .rounded-2xl {
+  box-shadow: 0 2px 8px rgba(20,40,75,.035);
+}
+::selection { background: #dce7f8; color: #14284b; }
+@media (max-width: 767px) {
+  aside { background: #14284b !important; }
+}
