@@ -237,6 +237,8 @@ function PlatformTab({ plat, reload }) {
   const [name, setName] = useState(plat.system_name || BRAND)
   const [logoUrl, setLogoUrl] = useState(plat.logo_url || '')
   const [logoFile, setLogoFile] = useState(null)
+  const [heroBackgroundUrl, setHeroBackgroundUrl] = useState(plat.hero_background_url || '')
+  const [heroBackgroundFile, setHeroBackgroundFile] = useState(null)
   const [price, setPrice] = useState((plat.price_cents / 100).toFixed(2).replace('.', ','))
   const [trial, setTrial] = useState(plat.trial_days)
   const [wa, setWa] = useState(plat.contact_whatsapp || '')
@@ -268,9 +270,25 @@ function PlatformTab({ plat, reload }) {
       }
       nextLogoUrl = supabase.storage.from('platform-branding').getPublicUrl(path).data.publicUrl + '?v=' + Date.now()
     }
+    let nextHeroBackgroundUrl = heroBackgroundUrl
+    if (heroBackgroundFile) {
+      const ext = (heroBackgroundFile.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg'
+      const path = 'system-hero-background.' + ext
+      const { error: uploadError } = await supabase.storage.from('platform-branding').upload(path, heroBackgroundFile, {
+        upsert: true,
+        contentType: heroBackgroundFile.type || 'image/jpeg',
+        cacheControl: '3600',
+      })
+      if (uploadError) {
+        setBusy(false)
+        return setMsg('Não foi possível enviar a imagem da home. Confira se a migração de identidade visual foi aplicada. ' + uploadError.message)
+      }
+      nextHeroBackgroundUrl = supabase.storage.from('platform-branding').getPublicUrl(path).data.publicUrl + '?v=' + Date.now()
+    }
     const { error } = await supabase.from('platform_settings').update({
       system_name: name.trim(),
       logo_url: nextLogoUrl || null,
+      hero_background_url: nextHeroBackgroundUrl || null,
       plan_name: plat.plan_name,
       price_cents: cents,
       trial_days: Math.max(0, Number(trial) || 0),
@@ -283,6 +301,7 @@ function PlatformTab({ plat, reload }) {
     setBusy(false)
     if (error) return setMsg('Não foi possível salvar. Confira se a migração de identidade visual foi aplicada. ' + error.message)
     setLogoFile(null)
+    setHeroBackgroundFile(null)
     setMsg('Configurações salvas com sucesso.')
     reload()
   }
@@ -319,6 +338,30 @@ function PlatformTab({ plat, reload }) {
             <p className="text-xs text-gray-500">PNG, JPG, WEBP ou SVG. Máximo de 2 MB.</p>
             {logoUrl && <button type="button" className="text-xs text-red-600 underline" onClick={() => { setLogoUrl(''); setLogoFile(null) }}>Remover logo personalizada</button>}
           </div>
+        </div>
+      </div>
+      <div className="space-y-2">
+        <label className="block text-sm font-medium text-gray-700">Imagem de fundo da primeira seção</label>
+        <p className="text-xs text-gray-500">Essa arte aparece como fundo completo da home, atrás do título e dos botões. Prefira uma imagem horizontal 16:9 com a área mais limpa à esquerda.</p>
+        <div className="flex flex-col gap-3">
+          <div className="w-full aspect-[16/6] rounded-xl border border-gray-200 bg-gray-900 overflow-hidden">
+            {heroBackgroundUrl
+              ? <img src={heroBackgroundUrl} alt="Prévia do fundo da primeira seção" className="w-full h-full object-cover" />
+              : <span className="h-full flex items-center justify-center text-xs text-gray-400">Usando a imagem padrão da home</span>}
+          </div>
+          <input type="file" accept="image/png,image/jpeg,image/webp" className={cls} onChange={e => {
+            const file = e.target.files?.[0] || null
+            if (file && file.size > 10 * 1024 * 1024) {
+              setMsg('A imagem da home deve ter no máximo 10 MB.')
+              e.target.value = ''
+              return
+            }
+            setMsg('')
+            setHeroBackgroundFile(file)
+            if (file) setHeroBackgroundUrl(URL.createObjectURL(file))
+          }} />
+          <p className="text-xs text-gray-500">PNG, JPG ou WEBP. Máximo de 10 MB. Salve as configurações para publicar.</p>
+          {heroBackgroundUrl && <button type="button" className="w-fit text-xs text-red-600 underline" onClick={() => { setHeroBackgroundUrl(''); setHeroBackgroundFile(null) }}>Usar imagem padrão da home</button>}
         </div>
       </div>
       <div className="border-t pt-4 space-y-3">

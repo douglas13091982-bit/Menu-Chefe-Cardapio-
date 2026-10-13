@@ -97,6 +97,7 @@ export function HomePage() {
   const [plan, setPlan] = useState<{
     system_name?: string;
     logo_url?: string | null;
+    hero_background_url?: string | null;
     plan_name: string;
     price_cents: number;
     trial_days: number;
@@ -106,7 +107,7 @@ export function HomePage() {
   useEffect(() => {
     supabase
       .from("platform_settings")
-      .select("system_name, logo_url, plan_name, price_cents, trial_days, contact_whatsapp")
+      .select("system_name, logo_url, hero_background_url, plan_name, price_cents, trial_days, contact_whatsapp")
       .eq("id", "main")
       .maybeSingle()
       .then(({ data }) => {
@@ -206,7 +207,10 @@ export function HomePage() {
         )}
       </header>
 
-      <section className="home-hero relative overflow-hidden">
+      <section
+        className="home-hero relative overflow-hidden"
+        style={{ "--home-hero-background": `url("${plan?.hero_background_url || "/tratto-hero-background.jpg"}")` } as React.CSSProperties}
+      >
         <div className="home-hero-glow home-hero-glow-one" />
         <div className="home-hero-glow home-hero-glow-two" />
         <div className="home-container home-hero-grid relative items-center">
@@ -253,25 +257,6 @@ export function HomePage() {
               </span>
               <span className="inline-flex items-center gap-2">
                 <span className="text-base">🇧🇷</span> Feito para o Brasil
-              </span>
-            </div>
-          </div>
-          <div className="home-hero-visual relative">
-            <div className="home-hero-orbit" />
-            <div className="home-hero-image-frame">
-              <img
-                src="/home-hero.jpg"
-                alt="Cardápio digital no celular e painel de pedidos no notebook"
-                className="home-hero-image w-full select-none"
-                loading="eager"
-              />
-            </div>
-            <div className="home-live-badge hidden sm:flex">
-              <span className="home-live-dot" />
-              <span>
-                <strong>Pedidos em tempo real</strong>
-                <br />
-                <small>tudo sob controle</small>
               </span>
             </div>
           </div>
