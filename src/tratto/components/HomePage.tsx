@@ -84,49 +84,8 @@ export function HomePage() {
             </div>
           </div>
 
-          <div className="relative mx-auto h-[430px] w-full max-w-[640px] sm:h-[480px]">
-            <div className="absolute right-0 top-4 w-[88%] rounded-t-2xl border border-white/10 bg-[#101013] p-3 shadow-2xl shadow-black/60">
-              <div className="flex items-center justify-between border-b border-white/5 pb-2">
-                <div className="flex items-center gap-2 text-xs font-semibold"><span className="flex h-6 w-6 items-center justify-center rounded-full bg-red-600"><ChefHat size={13} /></span>Búrguer & Cia<span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] text-emerald-400">● Online</span></div>
-                <div className="flex gap-3 text-slate-400"><Search size={14} /><Bell size={14} /></div>
-              </div>
-              <div className="grid grid-cols-[110px_1fr] gap-3 pt-3">
-                <div className="hidden space-y-1 text-[11px] text-slate-400 sm:block">
-                  {["Visão geral", "Pedidos", "Cardápio", "Mesas", "Avaliações", "Relatórios", "Configurações"].map((x, i) => <div key={x} className={`rounded-md px-2 py-1.5 ${i === 0 ? "bg-red-600 text-white" : ""}`}>{x}</div>)}
-                </div>
-                <div className="col-span-2 sm:col-span-1">
-                  <p className="text-sm font-bold">Pedidos em tempo real</p>
-                  <div className="mt-2 space-y-2">
-                    {orders.map(([id, items, st, total, c]) => (
-                      <div key={id} className="rounded-lg border border-white/5 bg-white/[0.03] p-2.5 text-[11px]">
-                        <div className="flex justify-between"><b>Pedido {id}</b><span className={c}>● {st}</span></div>
-                        <div className="mt-1 flex justify-between text-slate-400"><span>{items}</span><b className="text-white">{total}</b></div>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="mt-2 grid grid-cols-3 gap-2 text-[10px] text-slate-400">
-                    <div className="rounded-lg bg-white/[0.03] p-2">Pedidos hoje<b className="block text-sm text-white">28</b></div>
-                    <div className="rounded-lg bg-white/[0.03] p-2">Faturamento<b className="block text-sm text-white">R$ 1.842,50</b></div>
-                    <div className="rounded-lg bg-white/[0.03] p-2">Preparo<b className="block text-sm text-white">18 min</b></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="absolute -bottom-1 right-[-2%] h-3 w-[96%] rounded-b-2xl bg-gradient-to-b from-slate-600 to-slate-800" />
-            <div className="absolute bottom-0 left-0 z-10 w-[40%] min-w-[190px] rounded-[2rem] border-[5px] border-slate-800 bg-[#0c0c0f] p-3 shadow-2xl shadow-black/70">
-              <div className="mx-auto mb-2 h-4 w-16 rounded-full bg-black" />
-              <div className="flex items-center justify-between text-sm font-bold">Cardápio <span className="relative"><ShoppingBag size={15} /><i className="absolute -right-2 -top-2 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-600 text-[8px] not-italic">2</i></span></div>
-              <div className="mt-2 flex items-center gap-1 rounded-md bg-white/5 px-2 py-1.5 text-[10px] text-slate-400"><Search size={11} />Buscar no cardápio...</div>
-              <div className="mt-2 flex gap-1 text-[9px]">{["Destaques", "Hambúrgueres", "Porções"].map(x => <span key={x} className="rounded-full bg-white/10 px-2 py-1">{x}</span>)}</div>
-              <div className="mt-2 space-y-2">
-                {phoneItems.map(([n, p]) => (
-                  <div key={n} className="flex items-center gap-2 rounded-lg bg-white/[0.04] p-2">
-                    <div className="h-12 w-12 shrink-0 rounded-lg bg-gradient-to-br from-amber-500 via-red-700 to-amber-900" />
-                    <div className="text-[11px]"><b>{n}</b><p className="mt-0.5 text-[9px] text-slate-400">Feito na hora, com ingredientes selecionados.</p><b>{p}</b></div>
-                  </div>
-                ))}
-              </div>
-            </div>
+          <div className="relative mx-auto w-full max-w-[680px] lg:-mr-8">
+            <img src="/home-hero.jpg" alt="Cardápio digital no celular e painel de pedidos no notebook" className="w-full select-none [mask-image:radial-gradient(ellipse_at_center,#000_62%,transparent_100%)]" loading="eager" />
           </div>
         </div>
       </section>
