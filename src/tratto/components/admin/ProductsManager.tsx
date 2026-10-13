@@ -5,6 +5,7 @@ import { useStore } from '../../context/StoreContext'
 import { Product, ProductAddOn } from '../../types'
 import CatalogImport from './CatalogImport'
 import { money } from '../../format'
+import { compressImageToWebP, isImageFile } from '@/lib/image-compress'
 
 function ProductsManager() {
   const { products, categories, addProduct, updateProduct, deleteProduct } = useStore()
@@ -13,6 +14,7 @@ function ProductsManager() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [search, setSearch] = useState('')
   const [filterCategory, setFilterCategory] = useState('')
+  const [uploadingImage, setUploadingImage] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [formData, setFormData] = useState({
@@ -54,14 +56,27 @@ function ProductsManager() {
     setAddOns(prev => prev.filter(a => a.id !== id))
   }
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setFormData(prev => ({ ...prev, image: reader.result as string }))
-      }
-      reader.readAsDataURL(file)
+    e.target.value = ''
+    if (!file) return
+    if (!isImageFile(file)) {
+      alert('Por favor, selecione um arquivo de imagem (JPG, PNG, WebP...).')
+      return
+    }
+    setUploadingImage(true)
+    try {
+      // Produtos: max 1200px, qualidade 0.8 → leve no cardápio mobile
+      const result = await compressImageToWebP(file, {
+        maxWidth: 1200,
+        maxHeight: 1200,
+        quality: 0.8,
+      })
+      setFormData(prev => ({ ...prev, image: result.dataUrl! }))
+    } catch (err: any) {
+      alert(err?.message || 'Não foi possível processar a imagem.')
+    } finally {
+      setUploadingImage(false)
     }
   }
 
@@ -172,15 +187,17 @@ function ProductsManager() {
                         accept="image/*"
                         onChange={handleImageUpload}
                         className="hidden"
+                        disabled={uploadingImage}
                       />
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        className="border border-red-500 text-red-500 px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-50"
+                        disabled={uploadingImage}
+                        className="border border-red-500 text-red-500 px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-50 disabled:opacity-60"
                       >
-                        {formData.image ? 'Trocar foto' : 'Upload foto'}
+                        {uploadingImage ? 'Comprimindo…' : formData.image ? 'Trocar foto' : 'Upload foto'}
                       </button>
-                      <p className="text-xs text-gray-500 mt-1">JPG, PNG até 5MB</p>
+                      <p className="text-xs text-gray-500 mt-1">JPG, PNG ou WebP — convertida automaticamente para WebP</p>
                       {formData.image && (
                         <button
                           type="button"
