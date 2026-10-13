@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { fetchPlatformSettings, type PlatformSettings } from "../services/platform";
 import { moneyCents, whatsappUrl } from "../format";
+import { supabase } from "@/integrations/supabase/client";
 import {
   ArrowRight,
   Check,
@@ -96,6 +97,9 @@ const testimonials = [
 export function HomePage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [plan, setPlan] = useState<PlatformSettings | null>(null);
+  const fallbackLogoUrl = supabase.storage.from("platform-branding").getPublicUrl("system-logo.webp").data.publicUrl;
+  const [logoSrc, setLogoSrc] = useState(fallbackLogoUrl);
+  const [logoFailed, setLogoFailed] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -125,6 +129,11 @@ export function HomePage() {
   }, []);
 
   useEffect(() => {
+    setLogoSrc(plan?.logo_url?.trim() || fallbackLogoUrl);
+    setLogoFailed(false);
+  }, [plan?.logo_url, fallbackLogoUrl]);
+
+  useEffect(() => {
     if (typeof document !== "undefined") {
       document.title = plan?.system_name
         ? `${plan.system_name} | Cardápio digital para restaurantes`
@@ -151,11 +160,18 @@ export function HomePage() {
             className="home-brand flex min-w-0 items-center gap-3"
             aria-label={`${name} início`}
           >
-            {plan?.logo_url ? (
+            {logoSrc && !logoFailed ? (
               <img
-                src={plan.logo_url}
+                src={logoSrc}
                 alt=""
                 className="h-11 w-11 shrink-0 rounded-full object-contain"
+                onError={() => {
+                  if (logoSrc !== fallbackLogoUrl) {
+                    setLogoSrc(fallbackLogoUrl);
+                  } else {
+                    setLogoFailed(true);
+                  }
+                }}
               />
             ) : (
               <span className="home-brand-mark flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#ed252d] text-white">
