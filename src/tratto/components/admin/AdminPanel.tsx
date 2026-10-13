@@ -10,6 +10,7 @@ import {
   Megaphone,
   Settings,
   ShoppingCart,
+  Users,
 } from "lucide-react";
 import { useStore } from "../../context/StoreContext";
 import Dashboard from "./Dashboard";
@@ -21,6 +22,8 @@ import DeliveryPanel from "./DeliveryPanel";
 import MarketingPanel from "./MarketingPanel";
 import CouponsManager from "./CouponsManager";
 import ManualOrder from "./ManualOrder";
+import TeamManager from "./TeamManager";
+import { supabase } from "@/integrations/supabase/client";
 
 type AdminTab =
   | "dashboard"
@@ -31,7 +34,8 @@ type AdminTab =
   | "marketing"
   | "coupons"
   | "settings"
-  | "manual";
+  | "manual"
+  | "team";
 
 const tabs = [
   { id: "dashboard" as const, label: "Dashboard", icon: LayoutDashboard },
@@ -42,15 +46,30 @@ const tabs = [
   { id: "delivery" as const, label: "Entrega", icon: MapPinned },
   { id: "coupons" as const, label: "Cupons", icon: TicketPercent },
   { id: "marketing" as const, label: "Marketing", icon: Megaphone },
+  { id: "team" as const, label: "Equipe", icon: Users },
   { id: "settings" as const, label: "Configurações", icon: Settings },
 ];
 
 function AdminPanel() {
-  const { orders, config, lastIncomingOrder } = useStore();
+  const { orders, config, lastIncomingOrder, storeId } = useStore();
+  // perfil de quem está logado: colaborador só vê pedidos; administrador/dono veem tudo
+  const [myRole, setMyRole] = useState<string | null>(null);
+  useEffect(() => {
+    if (!storeId) return;
+    supabase.auth.getUser().then(({ data }) => {
+      const uid = data?.user?.id;
+      if (!uid) return;
+      supabase.from("store_members").select("role").eq("store_id", storeId).eq("user_id", uid).maybeSingle()
+        .then(({ data: r }) => setMyRole((r as any)?.role ?? null));
+    });
+  }, [storeId]);
+  const isStaff = myRole === "staff";
+  const visibleTabs = isStaff ? tabs.filter((t) => t.id === "orders" || t.id === "manual") : tabs;
   const [autoPrintOrder, setAutoPrintOrder] = useState<any>(null);
   const lastPrintedOrderId = useRef<string>("");
   const pendingOrdersCount = orders.filter((order) => order.status === "pending").length;
   const [activeTab, setActiveTab] = useState<AdminTab>("dashboard");
+  useEffect(() => { if (isStaff && activeTab !== "orders" && activeTab !== "manual") setActiveTab("orders"); }, [isStaff, activeTab]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
@@ -104,7 +123,7 @@ function AdminPanel() {
             <p>Gerencie seu restaurante</p>
           </div>
           <nav className="admin-nav space-y-1" aria-label="Navegação do painel">
-            {tabs.map((tab) => (
+            {visibleTabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => {
@@ -287,6 +306,7 @@ function AdminPanel() {
         {activeTab === "coupons" && <CouponsManager />}
         {activeTab === "marketing" && <MarketingPanel />}
         {activeTab === "settings" && <SettingsPanel />}
+        {activeTab === "team" && !isStaff && <TeamManager />}
       </main>
     </div>
   );
