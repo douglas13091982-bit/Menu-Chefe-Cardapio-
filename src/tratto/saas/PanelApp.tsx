@@ -308,6 +308,14 @@ function PanelShell({ store, status, isSuper, contact, plan, onLogout }) {
           )}
         </div>
         <div className="admin-topbar-actions flex items-center gap-1.5 text-xs">
+          {(status === "trial" || status === "active") && (
+            <button
+              onClick={() => setPayOpen(!payOpen)}
+              className="px-2.5 py-1.5 rounded-lg bg-[#d9273f] text-white font-semibold whitespace-nowrap"
+            >
+              {status === "trial" ? "Assinar" : "Renovar"}
+            </button>
+          )}
           <a
             href={`/${store.slug}`}
             target="_blank"
@@ -341,17 +349,26 @@ function PanelShell({ store, status, isSuper, contact, plan, onLogout }) {
       <div className="pt-16">
         {(() => {
           const end = status === "trial" ? store.trial_ends_at : status === "active" ? store.paid_until : null;
-          if (!end || daysLeft(end) > 3) return null;
-          const d = Math.max(0, daysLeft(end));
+          const soon = end && daysLeft(end) <= 3;
+          if (!soon && !payOpen) return null;
+          const d = end ? Math.max(0, daysLeft(end)) : 0;
           return (
             <div className="bg-amber-50 border-b border-amber-200 text-amber-800 text-sm px-4 py-2 text-center">
-              {status === "trial" ? "Seu teste termina" : "Sua assinatura vence"} em {d} dia(s).{" "}
-              <button type="button" className="underline font-semibold" onClick={() => setPayOpen(!payOpen)}>
-                {payOpen ? "Fechar" : status === "trial" ? "Assinar agora" : "Renovar agora"}
-              </button>
+              {soon && (
+                <>
+                  {status === "trial" ? "Seu teste termina" : "Sua assinatura vence"} em {d} dia(s).{" "}
+                  <button type="button" className="underline font-semibold" onClick={() => setPayOpen(!payOpen)}>
+                    {payOpen ? "Fechar" : status === "trial" ? "Assinar agora" : "Renovar agora"}
+                  </button>
+                </>
+              )}
               {payOpen && (
                 <div className="max-w-md mx-auto text-left text-gray-800">
+                  {status === "trial" && !soon && (
+                    <p className="text-xs text-gray-600 mt-1">Pode assinar quando quiser: a mensalidade começa quando o teste terminar, você não perde os dias restantes.</p>
+                  )}
                   <PayBox store={store} plan={plan} />
+                  <button type="button" className="block mx-auto mt-2 text-xs underline" onClick={() => setPayOpen(false)}>Fechar</button>
                 </div>
               )}
             </div>
