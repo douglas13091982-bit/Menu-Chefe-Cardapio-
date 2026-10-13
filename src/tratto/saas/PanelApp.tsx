@@ -5,7 +5,8 @@ import { StoreProvider } from "../context/StoreContext";
 import AdminPanel from "../components/admin/AdminPanel";
 import LoginForm from "./LoginForm";
 import { BRAND } from "./brand";
-import { slugify, effectiveStatus, daysLeft, fmtDate, isServable } from "./format";
+import { pixPayload } from "./pix";
+import { moneyCents, slugify, effectiveStatus, daysLeft, fmtDate, isServable } from "./format";
 
 const PENDING_KEY = "tratto_pending_store";
 const lsGet = (k) => {
@@ -200,7 +201,51 @@ function NoStore({ onCreated, onLogout }) {
   );
 }
 
-function Blocked({ store, status, contact, onLogout }) {
+function PayBox({ store, plan }) {
+  const [copied, setCopied] = useState("");
+  if (!plan) return null;
+  const cents = store.price_cents ?? plan.price_cents ?? 0;
+  const wa = String(plan.contact_whatsapp || "").replace(/\D/g, "");
+  const copy = async (txt, k) => {
+    try {
+      await navigator.clipboard.writeText(txt);
+      setCopied(k);
+      setTimeout(() => setCopied(""), 1800);
+    } catch {}
+  };
+  const waLink = wa
+    ? `https://wa.me/${wa.startsWith("55") ? wa : "55" + wa}?text=${encodeURIComponent("Olá! Já fiz o Pix da mensalidade da loja " + store.name + " (" + store.slug + ") no valor de " + moneyCents(cents) + ". Segue o comprovante.")}`
+    : "";
+  return (
+    <div className="mt-5 rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm">
+      <p className="font-semibold text-gray-900">Pagar mensalidade: {moneyCents(cents)}</p>
+      {plan.pix_key ? (
+        <>
+          <p className="text-gray-600 mt-1">Chave Pix{plan.pix_holder ? ` (${plan.pix_holder})` : ""}:</p>
+          <p className="font-mono break-all bg-white border rounded-lg px-3 py-2 mt-1">{plan.pix_key}</p>
+          <div className="grid grid-cols-2 gap-2 mt-2">
+            <button type="button" onClick={() => copy(plan.pix_key, "key")} className="rounded-lg border border-gray-300 py-2 font-semibold">
+              {copied === "key" ? "Copiado!" : "Copiar chave"}
+            </button>
+            <button type="button" onClick={() => copy(pixPayload(plan.pix_key, plan.pix_holder, plan.pix_city, cents), "code")} className="rounded-lg bg-[#d9273f] text-white py-2 font-semibold">
+              {copied === "code" ? "Copiado!" : "Pix copia e cola"}
+            </button>
+          </div>
+          <p className="text-xs text-gray-500 mt-2">O "copia e cola" já leva o valor. Cole na opção Pix do app do seu banco.</p>
+        </>
+      ) : (
+        <p className="text-gray-600 mt-1">Fale com a gente para receber os dados de pagamento.</p>
+      )}
+      {waLink && (
+        <a href={waLink} target="_blank" rel="noreferrer" className="block text-center mt-3 bg-green-600 text-white font-semibold rounded-lg py-2.5">
+          Já paguei, avisar no WhatsApp
+        </a>
+      )}
+    </div>
+  );
+}
+
+function Blocked({ store, status, contact, plan, onLogout }) {
   const msg =
     {
       trial_expired: "Seu período de teste terminou.",
@@ -216,6 +261,7 @@ function Blocked({ store, status, contact, onLogout }) {
         {msg} O cardápio está fora do ar para os clientes até a regularização. Seus produtos e
         pedidos continuam guardados.
       </p>
+      <PayBox store={store} plan={plan} />
       {wa && (
         <a
           href={`https://wa.me/${wa.startsWith("55") ? wa : "55" + wa}?text=${encodeURIComponent("Olá! Quero regularizar a assinatura da loja " + store.name + " (" + store.slug + ").")}`}
@@ -233,8 +279,9 @@ function Blocked({ store, status, contact, onLogout }) {
   );
 }
 
-function PanelShell({ store, status, isSuper, contact, onLogout }) {
+function PanelShell({ store, status, isSuper, contact, plan, onLogout }) {
   const [copied, setCopied] = useState(false);
+  const [payOpen, setPayOpen] = useState(false);
   const link = `${window.location.origin}/${store.slug}`;
   const copy = async () => {
     try {
@@ -292,21 +339,24 @@ function PanelShell({ store, status, isSuper, contact, onLogout }) {
         </div>
       </header>
       <div className="pt-16">
-        {status === "trial" && daysLeft(store.trial_ends_at) <= 3 && (
-          <div className="bg-amber-50 border-b border-amber-200 text-amber-800 text-sm px-4 py-2 text-center">
-            Seu teste termina em {Math.max(0, daysLeft(store.trial_ends_at))} dia(s).{" "}
-            {wa && (
-              <a
-                className="underline font-semibold"
-                target="_blank"
-                rel="noreferrer"
-                href={`https://wa.me/${wa.startsWith("55") ? wa : "55" + wa}?text=${encodeURIComponent("Olá! Quero assinar para a loja " + store.name + " (" + store.slug + ").")}`}
-              >
-                Assinar agora
-              </a>
-            )}
-          </div>
-        )}
+        {(() => {
+          const end = status === "trial" ? store.trial_ends_at : status === "active" ? store.paid_until : null;
+          if (!end || daysLeft(end) > 3) return null;
+          const d = Math.max(0, daysLeft(end));
+          return (
+            <div className="bg-amber-50 border-b border-amber-200 text-amber-800 text-sm px-4 py-2 text-center">
+              {status === "trial" ? "Seu teste termina" : "Sua assinatura vence"} em {d} dia(s).{" "}
+              <button type="button" className="underline font-semibold" onClick={() => setPayOpen(!payOpen)}>
+                {payOpen ? "Fechar" : status === "trial" ? "Assinar agora" : "Renovar agora"}
+              </button>
+              {payOpen && (
+                <div className="max-w-md mx-auto text-left text-gray-800">
+                  <PayBox store={store} plan={plan} />
+                </div>
+              )}
+            </div>
+          );
+        })()}
         <AdminPanel />
       </div>
     </StoreProvider>
@@ -318,6 +368,7 @@ export default function PanelApp() {
   const [store, setStore] = useState(null);
   const [isSuper, setIsSuper] = useState(false);
   const [contact, setContact] = useState("");
+  const [plan, setPlan] = useState(null);
   const [mode, setMode] = useState(() =>
     typeof window !== "undefined" && new URLSearchParams(window.location.search).has("cadastro")
       ? "signup"
@@ -337,10 +388,11 @@ export default function PanelApp() {
     const [sup, mem, plat] = await Promise.all([
       supabase.rpc("is_super_admin"),
       supabase.from("store_members").select("store_id").eq("user_id", session.user.id).limit(1),
-      supabase.from("platform_settings").select("contact_whatsapp").eq("id", "main").maybeSingle(),
+      supabase.from("platform_settings").select("contact_whatsapp, price_cents, pix_key, pix_holder, pix_city").eq("id", "main").maybeSingle(),
     ]);
     setIsSuper(!!sup.data);
     setContact(plat.data?.contact_whatsapp || "");
+    setPlan(plat.data || null);
     if (!mem.data?.length) {
       const pending = lsGet(PENDING_KEY);
       if (pending?.name && pending?.slug) {
@@ -414,13 +466,14 @@ export default function PanelApp() {
 
   const status = effectiveStatus(store);
   if (!isServable(status) && !isSuper)
-    return <Blocked store={store} status={status} contact={contact} onLogout={logout} />;
+    return <Blocked store={store} status={status} contact={contact} plan={plan} onLogout={logout} />;
   return (
     <PanelShell
       store={store}
       status={status}
       isSuper={isSuper}
       contact={contact}
+      plan={plan}
       onLogout={logout}
     />
   );

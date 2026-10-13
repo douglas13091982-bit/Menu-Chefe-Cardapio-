@@ -148,6 +148,21 @@ function StoresTab({ plat, reload, stores }) {
         ))}
       </div>
 
+      {(() => {
+        const soon = rows.map(s => ({ s, st: effectiveStatus(s), end: s.status === 'trial' ? s.trial_ends_at : s.paid_until }))
+          .filter(x => (x.st === 'trial' || x.st === 'active') && x.end && daysLeft(x.end) <= 5)
+          .sort((a, b) => new Date(a.end).getTime() - new Date(b.end).getTime())
+        if (!soon.length) return null
+        return (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+            <p className="text-sm font-semibold text-amber-900">Vencendo nos próximos 5 dias ({soon.length})</p>
+            <ul className="mt-2 text-sm text-amber-900 space-y-1">
+              {soon.map(({ s, st, end }) => <li key={s.id}><b>{s.name}</b> — {st === 'trial' ? 'teste' : 'assinatura'} termina em {fmtDate(end)} ({Math.max(0, daysLeft(end))} dia(s)){s.owner_email ? ' · ' + s.owner_email : ''}</li>)}
+            </ul>
+          </div>
+        )
+      })()}
+
       <div className="flex flex-col sm:flex-row gap-2">
         <input className={cls} placeholder="Buscar por nome, endereço ou e-mail" value={q} onChange={e => setQ(e.target.value)} />
         <select className={cls + ' sm:max-w-[200px]'} value={filter} onChange={e => setFilter(e.target.value)}>
@@ -225,6 +240,9 @@ function PlatformTab({ plat, reload }) {
   const [price, setPrice] = useState((plat.price_cents / 100).toFixed(2).replace('.', ','))
   const [trial, setTrial] = useState(plat.trial_days)
   const [wa, setWa] = useState(plat.contact_whatsapp || '')
+  const [pixKey, setPixKey] = useState(plat.pix_key || '')
+  const [pixHolder, setPixHolder] = useState(plat.pix_holder || '')
+  const [pixCity, setPixCity] = useState(plat.pix_city || '')
   const [msg, setMsg] = useState('')
   const [busy, setBusy] = useState(false)
 
@@ -257,6 +275,9 @@ function PlatformTab({ plat, reload }) {
       price_cents: cents,
       trial_days: Math.max(0, Number(trial) || 0),
       contact_whatsapp: wa.replace(/\D/g, ''),
+      pix_key: pixKey.trim(),
+      pix_holder: pixHolder.trim(),
+      pix_city: pixCity.trim(),
       updated_at: new Date().toISOString(),
     }).eq('id', 'main')
     setBusy(false)
@@ -309,6 +330,13 @@ function PlatformTab({ plat, reload }) {
           <label className="block text-sm">Dias de teste (novas lojas)<input className={cls + ' mt-1'} type="number" min="0" value={trial} onChange={e => setTrial(e.target.value)} /></label>
         </div>
         <label className="block text-sm">WhatsApp de contato/cobrança (com DDD)<input className={cls + ' mt-1'} inputMode="tel" value={wa} onChange={e => setWa(e.target.value)} placeholder="47999999999" /></label>
+        <h4 className="font-semibold text-sm text-gray-900 pt-2">Pix para receber as mensalidades</h4>
+        <p className="text-xs text-gray-500">Aparece para a loja na tela de teste/assinatura vencida, com botão "Pix copia e cola" já com o valor.</p>
+        <label className="block text-sm">Chave Pix (CPF/CNPJ, e-mail, celular ou aleatória)<input className={cls + ' mt-1'} value={pixKey} onChange={e => setPixKey(e.target.value)} /></label>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <label className="block text-sm">Nome do recebedor<input className={cls + ' mt-1'} maxLength={25} value={pixHolder} onChange={e => setPixHolder(e.target.value)} placeholder="Como aparece no banco" /></label>
+          <label className="block text-sm">Cidade<input className={cls + ' mt-1'} maxLength={15} value={pixCity} onChange={e => setPixCity(e.target.value)} placeholder="Joinville" /></label>
+        </div>
       </div>
       {msg && <p className={`text-sm ${msg.includes('sucesso') ? 'text-green-700' : 'text-red-600'}`}>{msg}</p>}
       <button disabled={busy} className="bg-gray-900 disabled:opacity-60 text-white font-semibold rounded-lg px-4 py-2.5 text-sm">{busy ? 'Salvando…' : 'Salvar identidade e configurações'}</button>
