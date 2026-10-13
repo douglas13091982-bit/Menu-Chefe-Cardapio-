@@ -428,19 +428,35 @@ function ImageMigrationTab() {
           try {
             const product = typeof row.data === 'string' ? JSON.parse(row.data) : row.data
             const image = product?.image
-            if (typeof image !== 'string' || !image.startsWith('data:image/')) {
+            if (typeof image !== 'string' || !image.trim()) {
               totals.skipped++
+              errorList.push('Produto ' + row.id + ': campo de imagem vazio ou não encontrado em data.image.')
               continue
             }
-            if (image.startsWith('data:image/webp;')) {
+            if (/^data:image\/webp(?:;|,)/i.test(image)) {
               totals.skipped++
               continue
             }
 
-            const response = await fetch(image)
+            // Aceita imagens em base64 e URLs acessíveis pelo navegador.
+            // URLs externas sem CORS serão registradas como falha, em vez de ignoradas silenciosamente.
+            let response: Response
+            try {
+              response = await fetch(image)
+            } catch (fetchErr: any) {
+              totals.failed++
+              errorList.push('Produto ' + row.id + ': não foi possível baixar a imagem para conversão (URL externa/CORS ou endereço indisponível).')
+              continue
+            }
+            if (!response.ok) {
+              totals.failed++
+              errorList.push('Produto ' + row.id + ': a imagem respondeu HTTP ' + response.status + '.')
+              continue
+            }
             const blob = await response.blob()
             if (!blob.type.startsWith('image/') || blob.size === 0 || blob.size > 15 * 1024 * 1024) {
-              totals.skipped++
+              totals.failed++
+              errorList.push('Produto ' + row.id + ': formato não reconhecido como imagem ou arquivo acima de 15 MB.')
               continue
             }
 
@@ -450,14 +466,17 @@ function ImageMigrationTab() {
               quality: 0.8,
             })
             const output = compressed.dataUrl
-            if (!output || !output.startsWith('data:image/webp;')) {
-              totals.skipped++
-              errorList.push('Produto ' + row.id + ': o navegador não conseguiu gerar WebP; imagem original mantida.')
+            if (!output || !/^data:image\/webp(?:;|,)/i.test(output)) {
+              totals.failed++
+              errorList.push('Produto ' + row.id + ': o navegador não gerou WebP; imagem original mantida.')
             } else {
-              const oldBytes = image.length * 0.75
-              const newBytes = output.length * 0.75
-              if (newBytes >= oldBytes) {
+              const oldBytes = image.startsWith('data:') ? Math.ceil(image.length * 0.75) : blob.size
+              const newBytes = Math.ceil(output.length * 0.75)
+              // Para URLs remotas, salvar a versão WebP no próprio campo de imagem evita depender
+              // do servidor original depois da migração. Só pula quando já é menor de verdade.
+              if (newBytes >= oldBytes && image.startsWith('data:')) {
                 totals.skipped++
+                errorList.push('Produto ' + row.id + ': WebP não ficou menor; imagem original mantida.')
               } else {
                 const updatedProduct = { ...product, image: output }
                 const { error: updateError } = await supabase
@@ -530,7 +549,7 @@ function ImageMigrationTab() {
         <button type="button" onClick={migrate} disabled={busy} className="bg-gray-900 disabled:opacity-50 text-white font-semibold rounded-lg px-4 py-2.5 text-sm">
           {busy ? 'Convertendo imagens…' : 'Iniciar migração de imagens'}
         </button>
-        <p className="text-xs text-gray-500">Processamento em lotes de 25 produtos. Imagens remotas e WebP existentes são ignoradas. Se houver falha, você pode executar novamente.</p>
+        <p className="text-xs text-gray-500">Processamento em lotes de 25 produtos. WebP existentes são ignorados. URLs são convertidas quando o navegador consegue acessá-las; bloqueios de CORS aparecem em Falhas/Avisos.</p>
       </div>
     </section>
   )
