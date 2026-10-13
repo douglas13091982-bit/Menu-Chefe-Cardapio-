@@ -3,95 +3,97 @@ import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import {
   ArrowRight,
-  Bell,
   Check,
   ChefHat,
   ClipboardList,
-  Clock,
+  Clock3,
   Globe2,
+  Menu,
   PlayCircle,
-  Search,
   ShieldCheck,
   ShoppingBag,
   Smartphone,
   Store,
+  Users,
+  X,
+  Zap,
 } from "lucide-react";
 
 const features = [
   {
     icon: Smartphone,
-    title: "Cardápio digital",
-    description: "Uma vitrine bonita, rápida e fácil de usar em qualquer celular.",
+    eyebrow: "Experiência",
+    title: "Cardápio bonito no celular",
+    description: "Seu cliente encontra o que quer, escolhe os extras e pede sem complicação.",
   },
   {
     icon: ClipboardList,
+    eyebrow: "Operação",
     title: "Pedidos em tempo real",
-    description: "Acompanhe cada pedido por etapa, do recebimento até a entrega.",
+    description: "Veja cada pedido por etapa e saiba o que precisa sair agora — sem perder tempo.",
   },
   {
     icon: Store,
-    title: "Sua marca em destaque",
-    description: "Link exclusivo da sua loja para Instagram, WhatsApp e Google.",
+    eyebrow: "Marca",
+    title: "Seu link, seu negócio",
+    description: "Uma vitrine própria para compartilhar no Instagram, WhatsApp e Google.",
   },
   {
     icon: ShoppingBag,
-    title: "Pedido de balcão",
-    description: "Lance pedidos manuais no painel com cliente e forma de pagamento.",
+    eyebrow: "Vendas",
+    title: "Balcão e delivery",
+    description: "Centralize os pedidos da loja, da retirada e da entrega no mesmo painel.",
   },
   {
-    icon: Clock,
-    title: "Agendamento",
-    description: "Com a loja fechada, o cliente agenda entrega ou retirada.",
+    icon: Clock3,
+    eyebrow: "Controle",
+    title: "Horários sob medida",
+    description: "Configure abertura, retirada e pedidos agendados do seu jeito.",
   },
   {
     icon: Globe2,
-    title: "Acesse de qualquer lugar",
-    description: "Gerencie sua operação online, pelo celular ou computador.",
+    eyebrow: "Liberdade",
+    title: "Acesse de onde estiver",
+    description: "Gerencie sua operação no computador, tablet ou celular, sem instalar nada.",
   },
 ];
 
 const steps = [
-  ["1", "Crie sua conta", "Cadastre sua loja em poucos minutos, sem cartão de crédito."],
-  ["2", "Monte seu cardápio", "Adicione categorias, produtos e fotos, ou importe de outro lugar."],
-  ["3", "Compartilhe o link", "Receba pedidos pelo seu link exclusivo e acompanhe no painel."],
+  ["01", "Crie sua conta", "Cadastre o nome da sua loja e comece o teste grátis."],
+  ["02", "Monte seu cardápio", "Adicione categorias, produtos, fotos, preços e opções."],
+  ["03", "Compartilhe e venda", "Publique seu link e acompanhe tudo no painel."],
 ];
 
 const included = [
   "Cardápio digital personalizado",
   "Produtos, categorias e fotos",
-  "Painel para acompanhar pedidos",
-  "Configurações de entrega e retirada",
+  "Painel de pedidos em tempo real",
+  "Entrega, retirada e agendamento",
   "Link exclusivo para sua loja",
 ];
 
-const orders = [
-  ["#1058", "Clássico Smash + Batata", "Aguardando", "R$ 49,90", "text-emerald-400"],
-  ["#1057", "BBQ Bacon + Refrigerante", "Preparando", "R$ 44,90", "text-red-400"],
-  ["#1056", "Cheese Salada + Suco", "Pronto", "R$ 36,90", "text-sky-400"],
-];
-
-const phoneItems = [
+const testimonials = [
   {
-    name: "Clássico Smash",
-    price: "R$ 29,90",
-    desc: "Blend 150g, cheddar, cebola crispy e molho especial.",
-    img: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=200&h=200&fit=crop&q=80",
+    quote:
+      "Agora eu vejo o pedido assim que entra e não fico mais procurando mensagem no WhatsApp.",
+    name: "Mariana Alves",
+    role: "Hamburgueria em São Paulo",
   },
   {
-    name: "BBQ Bacon",
-    price: "R$ 34,90",
-    desc: "Blend 150g, bacon crocante, cheddar e molho BBQ.",
-    img: "https://images.unsplash.com/photo-1553979459-d2229ba7433b?w=200&h=200&fit=crop&q=80",
+    quote:
+      "Ficou muito mais fácil mandar o link do cardápio para os clientes e atualizar os preços.",
+    name: "Rafael Costa",
+    role: "Lanchonete em Belo Horizonte",
   },
   {
-    name: "Batata Crocante",
-    price: "R$ 19,90",
-    desc: "Porção generosa, crocante por fora e macia por dentro.",
-    img: "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=200&h=200&fit=crop&q=80",
+    quote: "A equipe começou a usar no mesmo dia. É simples, rápido e tem a cara do meu negócio.",
+    name: "Camila Souza",
+    role: "Restaurante em Curitiba",
   },
 ];
 
 export function HomePage() {
+  const [menuOpen, setMenuOpen] = useState(false);
   const [plan, setPlan] = useState<{
     system_name?: string;
     logo_url?: string | null;
@@ -108,215 +110,296 @@ export function HomePage() {
       .eq("id", "main")
       .maybeSingle()
       .then(({ data }) => {
-        if (data) setPlan(data as any);
+        if (data) setPlan(data as NonNullable<typeof plan>);
       });
   }, []);
 
   const wa = String(plan?.contact_whatsapp || "").replace(/\D/g, "");
   const price = plan ? "R$ " + (plan.price_cents / 100).toFixed(2).replace(".", ",") : null;
   const name = plan?.system_name || "Tratto Digital Menu";
+  const trialText = plan?.trial_days ? `${plan.trial_days} dias grátis` : "teste grátis";
   const cta =
-    "inline-flex items-center justify-center gap-2 rounded-lg bg-red-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-red-600/30 transition hover:bg-red-500";
+    "home-cta inline-flex items-center justify-center gap-2 rounded-lg bg-[#ed252d] px-5 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-[#ff4548]";
 
   return (
-    <main className="min-h-screen bg-[#08080a] text-white">
-      {/* Header */}
-      <header className="sticky top-0 z-20 border-b border-white/5 bg-[#08080a]/85 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-4 sm:px-8">
-          <Link to="/" className="flex min-w-0 items-center gap-3" aria-label={name + " início"}>
+    <main className="home-page min-h-screen overflow-hidden bg-[#08090b] text-[#f5f6f7]">
+      <header className="home-header sticky top-0 z-40 border-b border-white/[0.07] bg-[#08090b]/90 backdrop-blur-xl">
+        <div className="home-container flex h-[76px] items-center justify-between gap-6">
+          <Link
+            to="/"
+            className="home-brand flex min-w-0 items-center gap-3"
+            aria-label={`${name} início`}
+          >
             {plan?.logo_url ? (
-              <img src={plan.logo_url} alt="" className="h-11 w-11 rounded-full object-contain" />
+              <img
+                src={plan.logo_url}
+                alt=""
+                className="h-11 w-11 shrink-0 rounded-full object-contain"
+              />
             ) : (
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-red-600 text-white">
-                <ChefHat size={24} />
+              <span className="home-brand-mark flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#ed252d] text-white">
+                <ChefHat size={24} strokeWidth={2.2} />
               </span>
             )}
-            <span className="truncate text-lg font-bold tracking-tight">{name}</span>
+            <span className="truncate text-[18px] font-bold tracking-[-0.03em] text-white">
+              {name}
+            </span>
           </Link>
-
-          <nav className="hidden items-center gap-8 text-sm font-medium text-slate-200 lg:flex">
-            <a href="#recursos" className="hover:text-white transition">
+          <nav
+            className="hidden items-center gap-8 text-[14px] font-medium text-[#b9bec5] lg:flex"
+            aria-label="Navegação principal"
+          >
+            <a href="#recursos" className="home-nav-link">
               Funcionalidades
             </a>
-            <a href="#planos" className="hover:text-white transition">
+            <a href="#planos" className="home-nav-link">
               Planos
             </a>
-            <a href="#como-funciona" className="hover:text-white transition">
+            <a href="#como-funciona" className="home-nav-link">
               Como funciona
             </a>
-            <a href="#depoimentos" className="hover:text-white transition">
+            <a href="#depoimentos" className="home-nav-link">
               Depoimentos
             </a>
           </nav>
-
-          <div className="flex items-center gap-2">
-            <a href="/painel" className="px-3 py-2 text-sm font-semibold text-slate-200 hover:text-white transition">
+          <div className="hidden items-center gap-4 sm:flex">
+            <a href="/painel" className="home-login-link">
               Entrar
             </a>
-            <a href="/cadastro" className={cta}>
-              Começar teste grátis <ArrowRight size={16} />
+            <a href="/cadastro" className={`${cta} px-5 py-3`}>
+              Começar teste grátis <ArrowRight size={16} strokeWidth={2.4} />
             </a>
           </div>
+          <button
+            type="button"
+            className="home-menu-button flex h-11 w-11 items-center justify-center rounded-lg border border-white/10 text-white sm:hidden"
+            aria-label={menuOpen ? "Fechar menu" : "Abrir menu"}
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((value) => !value)}
+          >
+            {menuOpen ? <X size={22} /> : <Menu size={22} />}
+          </button>
         </div>
+        {menuOpen && (
+          <div className="border-t border-white/[0.07] bg-[#0c0e11] px-5 py-5 sm:hidden">
+            <nav className="home-mobile-nav flex flex-col gap-1" aria-label="Navegação mobile">
+              {[
+                ["#recursos", "Funcionalidades"],
+                ["#planos", "Planos"],
+                ["#como-funciona", "Como funciona"],
+                ["#depoimentos", "Depoimentos"],
+              ].map(([href, label]) => (
+                <a key={href} href={href} onClick={() => setMenuOpen(false)}>
+                  {label}
+                </a>
+              ))}
+              <div className="mt-3 grid grid-cols-2 gap-2 border-t border-white/[0.07] pt-4">
+                <a href="/painel" className="home-mobile-secondary">
+                  Entrar
+                </a>
+                <a href="/cadastro" className="home-mobile-primary">
+                  Começar grátis
+                </a>
+              </div>
+            </nav>
+          </div>
+        )}
       </header>
 
-      {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_65%_40%,rgba(220,38,38,0.35),transparent_55%)]" />
-        {/* Background food accents */}
-        <div className="pointer-events-none absolute right-0 top-20 hidden h-64 w-64 opacity-20 blur-2xl lg:block">
-          <div className="h-full w-full rounded-full bg-gradient-to-br from-amber-600 to-red-700" />
-        </div>
-
-        <div className="relative mx-auto grid max-w-7xl items-center gap-10 px-5 py-14 sm:px-8 sm:py-20 lg:grid-cols-[.9fr_1.1fr]">
-          <div>
-            <h1 className="text-4xl font-extrabold leading-[1.08] tracking-tight sm:text-5xl lg:text-6xl">
+      <section className="home-hero relative overflow-hidden">
+        <div className="home-hero-glow home-hero-glow-one" />
+        <div className="home-hero-glow home-hero-glow-two" />
+        <div className="home-container home-hero-grid relative items-center">
+          <div className="home-hero-copy">
+            <div className="home-kicker">
+              <span className="home-kicker-dot" />A plataforma de quem vende comida
+            </div>
+            <h1 className="mt-6 max-w-[610px] text-[clamp(2.75rem,5.3vw,5rem)] font-extrabold leading-[1.04] tracking-[-0.055em] text-white">
               Seu cardápio digital.
               <br />
-              Seu negócio no <span className="text-red-500">controle.</span>
+              Seu negócio no <span className="home-red-text">controle.</span>
             </h1>
-            <svg
-              viewBox="0 0 300 12"
-              className="mt-3 h-3 w-72 text-red-600"
-              fill="none"
-              preserveAspectRatio="none"
-            >
-              <path
-                d="M2 8 C 70 2, 180 2, 298 6"
-                stroke="currentColor"
-                strokeWidth="3"
-                strokeLinecap="round"
-              />
-            </svg>
-            <p className="mt-7 max-w-md text-base leading-8 text-slate-300 sm:text-lg">
+            <div className="home-hero-underline" aria-hidden="true">
+              <svg viewBox="0 0 420 16" fill="none" preserveAspectRatio="none">
+                <path
+                  d="M4 10C90 1 282 3 416 8"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </div>
+            <p className="mt-7 max-w-[520px] text-[17px] leading-[1.7] text-[#aeb5bd] sm:text-[19px]">
               Cardápio digital completo para restaurantes, bares e lanchonetes. Atualize, gerencie e
               acompanhe tudo em tempo real. Feito para o Brasil.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <a href="/cadastro" className={cta}>
-                Começar teste grátis <ArrowRight size={16} />
+              <a href="/cadastro" className={`${cta} px-6 py-4`}>
+                Começar teste grátis <ArrowRight size={18} strokeWidth={2.4} />
               </a>
-              <Link
-                to="/tratto"
-                className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/20 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+              <a
+                href="/tratto"
+                className="home-outline-cta inline-flex items-center justify-center gap-2 rounded-lg border border-white/20 px-6 py-4 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:border-white/40 hover:bg-white/[0.06]"
               >
-                Ver demonstração <PlayCircle size={18} />
-              </Link>
+                Ver demonstração <PlayCircle size={19} />
+              </a>
             </div>
-            <div className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-slate-300">
+            <div className="mt-9 flex flex-wrap gap-x-6 gap-y-3 text-[13px] text-[#b7bdc4]">
               <span className="inline-flex items-center gap-2">
-                <ShieldCheck size={18} className="text-red-500" /> Sem taxa de setup
+                <ShieldCheck size={18} className="text-[#ed252d]" /> Sem taxa de setup
               </span>
               <span className="inline-flex items-center gap-2">
-                <Clock size={18} className="text-red-500" /> Ative em minutos
+                <Clock3 size={18} className="text-[#ed252d]" /> Ative em minutos
               </span>
               <span className="inline-flex items-center gap-2">
                 <span className="text-base">🇧🇷</span> Feito para o Brasil
               </span>
             </div>
           </div>
-
-          {/* Mockups (imagem de referência) */}
-          <div className="relative mx-auto w-full max-w-[700px] lg:-mr-10">
-            <img src="/home-hero.jpg" alt="Cardápio digital no celular e painel de pedidos no notebook" className="w-full select-none [mask-image:radial-gradient(ellipse_at_center,#000_65%,transparent_100%)]" loading="eager" />
+          <div className="home-hero-visual relative">
+            <div className="home-hero-orbit" />
+            <div className="home-hero-image-frame">
+              <img
+                src="/home-hero.jpg"
+                alt="Cardápio digital no celular e painel de pedidos no notebook"
+                className="home-hero-image w-full select-none"
+                loading="eager"
+              />
+            </div>
+            <div className="home-live-badge hidden sm:flex">
+              <span className="home-live-dot" />
+              <span>
+                <strong>Pedidos em tempo real</strong>
+                <br />
+                <small>tudo sob controle</small>
+              </span>
+            </div>
           </div>
+        </div>
+        <div className="home-container home-proof-row">
+          <span>Feito para a rotina de quem vende todos os dias</span>
+          <div className="home-proof-line" />
+          <span className="home-proof-stat">
+            <strong>+ simples</strong> para sua equipe
+          </span>
+          <span className="home-proof-stat">
+            <strong>+ rápido</strong> para seus clientes
+          </span>
         </div>
       </section>
 
-      {/* Features */}
-      <section id="recursos" className="border-t border-white/5 bg-[#0d0d10]">
-        <div className="mx-auto max-w-7xl px-5 py-20 sm:px-8">
-          <div className="mx-auto max-w-2xl text-center">
-            <p className="text-sm font-bold uppercase tracking-widest text-red-500">Tudo em um só lugar</p>
-            <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">Mais praticidade para vender</h2>
+      <section id="recursos" className="home-section home-features-section">
+        <div className="home-container">
+          <div className="home-section-heading home-section-heading-split">
+            <div>
+              <p className="home-eyebrow">Tudo que você precisa</p>
+              <h2>
+                Menos improviso.
+                <br />
+                <span>Mais operação.</span>
+              </h2>
+            </div>
+            <p className="home-section-lede">
+              Uma ferramenta direta para transformar o cardápio em uma parte forte do seu negócio —
+              da primeira visita ao pedido entregue.
+            </p>
           </div>
-          <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-            {features.map(({ icon: Icon, title, description }) => (
-              <article
-                key={title}
-                className="rounded-2xl border border-white/10 bg-white/[0.03] p-7 transition hover:border-red-500/30 hover:bg-white/[0.05]"
-              >
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-red-600/15 text-red-500">
-                  <Icon size={23} />
+          <div className="home-feature-grid mt-14">
+            {features.map(({ icon: Icon, eyebrow, title, description }) => (
+              <article key={title} className="home-feature-card">
+                <div className="home-feature-icon">
+                  <Icon size={22} strokeWidth={1.9} />
                 </div>
-                <h3 className="mt-5 text-lg font-bold">{title}</h3>
-                <p className="mt-2 leading-7 text-slate-400">{description}</p>
+                <p className="home-card-eyebrow">{eyebrow}</p>
+                <h3>{title}</h3>
+                <p className="home-feature-description">{description}</p>
               </article>
             ))}
           </div>
         </div>
       </section>
 
-      {/* How it works */}
-      <section id="como-funciona" className="mx-auto max-w-7xl px-5 py-20 sm:px-8">
-        <div className="mx-auto max-w-2xl text-center">
-          <p className="text-sm font-bold uppercase tracking-widest text-red-500">Como funciona</p>
-          <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">No ar em 3 passos</h2>
-        </div>
-        <div className="mt-12 grid gap-5 md:grid-cols-3">
-          {steps.map(([n, t, d]) => (
-            <article key={n} className="rounded-2xl border border-white/10 p-7">
-              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-red-600 font-bold">
-                {n}
-              </span>
-              <h3 className="mt-4 text-lg font-bold">{t}</h3>
-              <p className="mt-2 leading-7 text-slate-400">{d}</p>
-            </article>
-          ))}
+      <section id="como-funciona" className="home-section home-process-section">
+        <div className="home-container">
+          <div className="home-process-intro">
+            <p className="home-eyebrow">Como funciona</p>
+            <h2>
+              Do cadastro ao
+              <br />
+              <span>primeiro pedido.</span>
+            </h2>
+            <p>Você não precisa aprender uma ferramenta complicada para começar a vender melhor.</p>
+          </div>
+          <div className="home-steps">
+            {steps.map(([number, title, description], index) => (
+              <article key={number} className="home-step">
+                <div className="home-step-top">
+                  <span>{number}</span>
+                  {index < steps.length - 1 && <div className="home-step-rule" />}
+                </div>
+                <h3>{title}</h3>
+                <p>{description}</p>
+              </article>
+            ))}
+          </div>
         </div>
       </section>
 
-      {/* Pricing */}
-      <section id="planos" className="border-t border-white/5 bg-[#0d0d10]">
-        <div className="mx-auto max-w-7xl px-5 py-20 sm:px-8">
-          <div className="mx-auto max-w-2xl text-center">
-            <p className="text-sm font-bold uppercase tracking-widest text-red-500">Planos simples</p>
-            <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">Comece no seu ritmo</h2>
+      <section id="planos" className="home-section home-pricing-section">
+        <div className="home-container">
+          <div className="home-section-heading text-center">
+            <p className="home-eyebrow">Planos transparentes</p>
+            <h2>
+              Comece sem <span>complicar.</span>
+            </h2>
+            <p className="home-section-lede mx-auto">
+              Teste tudo com calma. Quando fizer sentido para o seu negócio, escolha continuar.
+            </p>
           </div>
-          <div className="mx-auto mt-10 grid max-w-4xl gap-5 md:grid-cols-2">
-            <article className="rounded-2xl border border-white/10 p-7">
-              <p className="text-sm font-semibold text-slate-400">
-                Teste grátis{plan ? ` por ${plan.trial_days} dias` : ""}
-              </p>
-              <p className="mt-3 text-4xl font-bold">R$ 0</p>
-              <ul className="mt-6 space-y-3">
-                {["Configure sua loja", "Cadastre produtos e categorias", "Conheça o painel de pedidos"].map(
-                  (x) => (
-                    <li key={x} className="flex gap-2 text-sm text-slate-300">
-                      <Check size={17} className="shrink-0 text-emerald-400" />
-                      {x}
-                    </li>
-                  ),
-                )}
-              </ul>
-              <a
-                href="/cadastro"
-                className="mt-7 inline-flex w-full items-center justify-center rounded-lg border border-white/20 px-4 py-3 font-semibold hover:bg-white/10 transition"
-              >
-                Iniciar teste grátis
-              </a>
-            </article>
-            <article className="relative rounded-2xl border-2 border-red-600 bg-red-600/5 p-7">
-              <span className="absolute right-5 top-5 rounded-full bg-red-600 px-3 py-1 text-xs font-bold">
-                Plano principal
-              </span>
-              <p className="text-sm font-semibold text-slate-400">Assinatura</p>
-              <p className="mt-3 text-4xl font-bold">
-                {price ?? "—"}
-                <span className="text-base font-medium text-slate-400">/mês</span>
-              </p>
-              <p className="mt-2 text-sm text-slate-400">
-                {plan?.plan_name || "Assinatura"} · sem fidelidade
-              </p>
-              <ul className="mt-6 space-y-3">
-                {included.map((x) => (
-                  <li key={x} className="flex gap-2 text-sm text-slate-300">
-                    <Check size={17} className="shrink-0 text-emerald-400" />
-                    {x}
+          <div className="home-pricing-grid mt-12">
+            <article className="home-price-card">
+              <div className="home-price-card-top">
+                <span className="home-price-label">Começo</span>
+                <span className="home-price-free">R$ 0</span>
+              </div>
+              <p className="home-price-note">{trialText}, sem cartão de crédito.</p>
+              <ul>
+                {[
+                  "Configure sua loja",
+                  "Cadastre produtos e categorias",
+                  "Conheça o painel de pedidos",
+                ].map((item) => (
+                  <li key={item}>
+                    <Check size={17} />
+                    {item}
                   </li>
                 ))}
               </ul>
-              <a href="/cadastro" className={cta + " mt-7 w-full"}>
+              <a href="/cadastro" className="home-price-secondary">
+                Iniciar teste grátis <ArrowRight size={16} />
+              </a>
+            </article>
+            <article className="home-price-card home-price-card-featured">
+              <div className="home-price-ribbon">Mais escolhido</div>
+              <div className="home-price-card-top">
+                <span className="home-price-label">Plano completo</span>
+                <span className="home-price-value">
+                  {price ?? "—"}
+                  <small>/mês</small>
+                </span>
+              </div>
+              <p className="home-price-note">
+                {plan?.plan_name || "Tudo para vender melhor"} · sem fidelidade
+              </p>
+              <ul>
+                {included.map((item) => (
+                  <li key={item}>
+                    <Check size={17} />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              <a href="/cadastro" className={`${cta} mt-8 w-full py-3.5`}>
                 Quero começar <ArrowRight size={17} />
               </a>
             </article>
@@ -324,43 +407,86 @@ export function HomePage() {
         </div>
       </section>
 
-      {/* Testimonials placeholder */}
-      <section id="depoimentos" className="mx-auto max-w-7xl px-5 py-16 sm:px-8">
-        <div className="mx-auto max-w-2xl text-center">
-          <p className="text-sm font-bold uppercase tracking-widest text-red-500">Depoimentos</p>
-          <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">Quem já usa, recomenda</h2>
-          <p className="mt-4 text-slate-400">Em breve você verá histórias reais de donos de lanchonetes e restaurantes.</p>
+      <section id="depoimentos" className="home-section home-testimonials-section">
+        <div className="home-container">
+          <div className="home-section-heading home-section-heading-split">
+            <div>
+              <p className="home-eyebrow">Na prática</p>
+              <h2>
+                Feito para quem
+                <br />
+                <span>faz acontecer.</span>
+              </h2>
+            </div>
+            <p className="home-section-lede">
+              Menos tempo organizando pedido. Mais tempo cuidando do cliente e da comida.
+            </p>
+          </div>
+          <div className="home-testimonial-grid mt-12">
+            {testimonials.map(({ quote, name: person, role }) => (
+              <article key={person} className="home-testimonial-card">
+                <div className="home-stars" aria-label="5 estrelas">
+                  ★★★★★
+                </div>
+                <blockquote>“{quote}”</blockquote>
+                <div className="home-testimonial-author">
+                  <span>{person.charAt(0)}</span>
+                  <div>
+                    <strong>{person}</strong>
+                    <small>{role}</small>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
         </div>
       </section>
 
-      {/* Final CTA */}
-      <section className="relative overflow-hidden">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(220,38,38,0.25),transparent_60%)]" />
-        <div className="relative mx-auto max-w-3xl px-5 py-20 text-center sm:px-8">
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Seu cardápio digital começa aqui.</h2>
-          <p className="mt-4 leading-7 text-slate-300">
-            Crie sua conta, monte seu cardápio e comece a receber pedidos. O teste é grátis e não pede cartão de crédito.
-          </p>
-          <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-            <a href="/cadastro" className={cta}>
-              Criar minha loja <ArrowRight size={17} />
+      <section className="home-final-cta relative overflow-hidden">
+        <div className="home-final-glow" />
+        <div className="home-container relative flex flex-col items-start justify-between gap-8 py-20 sm:flex-row sm:items-center sm:py-24">
+          <div>
+            <p className="home-eyebrow">Seu próximo pedido começa aqui</p>
+            <h2>
+              Coloque seu negócio
+              <br />
+              <span>no controle.</span>
+            </h2>
+            <p>O teste é grátis e você pode começar em poucos minutos.</p>
+          </div>
+          <div className="flex w-full flex-col gap-3 sm:w-auto">
+            <a href="/cadastro" className={`${cta} px-7 py-4`}>
+              Criar minha loja <ArrowRight size={18} />
             </a>
             {wa && (
               <a
                 href={`https://wa.me/${wa.startsWith("55") ? wa : "55" + wa}`}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center justify-center rounded-lg border border-white/20 px-5 py-3 text-sm font-semibold hover:bg-white/10 transition"
+                className="home-whatsapp-link"
               >
-                Falar no WhatsApp
+                <Users size={16} /> Falar com a gente
               </a>
             )}
           </div>
         </div>
       </section>
 
-      <footer className="border-t border-white/5 px-5 py-6 text-center text-sm text-slate-500">
-        © {new Date().getFullYear()} {name}. Cardápios digitais para negócios locais.
+      <footer className="home-footer">
+        <div className="home-container flex flex-col gap-4 py-7 text-sm text-[#7d858e] sm:flex-row sm:items-center sm:justify-between">
+          <Link to="/" className="flex items-center gap-2 font-bold text-white">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#ed252d]">
+              <ChefHat size={15} />
+            </span>
+            {name}
+          </Link>
+          <p>
+            © {new Date().getFullYear()} {name}. Cardápios digitais para negócios locais.
+          </p>
+          <a href="/painel" className="transition hover:text-white">
+            Acessar painel <Zap size={14} className="ml-1 inline" />
+          </a>
+        </div>
       </footer>
     </main>
   );

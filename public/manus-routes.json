@@ -1,0 +1,1 @@
+{"routes":[{"path":"/","title":"Tratto Digital Menu — Cardápio digital"},{"path":"/cadastro","title":"Criar minha loja — Tratto Digital Menu"},{"path":"/painel","title":"Painel — Tratto Digital Menu"},{"path":"/super","title":"Super admin — Tratto Digital Menu"},{"path":"/:slug","title":"Cardápio digital"}]}
