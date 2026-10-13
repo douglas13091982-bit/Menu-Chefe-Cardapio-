@@ -50,8 +50,8 @@ function canvasToBlob(canvas: HTMLCanvasElement, type: string, quality: number):
 }
 
 /**
- * Redimensiona (se necessário), comprime e converte para WebP.
- * Fallback para JPEG se o navegador não suportar WebP no canvas.
+ * Redimensiona, comprime e converte para WebP preservando transparência.
+ * Só usa fundo branco no fallback JPEG, pois JPEG não suporta transparência.
  */
 export async function compressImageToWebP(
   file: File | Blob,
@@ -76,23 +76,33 @@ export async function compressImageToWebP(
   const width = Math.max(1, Math.round(img.width * scale))
   const height = Math.max(1, Math.round(img.height * scale))
 
+  // O canvas começa transparente. Não preencher de branco antes do WebP:
+  // isso elimina o canal alfa de logos PNG com fundo transparente.
   const canvas = document.createElement('canvas')
   canvas.width = width
   canvas.height = height
   const ctx = canvas.getContext('2d')
   if (!ctx) throw new Error('Não foi possível processar a imagem.')
-
-  // Fundo branco para PNGs com transparência ao converter (evita fundo preto em WebP opaco)
-  ctx.fillStyle = '#ffffff'
-  ctx.fillRect(0, 0, width, height)
+  ctx.clearRect(0, 0, width, height)
   ctx.drawImage(img, 0, 0, width, height)
 
-  // Tenta WebP; se o navegador não suportar, cai para JPEG
   let mime = 'image/webp'
+  let outputCanvas = canvas
   let blob = await canvasToBlob(canvas, 'image/webp', quality)
+
+  // Se WebP não for suportado, JPEG exige fundo opaco; use um canvas separado
+  // para manter o canvas original transparente sempre que WebP estiver disponível.
   if (!blob || blob.type !== 'image/webp' || blob.size === 0) {
     mime = 'image/jpeg'
-    blob = await canvasToBlob(canvas, 'image/jpeg', quality)
+    outputCanvas = document.createElement('canvas')
+    outputCanvas.width = width
+    outputCanvas.height = height
+    const jpegCtx = outputCanvas.getContext('2d')
+    if (!jpegCtx) throw new Error('Não foi possível processar a imagem.')
+    jpegCtx.fillStyle = '#ffffff'
+    jpegCtx.fillRect(0, 0, width, height)
+    jpegCtx.drawImage(img, 0, 0, width, height)
+    blob = await canvasToBlob(outputCanvas, 'image/jpeg', quality)
   }
 
   const bytesApprox = blob.size
@@ -104,12 +114,8 @@ export async function compressImageToWebP(
     return { blob, file: fileOut, width, height, bytesApprox }
   }
 
-  // data URL (compatível com o armazenamento atual em base64 no config/produtos)
-  const dataUrl =
-    mime === 'image/webp'
-      ? canvas.toDataURL('image/webp', quality)
-      : canvas.toDataURL('image/jpeg', quality)
-
+  // data URL compatível com o armazenamento atual em base64.
+  const dataUrl = outputCanvas.toDataURL(mime, quality)
   return { dataUrl, width, height, bytesApprox }
 }
 
