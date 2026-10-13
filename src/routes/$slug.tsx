@@ -13,11 +13,39 @@ export const Route = createFileRoute("/$slug")({
   component: StorePage,
 });
 
+function MenuLoading() {
+  return (
+    <main className="min-h-screen bg-[#f8f8fa] text-gray-900" aria-label="Carregando cardápio">
+      <div className="mx-auto max-w-5xl px-4 py-5 sm:px-6">
+        <div className="h-3 w-24 animate-pulse rounded bg-gray-200" />
+        <div className="mt-5 h-36 animate-pulse rounded-2xl bg-gray-200 sm:h-44" />
+        <div className="mt-6 h-7 w-2/5 animate-pulse rounded bg-gray-200" />
+        <div className="mt-3 flex gap-3 overflow-hidden">
+          <div className="h-9 w-24 shrink-0 animate-pulse rounded-full bg-gray-200" />
+          <div className="h-9 w-28 shrink-0 animate-pulse rounded-full bg-gray-200" />
+          <div className="h-9 w-24 shrink-0 animate-pulse rounded-full bg-gray-200" />
+        </div>
+        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {Array.from({ length: 6 }, (_, i) => (
+            <div key={i} className="overflow-hidden rounded-xl border border-gray-100 bg-white p-3">
+              <div className="aspect-[4/3] animate-pulse rounded-lg bg-gray-200" />
+              <div className="mt-3 h-4 w-4/5 animate-pulse rounded bg-gray-200" />
+              <div className="mt-2 h-3 w-full animate-pulse rounded bg-gray-100" />
+              <div className="mt-4 h-5 w-2/5 animate-pulse rounded bg-gray-200" />
+            </div>
+          ))}
+        </div>
+        <p className="mt-5 text-center text-sm text-gray-500">Preparando o cardápio…</p>
+      </div>
+    </main>
+  );
+}
+
 function StorePage() {
   const { slug } = Route.useParams();
   return (
-    <ClientOnly fallback={<div className="min-h-screen bg-gray-50" />}>
-      <Suspense fallback={<div className="min-h-screen bg-gray-50" />}>
+    <ClientOnly fallback={<MenuLoading />}>
+      <Suspense fallback={<MenuLoading />}>
         <MenuPage slug={slug.toLowerCase()} />
       </Suspense>
     </ClientOnly>
