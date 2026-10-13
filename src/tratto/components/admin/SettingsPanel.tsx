@@ -5,6 +5,7 @@ import { useStore } from '../../context/StoreContext'
 import { supabase } from '@/integrations/supabase/client'
 import { DAY_LABELS, DAY_ORDER, getWeeklyHours, getStoreStatus } from '../../hours'
 import MapboxIntegration from './MapboxIntegration'
+import { money } from '../../format'
 
 function SettingsPanel() {
   const { config, setConfig } = useStore()
@@ -552,8 +553,8 @@ function SettingsPanel() {
               </span>
             </div>
             <div className="mt-2 flex gap-4 text-xs">
-              <span className="text-green-700 font-medium"> Entrega: R$ {formData.deliveryFee.toFixed(2).replace('.', ',')}</span>
-              <span className="text-gray-500">Pedido mín: R$ {formData.minOrder.toFixed(2).replace('.', ',')}</span>
+              <span className="text-green-700 font-medium"> Entrega: {money(formData.deliveryFee)}</span>
+              <span className="text-gray-500">Pedido mín: {money(formData.minOrder)}</span>
             </div>
           </div>
         </div>

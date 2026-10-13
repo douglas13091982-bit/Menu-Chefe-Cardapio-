@@ -2,8 +2,8 @@
 import { useMemo, useState } from 'react'
 import { Minus, Plus, Search, ShoppingBag, UserRound, Phone, CreditCard, CheckCircle2 } from 'lucide-react'
 import { useStore } from '../../context/StoreContext'
+import { money } from '../../format'
 
-const money = (value) => 'R$ ' + Number(value || 0).toFixed(2).replace('.', ',')
 
 function ManualOrder() {
   const { products, categories, addOrder } = useStore()

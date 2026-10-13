@@ -1,7 +1,7 @@
 // Envio do pedido para o WhatsApp da loja (link wa.me com a mensagem pronta)
 import type { Order, StoreConfig, CartItem, PaymentMethod } from './types'
+import { money } from './format'
 
-const money = (v: number) => `R$ ${v.toFixed(2).replace('.', ',')}`
 
 const PAYMENT_LABELS: Record<PaymentMethod, string> = {
   card: 'Cartão (na entrega/retirada)',

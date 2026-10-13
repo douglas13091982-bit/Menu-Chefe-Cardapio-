@@ -24,6 +24,7 @@ import CouponsManager from "./CouponsManager";
 import ManualOrder from "./ManualOrder";
 import TeamManager from "./TeamManager";
 import { supabase } from "@/integrations/supabase/client";
+import { money } from '../../format'
 
 type AdminTab =
   | "dashboard"
@@ -270,7 +271,7 @@ function AdminPanel() {
           {Number(autoPrintOrder.discount || 0) > 0 && (
             <div className="auto-receipt-row">
               <span>Desconto</span>
-              <span>- R$ {Number(autoPrintOrder.discount).toFixed(2).replace(".", ",")}</span>
+              <span>- {money(Number(autoPrintOrder.discount))}</span>
             </div>
           )}
           <div className="auto-receipt-line" />

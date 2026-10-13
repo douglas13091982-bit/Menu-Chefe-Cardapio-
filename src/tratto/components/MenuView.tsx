@@ -8,8 +8,8 @@ import { buildWhatsAppUrl } from '../whatsapp'
 import { getStoreStatus, getScheduleSlots, formatScheduled } from '../hours'
 import { extractLogoBackground } from '../logoColor'
 import { geocodeAddress, drivingDistanceKm, roundMoney } from '../freight'
+import { money, money as fmt } from '../format'
 
-const fmt = (v: number) => `R$ ${v.toFixed(2).replace('.', ',')}`
 
 // preço unitário do item do carrinho (produto + adicionais selecionados)
 const getItemUnitPrice = (item: CartItem) =>
@@ -835,7 +835,7 @@ function MenuView() {
                   }}>
                     <p style={{ fontWeight: 600, color: '#1f2937', fontSize: '13px', margin: 0 }}>{zone.name}</p>
                     <p style={{ color: '#15803d', fontWeight: 'bold', fontSize: '14px', margin: '4px 0 0 0' }}>
-                      R$ {zone.price.toFixed(2).replace('.', ',')}
+                      {money(zone.price)}
                     </p>
                     <p style={{ fontSize: '11px', color: '#6b7280', margin: '2px 0 0 0' }}>{zone.estimatedTime}</p>
                   </div>
@@ -898,7 +898,7 @@ function MenuView() {
                 </span>
               </div>
               <span style={{ fontWeight: 'bold', fontSize: isMobile ? '16px' : '18px' }}>
-                R$ {totalPrice.toFixed(2).replace('.', ',')}
+                {money(totalPrice)}
               </span>
             </button>
           </div>
@@ -1030,7 +1030,7 @@ function MenuView() {
                       fontSize: '13px',
                       margin: '2px 0 0 0'
                     }}>
-                      R$ {(getItemUnitPrice(item) * item.quantity).toFixed(2).replace('.', ',')}
+                      {money(getItemUnitPrice(item) * item.quantity)}
                     </p>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1770,7 +1770,7 @@ function MenuView() {
                 marginTop: '20px'
               }}>
                 <span style={{ fontSize: isMobile ? '22px' : '26px', fontWeight: 'bold', color: '#1f2937' }}>
-                  R$ {modalItemTotal.toFixed(2).replace('.', ',')}
+                  {money(modalItemTotal)}
                 </span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <button
@@ -1859,7 +1859,7 @@ function MenuView() {
                             {addOn.name}
                           </span>
                           <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#15803d', whiteSpace: 'nowrap' }}>
-                            + R$ {addOn.price.toFixed(2).replace('.', ',')}
+                            + {money(addOn.price)}
                           </span>
                         </label>
                       )
@@ -1899,7 +1899,7 @@ function MenuView() {
                 {editingCartKey ? 'Salvar alterações' : (
                   <>
                     <span style={{ fontSize: '18px' }}>+</span>
-                    Adicionar • R$ {modalItemTotal.toFixed(2).replace('.', ',')}
+                    Adicionar • {money(modalItemTotal)}
                   </>
                 )}
               </button>

@@ -17,6 +17,7 @@ import {
 } from "recharts";
 import { useMemo } from "react";
 import { Wallet, CheckCircle2, Clock3, TrendingUp } from "lucide-react";
+import { money } from '../../format'
 
 function Dashboard() {
   const { orders, products, categories } = useStore();
@@ -99,7 +100,7 @@ function Dashboard() {
       <div className="admin-stat-grid grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard
           title="Faturamento Total"
-          value={`R$ ${stats.totalRevenue.toFixed(2).replace(".", ",")}`}
+          value={`${money(stats.totalRevenue)}`}
           icon={Wallet}
           color="green"
         />
@@ -117,7 +118,7 @@ function Dashboard() {
         />
         <StatCard
           title="Ticket Médio"
-          value={`R$ ${stats.avgTicket.toFixed(2).replace(".", ",")}`}
+          value={`${money(stats.avgTicket)}`}
           icon={TrendingUp}
           color="purple"
         />
@@ -135,7 +136,7 @@ function Dashboard() {
               <YAxis tick={{ fontSize: 12 }} />
               <Tooltip
                 formatter={(value: number) => [
-                  `R$ ${value.toFixed(2).replace(".", ",")}`,
+                  `${money(value)}`,
                   "Vendas",
                 ]}
               />
@@ -188,7 +189,7 @@ function Dashboard() {
                 </Pie>
                 <Tooltip
                   formatter={(value: number) => [
-                    `R$ ${value.toFixed(2).replace(".", ",")}`,
+                    `${money(value)}`,
                     "Vendas",
                   ]}
                 />
@@ -227,7 +228,7 @@ function Dashboard() {
                     <p className="text-xs text-gray-500">{product.quantity} vendidos</p>
                   </div>
                   <span className="text-green-700 font-bold text-sm">
-                    R$ {product.revenue.toFixed(2).replace(".", ",")}
+                    {money(product.revenue)}
                   </span>
                 </div>
               ))
@@ -258,7 +259,7 @@ function Dashboard() {
                   <td className="py-3 font-medium">{order.id}</td>
                   <td className="py-3">{order.customerName}</td>
                   <td className="py-3 text-green-700 font-medium">
-                    R$ {order.total.toFixed(2).replace(".", ",")}
+                    {money(order.total)}
                   </td>
                   <td className="py-3">
                     <StatusBadge status={order.status} />

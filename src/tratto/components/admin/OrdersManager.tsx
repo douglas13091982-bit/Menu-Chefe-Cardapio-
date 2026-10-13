@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { Clock3, ChefHat, Truck, CheckCircle2, XCircle, X, Printer } from 'lucide-react'
 import { useStore } from '../../context/StoreContext'
 import { Order } from '../../types'
+import { money } from '../../format'
 
 function OrdersManager() {
   const { orders, updateOrderStatus, config } = useStore()
@@ -131,7 +132,7 @@ function OrdersManager() {
                   </div>
                   <div>
                     <p className="text-gray-500 text-xs">Total</p>
-                    <p className="font-bold text-green-700">R$ {(order.total + order.deliveryFee - (order.discount || 0)).toFixed(2).replace('.', ',')}</p>
+                    <p className="font-bold text-green-700">{money(order.total + order.deliveryFee - (order.discount || 0))}</p>
                   </div>
                 </div>
                 {(order.deliveryType || order.paymentMethod) && (
@@ -149,7 +150,7 @@ function OrdersManager() {
                     {order.paymentMethod && (
                       <span className="px-2 py-1 rounded-full font-medium bg-emerald-50 text-emerald-700">
                         {order.paymentMethod === 'card' ? 'Cartão' : order.paymentMethod === 'pix' ? 'PIX' : 'Dinheiro'}
-                        {order.changeFor ? ` (troco p/ R$ ${order.changeFor.toFixed(2).replace('.', ',')})` : ''}
+                        {order.changeFor ? ` (troco p/ ${money(order.changeFor)})` : ''}
                       </span>
                     )}
                   </div>
@@ -235,7 +236,7 @@ function OrdersManager() {
           <div><strong>Telefone:</strong> {printOrder.customerPhone}</div>
           <div><strong>Endereço:</strong> {printOrder.deliveryType === 'pickup' ? 'Retirada no local' : (printOrder.customerAddress || 'Não informado')}</div>
           <div><strong>Pagamento:</strong> {printOrder.paymentMethod === 'pix' ? 'Pix' : printOrder.paymentMethod === 'cash' ? 'Dinheiro' : printOrder.paymentMethod === 'card' ? 'Cartão' : 'Não informado'}</div>
-          {printOrder.changeFor ? <div><strong>Troco para:</strong> R$ {printOrder.changeFor.toFixed(2).replace('.', ',')}</div> : null}
+          {printOrder.changeFor ? <div><strong>Troco para:</strong> {money(printOrder.changeFor)}</div> : null}
           <div className="receipt-line" />
           <div className="receipt-row"><strong>QTD / PRODUTO</strong><strong>VALOR</strong></div>
           <div className="receipt-items">
@@ -246,16 +247,16 @@ function OrdersManager() {
                 <div>{item.quantity}x {item.product.name}</div>
                 {(item.selectedAddOns || []).map(addon => <div key={addon.id} className="receipt-small"> + {addon.name}</div>)}
                 {item.observation && <div className="receipt-small">Obs.: {item.observation}</div>}
-                <div className="receipt-row"><span>{item.quantity} x R$ {unit.toFixed(2).replace('.', ',')}</span><span>R$ {(unit * item.quantity).toFixed(2).replace('.', ',')}</span></div>
+                <div className="receipt-row"><span>{item.quantity} x {money(unit)}</span><span>{money(unit * item.quantity)}</span></div>
               </div>
             })}
           </div>
           <div className="receipt-line" />
-          <div className="receipt-row"><span>Subtotal</span><span>R$ {Number(printOrder.total || 0).toFixed(2).replace('.', ',')}</span></div>
-          <div className="receipt-row"><span>Taxa de entrega</span><span>R$ {Number(printOrder.deliveryFee || 0).toFixed(2).replace('.', ',')}</span></div>
-          {Number(printOrder.discount || 0) > 0 && <div className="receipt-row"><span>Desconto</span><span>- R$ {Number(printOrder.discount).toFixed(2).replace('.', ',')}</span></div>}
+          <div className="receipt-row"><span>Subtotal</span><span>{money(Number(printOrder.total || 0))}</span></div>
+          <div className="receipt-row"><span>Taxa de entrega</span><span>{money(Number(printOrder.deliveryFee || 0))}</span></div>
+          {Number(printOrder.discount || 0) > 0 && <div className="receipt-row"><span>Desconto</span><span>- {money(Number(printOrder.discount))}</span></div>}
           <div className="receipt-line" />
-          <div className="receipt-row" style={{ fontSize: '14px', fontWeight: 700 }}><span>TOTAL</span><span>R$ {(Number(printOrder.total || 0) + Number(printOrder.deliveryFee || 0) - Number(printOrder.discount || 0)).toFixed(2).replace('.', ',')}</span></div>
+          <div className="receipt-row" style={{ fontSize: '14px', fontWeight: 700 }}><span>TOTAL</span><span>{money(Number(printOrder.total || 0) + Number(printOrder.deliveryFee || 0) - Number(printOrder.discount || 0))}</span></div>
           {printOrder.notes && <div style={{ marginTop: '8px' }}><strong>Observações:</strong> {printOrder.notes}</div>}
           <div className="receipt-line" />
           <div className="receipt-center receipt-small">Obrigado pela preferência!</div>
@@ -305,7 +306,7 @@ function OrdersManager() {
                       {selectedOrder.paymentMethod === 'card' ? 'Cartão' :
                        selectedOrder.paymentMethod === 'pix' ? 'PIX' :
                        selectedOrder.paymentMethod === 'cash' ? 'Dinheiro' : 'Não informado'}
-                      {selectedOrder.changeFor ? ` — troco para R$ ${selectedOrder.changeFor.toFixed(2).replace('.', ',')}` : ''}
+                      {selectedOrder.changeFor ? ` — troco para ${money(selectedOrder.changeFor)}` : ''}
                     </p>
                   </div>
                 )}
@@ -319,12 +320,12 @@ function OrdersManager() {
                       <p className="font-medium text-sm">{item.quantity}x {item.product.name}</p>
                       {item.selectedAddOns && item.selectedAddOns.length > 0 && (
                         <p className="text-xs text-gray-500">
-                          + {item.selectedAddOns.map(a => `${a.name} (+R$ ${a.price.toFixed(2).replace('.', ',')})`).join(', ')}
+                          + {item.selectedAddOns.map(a => `${a.name} (+${money(a.price)})`).join(', ')}
                         </p>
                       )}
-                      <p className="text-xs text-gray-500">R$ {(item.product.price + (item.selectedAddOns || []).reduce((s, a) => s + a.price, 0)).toFixed(2).replace('.', ',')} cada</p>
+                      <p className="text-xs text-gray-500">{money(item.product.price + (item.selectedAddOns || []).reduce((s, a) => s + a.price, 0))} cada</p>
                     </div>
-                    <span className="font-semibold text-sm">R$ {((item.product.price + (item.selectedAddOns || []).reduce((s, a) => s + a.price, 0)) * item.quantity).toFixed(2).replace('.', ',')}</span>
+                    <span className="font-semibold text-sm">{money((item.product.price + (item.selectedAddOns || []).reduce((s, a) => s + a.price, 0)) * item.quantity)}</span>
                   </div>
                 ))}
               </div>
@@ -332,21 +333,21 @@ function OrdersManager() {
               <div className="border-t pt-3 space-y-1">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Subtotal</span>
-                  <span>R$ {selectedOrder.total.toFixed(2).replace('.', ',')}</span>
+                  <span>{money(selectedOrder.total)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Taxa de entrega</span>
-                  <span>R$ {selectedOrder.deliveryFee.toFixed(2).replace('.', ',')}</span>
+                  <span>{money(selectedOrder.deliveryFee)}</span>
                 </div>
                 {selectedOrder.discount > 0 && (
                   <div className="flex justify-between text-sm text-green-700">
                     <span>Desconto{selectedOrder.couponCode ? ` (${selectedOrder.couponCode})` : ''}</span>
-                    <span>- R$ {selectedOrder.discount.toFixed(2).replace('.', ',')}</span>
+                    <span>- {money(selectedOrder.discount)}</span>
                   </div>
                 )}
                 <div className="flex justify-between font-bold text-lg pt-2 border-t">
                   <span>Total</span>
-                  <span className="text-green-700">R$ {(selectedOrder.total + selectedOrder.deliveryFee - (selectedOrder.discount || 0)).toFixed(2).replace('.', ',')}</span>
+                  <span className="text-green-700">{money(selectedOrder.total + selectedOrder.deliveryFee - (selectedOrder.discount || 0))}</span>
                 </div>
               </div>
 

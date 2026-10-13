@@ -1,8 +1,4 @@
-export const moneyCents = (c: number) => 'R$ ' + (Number(c || 0) / 100).toFixed(2).replace('.', ',')
-export const fmtDate = (iso?: string | null) => (iso ? new Date(iso).toLocaleDateString('pt-BR') : '—')
-export const daysLeft = (iso?: string | null) => (iso ? Math.ceil((new Date(iso).getTime() - Date.now()) / 86400000) : 0)
-export const slugify = (s: string) =>
-  s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40)
+export { moneyCents, fmtDate, daysLeft, slugify } from '../format'
 
 export type EffectiveStatus = 'trial' | 'trial_expired' | 'active' | 'overdue' | 'suspended' | 'cancelled'
 export function effectiveStatus(s: { status: string; trial_ends_at?: string | null; paid_until?: string | null }): EffectiveStatus {

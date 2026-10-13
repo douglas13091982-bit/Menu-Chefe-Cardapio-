@@ -2,8 +2,8 @@
 import { useState } from 'react'
 import { useStore } from '../../context/StoreContext'
 import { searchMerchants, fetchMenu, fetchMenuByUrl, parseMenu, buildImport } from '../../geckoImport'
+import { money } from '../../format'
 
-const money = (n) => 'R$ ' + Number(n).toFixed(2).replace('.', ',')
 const inputCls = 'w-full border rounded-lg px-3 py-2 text-sm'
 
 export default function CatalogImport({ onClose }) {

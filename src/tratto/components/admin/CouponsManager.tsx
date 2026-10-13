@@ -3,9 +3,9 @@ import { useState } from 'react'
 import { Tag, Pencil, Trash2, Plus } from 'lucide-react'
 import { useStore } from '../../context/StoreContext'
 import { normalizeCode } from '../../coupons'
+import { money } from '../../format'
 
 const empty = { code: '', type: 'percent', value: '', minOrder: '', startsAt: '', expiresAt: '', active: true }
-const money = (n) => 'R$ ' + Number(n).toFixed(2).replace('.', ',')
 
 export default function CouponsManager() {
   const { config, setConfig } = useStore()

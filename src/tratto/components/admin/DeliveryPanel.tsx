@@ -5,6 +5,7 @@ import { getMapboxToken, MAPBOX_TOKEN_EVENT } from '../../mapboxToken'
 import { geocodeAddress } from '../../freight'
 import { useStore } from '../../context/StoreContext'
 import { DeliveryZone } from '../../types'
+import { money } from '../../format'
 
 // Joinville coordinates
 const DEFAULT_CENTER = { lat: -26.30, lng: -48.85 }
@@ -150,7 +151,7 @@ function DeliveryPanel() {
           {fixedEnabled && mapboxEnabled && 'Se o bairro do cliente estiver nas zonas abaixo, vale a taxa fixa da zona. Se não estiver, o frete é calculado pelo Mapbox.'}
           {fixedEnabled && !mapboxEnabled && 'Só vale a taxa fixa por bairro. Clientes de bairros que não estão nas zonas abaixo não conseguem pedir entrega.'}
           {!fixedEnabled && mapboxEnabled && 'O frete é calculado pela distância da rota. As taxas das zonas abaixo não são cobradas.'}
-          {!fixedEnabled && !mapboxEnabled && `Frete único: taxa base de R$ ${Number(config.deliveryFee || 0).toFixed(2).replace('.', ',')} para qualquer endereço (altere em Configurações).`}
+          {!fixedEnabled && !mapboxEnabled && `Frete único: taxa base de ${money(Number(config.deliveryFee || 0))} para qualquer endereço (altere em Configurações).`}
         </p>
       </div>
 
@@ -174,7 +175,7 @@ function DeliveryPanel() {
             <div key={zone.id} className="flex items-center gap-2">
               <div className="w-4 h-4 rounded" style={{ backgroundColor: colors[idx % colors.length], opacity: 0.7 }}></div>
               <span className="text-xs text-gray-700 font-medium">{zone.name}</span>
-              <span className="text-xs text-gray-400">R$ {zone.price.toFixed(2).replace('.', ',')}</span>
+              <span className="text-xs text-gray-400">{money(zone.price)}</span>
             </div>
           ))}
         </div>
@@ -222,7 +223,7 @@ function DeliveryPanel() {
               <p className="text-xs text-gray-500">{zone.estimatedTime} • {zone.coordinates.length} pontos</p>
             </div>
             <div className="text-right">
-              <p className="font-bold text-green-700">R$ {zone.price.toFixed(2).replace('.', ',')}</p>
+              <p className="font-bold text-green-700">{money(zone.price)}</p>
             </div>
             <div className="flex gap-2">
               <button
@@ -441,7 +442,7 @@ function MapComponent({ zones, colors, address }: { zones: DeliveryZone[]; color
           const el = document.createElement('div')
           el.style.padding = '4px'
           const t = document.createElement('strong'); t.textContent = zone.name
-          el.append(t, document.createElement('br'), `Taxa: R$ ${Number(zone.price).toFixed(2).replace('.', ',')}`, document.createElement('br'), String(zone.estimatedTime || ''))
+          el.append(t, document.createElement('br'), `Taxa: ${money(Number(zone.price))}`, document.createElement('br'), String(zone.estimatedTime || ''))
           new mapboxgl.Popup().setLngLat(e.lngLat).setDOMContent(el).addTo(map)
         })
         addedIds.current.push(zone.id)
@@ -511,7 +512,7 @@ function MapFallback({ zones, colors }: { zones: DeliveryZone[]; colors: string[
             <p className="font-semibold text-sm text-gray-800">{zone.name}</p>
             <p className="text-xs text-gray-500 mt-1">{zone.estimatedTime}</p>
             <p className="font-bold text-sm mt-1" style={{ color: colors[idx % colors.length] }}>
-              R$ {zone.price.toFixed(2).replace('.', ',')}
+              {money(zone.price)}
             </p>
           </div>
         ))}

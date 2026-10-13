@@ -1,4 +1,5 @@
 import type { Coupon } from './types'
+import { money } from './format'
 
 export const normalizeCode = (s: string) => (s || '').trim().toUpperCase().replace(/\s+/g, '')
 
@@ -28,7 +29,7 @@ export function validateCoupon(
   if (coupon.expiresAt && today > coupon.expiresAt) return { ok: false, message: 'Este cupom expirou.' }
   const min = Number(coupon.minOrder) || 0
   if (subtotal < min) {
-    return { ok: false, message: `Pedido mínimo de R$ ${min.toFixed(2).replace('.', ',')} para este cupom.` }
+    return { ok: false, message: `Pedido mínimo de ${money(min)} para este cupom.` }
   }
   return { ok: true, coupon, discount: calcDiscount(coupon, subtotal) }
 }

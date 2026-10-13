@@ -4,6 +4,7 @@ import { Pencil, Trash2, X } from 'lucide-react'
 import { useStore } from '../../context/StoreContext'
 import { Product, ProductAddOn } from '../../types'
 import CatalogImport from './CatalogImport'
+import { money } from '../../format'
 
 function ProductsManager() {
   const { products, categories, addProduct, updateProduct, deleteProduct } = useStore()
@@ -377,7 +378,7 @@ function ProductsManager() {
                   )}
                 </div>
                 <div className="flex items-center justify-between mt-2">
-                  <span className="text-green-700 font-bold text-sm">R$ {product.price.toFixed(2).replace('.', ',')}</span>
+                  <span className="text-green-700 font-bold text-sm">{money(product.price)}</span>
                   <div className="flex gap-1">
                     <button
                       onClick={() => openEditForm(product)}
