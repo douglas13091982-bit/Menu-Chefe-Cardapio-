@@ -105,18 +105,38 @@ export function HomePage() {
   } | null>(null);
 
   useEffect(() => {
-    supabase
-      .from("platform_settings")
-      .select("system_name, logo_url, hero_background_url, plan_name, price_cents, trial_days, contact_whatsapp")
-      .eq("id", "main")
-      .maybeSingle()
-      .then(({ data }) => {
-        if (data) setPlan(data as NonNullable<typeof plan>);
-      });
+    const loadPlatformSettings = async () => {
+      const fullQuery = await supabase
+        .from("platform_settings")
+        .select("system_name, logo_url, hero_background_url, plan_name, price_cents, trial_days, contact_whatsapp")
+        .eq("id", "main")
+        .maybeSingle();
+
+      if (fullQuery.data) {
+        setPlan(fullQuery.data as NonNullable<typeof plan>);
+        return;
+      }
+
+      // Compatibilidade enquanto a migração da imagem hero ainda não foi aplicada.
+      const legacyQuery = await supabase
+        .from("platform_settings")
+        .select("system_name, logo_url, plan_name, price_cents, trial_days, contact_whatsapp")
+        .eq("id", "main")
+        .maybeSingle();
+
+      if (legacyQuery.data) {
+        setPlan({ ...legacyQuery.data, hero_background_url: null } as NonNullable<typeof plan>);
+      }
+    };
+
+    void loadPlatformSettings();
   }, []);
 
   const wa = String(plan?.contact_whatsapp || "").replace(/\D/g, "");
-  const price = plan ? "R$ " + (plan.price_cents / 100).toFixed(2).replace(".", ",") : null;
+  const priceCents = Number(plan?.price_cents);
+  const price = Number.isFinite(priceCents)
+    ? "R$ " + (priceCents / 100).toFixed(2).replace(".", ",")
+    : "R$ 99,00";
   const name = plan?.system_name || "Tratto Digital Menu";
   const trialText = plan?.trial_days ? `${plan.trial_days} dias grátis` : "teste grátis";
   const cta =
