@@ -1,4 +1,3 @@
-// @ts-nocheck -- código original migrado sem alterações de lógica
 import { useState, useEffect } from 'react'
 import { trackMenuPageView } from './marketing'
 import { StoreProvider } from './context/StoreContext'
@@ -8,32 +7,71 @@ import LoginScreen from './components/LoginScreen'
 
 type View = 'menu' | 'login' | 'admin'
 
-function App() {
-  const [view, setView] = useState<View>('menu')
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
+const ADMIN_AUTH_KEY = 'admin_auth'
 
-  // Check if already logged in (session)
+/** Sessão pode estar em sessionStorage (aba atual) ou localStorage ("manter conectado"). */
+function readAuthSession(): boolean {
+  try {
+    return (
+      sessionStorage.getItem(ADMIN_AUTH_KEY) === 'true' ||
+      localStorage.getItem(ADMIN_AUTH_KEY) === 'true'
+    )
+  } catch {
+    return false
+  }
+}
+
+function App() {
+  // Evita flash do cardápio para admin autenticado: lê a sessão de forma síncrona
+  // quando disponível (client-side), com fallback SSR resolvido no efeito abaixo.
+  const [view, setView] = useState<View>('menu')
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false
+    return readAuthSession()
+  })
+
+  // Confere a sessão novamente no cliente (cobre o caso de hidratação SSR).
   useEffect(() => {
-    const auth = sessionStorage.getItem('admin_auth')
-    if (auth === 'true') {
-      setIsAuthenticated(true)
-    }
+    const authed = readAuthSession()
+    setIsAuthenticated(authed)
+    // Se a sessão era de admin mas caímos no cardápio por hidratação, não força
+    // a troca de view — apenas mantém o estado de autenticação consistente.
+    if (!authed && view === 'admin') setView('login')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Proteção de rota: nunca renderizar o painel sem autenticação válida.
+  useEffect(() => {
+    if (view === 'admin' && !isAuthenticated) {
+      setView('login')
+    }
+  }, [view, isAuthenticated])
 
   // Meta Pixel: PageView ao abrir o cardápio (só se houver Pixel ID salvo)
   useEffect(() => {
     if (view === 'menu') trackMenuPageView()
   }, [view])
 
-  const handleLogin = () => {
+  const handleLogin = (remember: boolean) => {
     setIsAuthenticated(true)
-    sessionStorage.setItem('admin_auth', 'true')
+    try {
+      sessionStorage.setItem(ADMIN_AUTH_KEY, 'true')
+      if (remember) localStorage.setItem(ADMIN_AUTH_KEY, 'true')
+      else localStorage.removeItem(ADMIN_AUTH_KEY)
+    } catch {
+      /* storage indisponível: sessão apenas em memória */
+    }
     setView('admin')
   }
 
   const handleLogout = () => {
     setIsAuthenticated(false)
-    sessionStorage.removeItem('admin_auth')
+    try {
+      sessionStorage.removeItem(ADMIN_AUTH_KEY)
+      localStorage.removeItem(ADMIN_AUTH_KEY)
+    } catch {
+      /* ignore */
+    }
     setView('menu')
   }
 
