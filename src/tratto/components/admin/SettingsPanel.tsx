@@ -1,6 +1,6 @@
-// @ts-nocheck -- código original migrado sem alterações de lógica
 import { useState } from 'react'
 import { useStore } from '../../context/StoreContext'
+import { formatBRL, readImageFileAsDataUrl } from '../../utils'
 import MapboxIntegration from './MapboxIntegration'
 
 function SettingsPanel() {
@@ -14,20 +14,17 @@ function SettingsPanel() {
   const [passwordError, setPasswordError] = useState('')
   const [passwordSaved, setPasswordSaved] = useState(false)
 
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (!file) return
-    if (!file.type.startsWith('image/')) {
-      alert('Por favor, selecione um arquivo de imagem (PNG, JPG...)')
-      return
-    }
-    const reader = new FileReader()
-    reader.onloadend = () => {
-      setFormData(prev => ({ ...prev, logoUrl: reader.result as string }))
-    }
-    reader.readAsDataURL(file)
     // Reseta o input para permitir re-upload do mesmo arquivo
     e.target.value = ''
+    if (!file) return
+    const result = await readImageFileAsDataUrl(file)
+    if (!result.ok) {
+      alert(result.error)
+      return
+    }
+    setFormData(prev => ({ ...prev, logoUrl: result.dataUrl }))
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -274,8 +271,8 @@ function SettingsPanel() {
               </span>
             </div>
             <div className="mt-2 flex gap-4 text-xs">
-              <span className="text-green-700 font-medium">🏷️ Entrega: R$ {formData.deliveryFee.toFixed(2).replace('.', ',')}</span>
-              <span className="text-gray-500">Pedido mín: R$ {formData.minOrder.toFixed(2).replace('.', ',')}</span>
+              <span className="text-green-700 font-medium">🏷️ Entrega: {formatBRL(formData.deliveryFee)}</span>
+              <span className="text-gray-500">Pedido mín: {formatBRL(formData.minOrder)}</span>
             </div>
           </div>
         </div>

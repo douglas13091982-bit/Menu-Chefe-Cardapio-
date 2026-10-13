@@ -1,6 +1,6 @@
-// @ts-nocheck -- código original migrado sem alterações de lógica
 import { useState } from 'react'
 import { useStore } from '../../context/StoreContext'
+import { formatBRL } from '../../utils'
 import { Order } from '../../types'
 
 function OrdersManager() {
@@ -14,7 +14,7 @@ function OrdersManager() {
 
   const getNextStatus = (current: Order['status']): Order['status'] | null => {
     const idx = statusFlow.indexOf(current)
-    if (idx >= 0 && idx < statusFlow.length - 1) return statusFlow[idx + 1]
+    if (idx >= 0 && idx < statusFlow.length - 1) return statusFlow[idx + 1] ?? null
     return null
   }
 
@@ -120,7 +120,7 @@ function OrdersManager() {
                   </div>
                   <div>
                     <p className="text-gray-500 text-xs">Total</p>
-                    <p className="font-bold text-green-700">R$ {(order.total + order.deliveryFee).toFixed(2).replace('.', ',')}</p>
+                    <p className="font-bold text-green-700">{formatBRL((order.total + order.deliveryFee))}</p>
                   </div>
                 </div>
                 {(order.deliveryType || order.paymentMethod) && (
@@ -133,7 +133,7 @@ function OrdersManager() {
                     {order.paymentMethod && (
                       <span className="px-2 py-1 rounded-full font-medium bg-emerald-50 text-emerald-700">
                         {order.paymentMethod === 'card' ? '💳 Cartão' : order.paymentMethod === 'pix' ? '📱 PIX' : '💵 Dinheiro'}
-                        {order.changeFor ? ` (troco p/ R$ ${order.changeFor.toFixed(2).replace('.', ',')})` : ''}
+                        {order.changeFor ? ` (troco p/ ${formatBRL(order.changeFor)})` : ''}
                       </span>
                     )}
                   </div>
@@ -217,7 +217,7 @@ function OrdersManager() {
                       {selectedOrder.paymentMethod === 'card' ? '💳 Cartão' :
                        selectedOrder.paymentMethod === 'pix' ? '📱 PIX' :
                        selectedOrder.paymentMethod === 'cash' ? '💵 Dinheiro' : 'Não informado'}
-                      {selectedOrder.changeFor ? ` — troco para R$ ${selectedOrder.changeFor.toFixed(2).replace('.', ',')}` : ''}
+                      {selectedOrder.changeFor ? ` — troco para ${formatBRL(selectedOrder.changeFor)}` : ''}
                     </p>
                   </div>
                 )}
@@ -231,12 +231,12 @@ function OrdersManager() {
                       <p className="font-medium text-sm">{item.quantity}x {item.product.name}</p>
                       {item.selectedAddOns && item.selectedAddOns.length > 0 && (
                         <p className="text-xs text-gray-500">
-                          + {item.selectedAddOns.map(a => `${a.name} (+R$ ${a.price.toFixed(2).replace('.', ',')})`).join(', ')}
+                          + {item.selectedAddOns.map(a => `${a.name} (+${formatBRL(a.price)})`).join(', ')}
                         </p>
                       )}
-                      <p className="text-xs text-gray-500">R$ {(item.product.price + (item.selectedAddOns || []).reduce((s, a) => s + a.price, 0)).toFixed(2).replace('.', ',')} cada</p>
+                      <p className="text-xs text-gray-500">{formatBRL((item.product.price + (item.selectedAddOns || []).reduce((s, a) => s + a.price, 0)))} cada</p>
                     </div>
-                    <span className="font-semibold text-sm">R$ {((item.product.price + (item.selectedAddOns || []).reduce((s, a) => s + a.price, 0)) * item.quantity).toFixed(2).replace('.', ',')}</span>
+                    <span className="font-semibold text-sm">{formatBRL(((item.product.price + (item.selectedAddOns || []).reduce((s, a) => s + a.price, 0)) * item.quantity))}</span>
                   </div>
                 ))}
               </div>
@@ -244,15 +244,15 @@ function OrdersManager() {
               <div className="border-t pt-3 space-y-1">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Subtotal</span>
-                  <span>R$ {selectedOrder.total.toFixed(2).replace('.', ',')}</span>
+                  <span>{formatBRL(selectedOrder.total)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Taxa de entrega</span>
-                  <span>R$ {selectedOrder.deliveryFee.toFixed(2).replace('.', ',')}</span>
+                  <span>{formatBRL(selectedOrder.deliveryFee)}</span>
                 </div>
                 <div className="flex justify-between font-bold text-lg pt-2 border-t">
                   <span>Total</span>
-                  <span className="text-green-700">R$ {(selectedOrder.total + selectedOrder.deliveryFee).toFixed(2).replace('.', ',')}</span>
+                  <span className="text-green-700">{formatBRL((selectedOrder.total + selectedOrder.deliveryFee))}</span>
                 </div>
               </div>
 

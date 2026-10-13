@@ -1,7 +1,7 @@
-// @ts-nocheck -- código original migrado sem alterações de lógica
 import { useState, useRef } from 'react'
 import { useStore } from '../../context/StoreContext'
-import { Product, ProductAddOn } from '../../types'
+import type { Product, ProductAddOn } from '../../types'
+import { generateId, readImageFileAsDataUrl, formatBRL } from '../../utils'
 
 function ProductsManager() {
   const { products, categories, addProduct, updateProduct, deleteProduct } = useStore()
@@ -39,7 +39,7 @@ function ProductsManager() {
   }
 
   const addAddOn = () => {
-    setAddOns(prev => [...prev, { id: Date.now().toString(), name: '', price: 0 }])
+    setAddOns(prev => [...prev, { id: generateId('addon-'), name: '', price: 0 }])
   }
 
   const updateAddOn = (id: string, patch: Partial<ProductAddOn>) => {
@@ -50,15 +50,17 @@ function ProductsManager() {
     setAddOns(prev => prev.filter(a => a.id !== id))
   }
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setFormData(prev => ({ ...prev, image: reader.result as string }))
-      }
-      reader.readAsDataURL(file)
+    // Reseta o input para permitir re-upload do mesmo arquivo
+    e.target.value = ''
+    if (!file) return
+    const result = await readImageFileAsDataUrl(file)
+    if (!result.ok) {
+      alert(result.error)
+      return
     }
+    setFormData(prev => ({ ...prev, image: result.dataUrl }))
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -67,7 +69,7 @@ function ProductsManager() {
       .filter(a => a.name.trim())
       .map(a => ({ ...a, name: a.name.trim(), price: a.price || 0 }))
     const product: Product = {
-      id: editingProduct?.id || Date.now().toString(),
+      id: editingProduct?.id || generateId('prod-'),
       name: formData.name,
       description: formData.description,
       price: parseFloat(formData.price) || 0,
@@ -75,8 +77,9 @@ function ProductsManager() {
       categoryId: formData.categoryId,
       popular: formData.popular,
       available: formData.available,
-      addOns: cleanedAddOns.length > 0 ? cleanedAddOns : undefined
     }
+    // `exactOptionalPropertyTypes`: só anexa addOns quando existem itens limpos.
+    if (cleanedAddOns.length > 0) product.addOns = cleanedAddOns
     if (editingProduct) {
       updateProduct(product)
     } else {
@@ -360,12 +363,12 @@ function ProductsManager() {
                   <p className="text-xs text-gray-500 mt-0.5">{category?.icon} {category?.name}</p>
                   {product.addOns && product.addOns.length > 0 && (
                     <p className="text-[11px] text-gray-400 mt-0.5 truncate">
-                      ➕ {product.addOns.length} adicional{product.addOns.length > 1 ? 'eis' : ''} (ex: {product.addOns[0].name})
+                      ➕ {product.addOns.length} adicional{product.addOns.length > 1 ? 'eis' : ''}{product.addOns[0] ? ` (ex: ${product.addOns[0].name})` : ''}
                     </p>
                   )}
                 </div>
                 <div className="flex items-center justify-between mt-2">
-                  <span className="text-green-700 font-bold text-sm">R$ {product.price.toFixed(2).replace('.', ',')}</span>
+                  <span className="text-green-700 font-bold text-sm">{formatBRL(product.price)}</span>
                   <div className="flex gap-1">
                     <button
                       onClick={() => openEditForm(product)}
