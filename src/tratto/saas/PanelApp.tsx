@@ -203,8 +203,19 @@ function NoStore({ onCreated, onLogout }) {
 
 function PayBox({ store, plan }) {
   const [copied, setCopied] = useState("");
+  const [qr, setQr] = useState("");
+  const cents = store.price_cents ?? plan?.price_cents ?? 0;
+  const code = plan?.pix_key ? pixPayload(plan.pix_key, plan.pix_holder, plan.pix_city, cents) : "";
+  useEffect(() => {
+    if (!code) { setQr(""); return; }
+    let alive = true;
+    import("qrcode")
+      .then((m) => (m.default || m).toDataURL(code, { margin: 1, width: 320, errorCorrectionLevel: "M" }))
+      .then((url) => alive && setQr(url))
+      .catch(() => alive && setQr(""));
+    return () => { alive = false; };
+  }, [code]);
   if (!plan) return null;
-  const cents = store.price_cents ?? plan.price_cents ?? 0;
   const wa = String(plan.contact_whatsapp || "").replace(/\D/g, "");
   const copy = async (txt, k) => {
     try {
@@ -221,13 +232,19 @@ function PayBox({ store, plan }) {
       <p className="font-semibold text-gray-900">Pagar mensalidade: {moneyCents(cents)}</p>
       {plan.pix_key ? (
         <>
-          <p className="text-gray-600 mt-1">Chave Pix{plan.pix_holder ? ` (${plan.pix_holder})` : ""}:</p>
+          {qr && (
+            <div className="flex flex-col items-center mt-3">
+              <img src={qr} alt="QR Code Pix" className="w-48 h-48 rounded-lg border bg-white p-1" />
+              <p className="text-xs text-gray-500 mt-1">Aponte a câmera do app do seu banco</p>
+            </div>
+          )}
+          <p className="text-gray-600 mt-3">Chave Pix{plan.pix_holder ? ` (${plan.pix_holder})` : ""}:</p>
           <p className="font-mono break-all bg-white border rounded-lg px-3 py-2 mt-1">{plan.pix_key}</p>
           <div className="grid grid-cols-2 gap-2 mt-2">
             <button type="button" onClick={() => copy(plan.pix_key, "key")} className="rounded-lg border border-gray-300 py-2 font-semibold">
               {copied === "key" ? "Copiado!" : "Copiar chave"}
             </button>
-            <button type="button" onClick={() => copy(pixPayload(plan.pix_key, plan.pix_holder, plan.pix_city, cents), "code")} className="rounded-lg bg-[#d9273f] text-white py-2 font-semibold">
+            <button type="button" onClick={() => copy(code, "code")} className="rounded-lg bg-[#d9273f] text-white py-2 font-semibold">
               {copied === "code" ? "Copiado!" : "Pix copia e cola"}
             </button>
           </div>
@@ -349,31 +366,32 @@ function PanelShell({ store, status, isSuper, contact, plan, onLogout }) {
       <div className="pt-16">
         {(() => {
           const end = status === "trial" ? store.trial_ends_at : status === "active" ? store.paid_until : null;
-          const soon = end && daysLeft(end) <= 3;
-          if (!soon && !payOpen) return null;
-          const d = end ? Math.max(0, daysLeft(end)) : 0;
+          if (!end || daysLeft(end) > 3) return null;
+          const d = Math.max(0, daysLeft(end));
           return (
             <div className="bg-amber-50 border-b border-amber-200 text-amber-800 text-sm px-4 py-2 text-center">
-              {soon && (
-                <>
-                  {status === "trial" ? "Seu teste termina" : "Sua assinatura vence"} em {d} dia(s).{" "}
-                  <button type="button" className="underline font-semibold" onClick={() => setPayOpen(!payOpen)}>
-                    {payOpen ? "Fechar" : status === "trial" ? "Assinar agora" : "Renovar agora"}
-                  </button>
-                </>
-              )}
-              {payOpen && (
-                <div className="max-w-md mx-auto text-left text-gray-800">
-                  {status === "trial" && !soon && (
-                    <p className="text-xs text-gray-600 mt-1">Pode assinar quando quiser: a mensalidade começa quando o teste terminar, você não perde os dias restantes.</p>
-                  )}
-                  <PayBox store={store} plan={plan} />
-                  <button type="button" className="block mx-auto mt-2 text-xs underline" onClick={() => setPayOpen(false)}>Fechar</button>
-                </div>
-              )}
+              {status === "trial" ? "Seu teste termina" : "Sua assinatura vence"} em {d} dia(s).{" "}
+              <button type="button" className="underline font-semibold" onClick={() => setPayOpen(true)}>
+                {status === "trial" ? "Assinar agora" : "Renovar agora"}
+              </button>
             </div>
           );
         })()}
+        {payOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4" onClick={() => setPayOpen(false)}>
+            <div role="dialog" aria-modal="true" className="relative w-full max-w-md max-h-[92vh] overflow-y-auto rounded-2xl bg-white p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+              <button type="button" aria-label="Fechar" className="absolute right-3 top-3 text-2xl leading-none text-gray-400 hover:text-gray-700" onClick={() => setPayOpen(false)}>×</button>
+              <h2 className="text-lg font-bold text-gray-900 pr-6">{status === "trial" ? "Assinar" : "Renovar assinatura"} — {store.name}</h2>
+              {status === "trial" ? (
+                <p className="text-xs text-gray-500 mt-1">A mensalidade começa quando o teste terminar, você não perde os dias restantes.</p>
+              ) : store.paid_until ? (
+                <p className="text-xs text-gray-500 mt-1">Vence em {fmtDate(store.paid_until)}. Cada mês pago é somado ao vencimento atual.</p>
+              ) : null}
+              <PayBox store={store} plan={plan} />
+              <p className="text-xs text-gray-500 mt-3">Após o pagamento, envie o comprovante pelo WhatsApp. Assim que for conferido, sua assinatura é atualizada.</p>
+            </div>
+          </div>
+        )}
         <AdminPanel />
       </div>
     </StoreProvider>
