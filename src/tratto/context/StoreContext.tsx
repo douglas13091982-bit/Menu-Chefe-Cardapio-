@@ -1,6 +1,22 @@
-// @ts-nocheck -- código original migrado sem alterações de lógica
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
-import { Product, Category, Order, StoreConfig, DeliveryZone } from '../types'
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useMemo,
+  useRef,
+  type ReactNode,
+} from 'react'
+import type { Product, Category, Order, StoreConfig, DeliveryZone } from '../types'
+import {
+  loadJson,
+  saveJson,
+  normalizeConfig,
+  normalizeProduct,
+  normalizeCategory,
+  normalizeOrder,
+  normalizeDeliveryZones,
+} from '../storage'
 
 interface StoreContextType {
   // Config
@@ -20,6 +36,7 @@ interface StoreContextType {
   orders: Order[]
   addOrder: (order: Order) => void
   updateOrderStatus: (id: string, status: Order['status']) => void
+  deleteOrder: (id: string) => void
   // Delivery
   deliveryZones: DeliveryZone[]
   addDeliveryZone: (zone: DeliveryZone) => void
@@ -197,16 +214,16 @@ function generateDemoOrders(): Order[] {
     const date = new Date()
     date.setDate(date.getDate() - daysAgo)
     date.setHours(Math.floor(Math.random() * 5) + 18, Math.floor(Math.random() * 60))
+    const product = defaultProducts[Math.floor(Math.random() * defaultProducts.length)] ?? defaultProducts[0]!
+    const quantity = Math.floor(Math.random() * 3) + 1
     
     orders.push({
       id: `ORD-${1000 + i}`,
-      items: [
-        { product: defaultProducts[Math.floor(Math.random() * 5)], quantity: Math.floor(Math.random() * 3) + 1 }
-      ],
-      total: Math.random() * 80 + 30,
-      deliveryFee: [5.99, 7.99, 9.99][Math.floor(Math.random() * 3)],
-      status: statuses[Math.floor(Math.random() * statuses.length)],
-      customerName: names[Math.floor(Math.random() * names.length)],
+      items: [{ product, quantity }],
+      total: parseFloat((product.price * quantity).toFixed(2)),
+      deliveryFee: [5.99, 7.99, 9.99][Math.floor(Math.random() * 3)]!,
+      status: statuses[Math.floor(Math.random() * statuses.length)]!,
+      customerName: names[Math.floor(Math.random() * names.length)]!,
       customerPhone: `(47) 9${Math.floor(Math.random() * 9000 + 1000)}-${Math.floor(Math.random() * 9000 + 1000)}`,
       customerAddress: `Rua ${['das Flores', 'São Paulo', 'Principal', 'das Palmeiras'][Math.floor(Math.random() * 4)]}, ${Math.floor(Math.random() * 2000 + 100)}`,
       createdAt: date.toISOString(),
@@ -218,54 +235,98 @@ function generateDemoOrders(): Order[] {
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined)
 
-function loadFromStorage<T>(key: string, defaultValue: T): T {
-  try {
-    const stored = localStorage.getItem(key)
-    return stored ? JSON.parse(stored) : defaultValue
-  } catch {
-    return defaultValue
+// Chaves de persistência
+const KEYS = {
+  config: 'store_config',
+  products: 'store_products',
+  categories: 'store_categories',
+  orders: 'store_orders',
+  deliveryZones: 'store_delivery_zones',
+} as const
+
+/**
+ * Carrega a lista inicial de pedidos. Se não houver nada persistido, gera
+ * dados de demonstração e os grava imediatamente — evitando que um novo
+ * conjunto aleatório seja regenerado a cada montagem do provider.
+ */
+function loadInitialOrders(): Order[] {
+  const stored = loadJson<Order[] | null>(KEYS.orders, null, v => v === null || Array.isArray(v))
+  if (stored) {
+    return (stored as unknown[]).map(normalizeOrder).filter((o): o is Order => o !== null)
   }
+  const demo = generateDemoOrders()
+  saveJson(KEYS.orders, demo)
+  return demo
+}
+
+/** Efeito de persistência com skip da primeira renderização (o valor já vem do storage). */
+function usePersisted<T>(key: string, value: T) {
+  const first = useRef(true)
+  useEffect(() => {
+    if (first.current) {
+      first.current = false
+      return
+    }
+    saveJson(key, value)
+  }, [key, value])
 }
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const [config, setConfigState] = useState<StoreConfig>(() => loadFromStorage('store_config', defaultConfig))
-  const [products, setProducts] = useState<Product[]>(() => loadFromStorage('store_products', defaultProducts))
-  const [categories, setCategories] = useState<Category[]>(() => loadFromStorage('store_categories', defaultCategories))
-  const [orders, setOrders] = useState<Order[]>(() => loadFromStorage('store_orders', generateDemoOrders()))
-  const [deliveryZones, setDeliveryZones] = useState<DeliveryZone[]>(() => loadFromStorage('store_delivery_zones', defaultDeliveryZones))
-
-  useEffect(() => { localStorage.setItem('store_config', JSON.stringify(config)) }, [config])
-  useEffect(() => { localStorage.setItem('store_products', JSON.stringify(products)) }, [products])
-  useEffect(() => { localStorage.setItem('store_categories', JSON.stringify(categories)) }, [categories])
-  useEffect(() => { localStorage.setItem('store_orders', JSON.stringify(orders)) }, [orders])
-  useEffect(() => { localStorage.setItem('store_delivery_zones', JSON.stringify(deliveryZones)) }, [deliveryZones])
-
-  const setConfig = (c: StoreConfig) => setConfigState(c)
-  const addProduct = (p: Product) => setProducts(prev => [...prev, p])
-  const updateProduct = (p: Product) => setProducts(prev => prev.map(item => item.id === p.id ? p : item))
-  const deleteProduct = (id: string) => setProducts(prev => prev.filter(item => item.id !== id))
-  const addCategory = (c: Category) => setCategories(prev => [...prev, c])
-  const updateCategory = (c: Category) => setCategories(prev => prev.map(item => item.id === c.id ? c : item))
-  const deleteCategory = (id: string) => setCategories(prev => prev.filter(item => item.id !== id))
-  const addOrder = (o: Order) => setOrders(prev => [o, ...prev])
-  const updateOrderStatus = (id: string, status: Order['status']) => {
-    setOrders(prev => prev.map(o => o.id === id ? { ...o, status, updatedAt: new Date().toISOString() } : o))
-  }
-  const addDeliveryZone = (z: DeliveryZone) => setDeliveryZones(prev => [...prev, z])
-  const updateDeliveryZone = (z: DeliveryZone) => setDeliveryZones(prev => prev.map(item => item.id === z.id ? z : item))
-  const deleteDeliveryZone = (id: string) => setDeliveryZones(prev => prev.filter(item => item.id !== id))
-
-  return (
-    <StoreContext.Provider value={{
-      config, setConfig,
-      products, addProduct, updateProduct, deleteProduct,
-      categories, addCategory, updateCategory, deleteCategory,
-      orders, addOrder, updateOrderStatus,
-      deliveryZones, addDeliveryZone, updateDeliveryZone, deleteDeliveryZone
-    }}>
-      {children}
-    </StoreContext.Provider>
+  const [config, setConfigState] = useState<StoreConfig>(() =>
+    normalizeConfig(loadJson<unknown>(KEYS.config, null), defaultConfig)
   )
+  const [products, setProducts] = useState<Product[]>(() => {
+    const stored = loadJson<Product[] | null>(KEYS.products, null, v => v === null || Array.isArray(v))
+    if (!stored) return defaultProducts
+    return (stored as unknown[]).map(normalizeProduct).filter((p): p is Product => p !== null)
+  })
+  const [categories, setCategories] = useState<Category[]>(() => {
+    const stored = loadJson<Category[] | null>(KEYS.categories, null, v => v === null || Array.isArray(v))
+    if (!stored) return defaultCategories
+    return (stored as unknown[]).map(normalizeCategory).filter((c): c is Category => c !== null)
+  })
+  const [orders, setOrders] = useState<Order[]>(loadInitialOrders)
+  const [deliveryZones, setDeliveryZones] = useState<DeliveryZone[]>(() =>
+    normalizeDeliveryZones(loadJson<unknown>(KEYS.deliveryZones, null)) ?? defaultDeliveryZones
+  )
+
+  usePersisted(KEYS.config, config)
+  usePersisted(KEYS.products, products)
+  usePersisted(KEYS.categories, categories)
+  usePersisted(KEYS.orders, orders)
+  usePersisted(KEYS.deliveryZones, deliveryZones)
+
+  // Funções estáveis (useMemo/useCallback) para evitar re-renderizações
+  // desnecessárias dos consumidores do contexto.
+  const value = useMemo<StoreContextType>(
+    () => ({
+      config,
+      setConfig: (c: StoreConfig) => setConfigState(c),
+      products,
+      addProduct: (p: Product) => setProducts(prev => [...prev, p]),
+      updateProduct: (p: Product) => setProducts(prev => prev.map(item => (item.id === p.id ? p : item))),
+      deleteProduct: (id: string) => setProducts(prev => prev.filter(item => item.id !== id)),
+      categories,
+      addCategory: (c: Category) => setCategories(prev => [...prev, c]),
+      updateCategory: (c: Category) => setCategories(prev => prev.map(item => (item.id === c.id ? c : item))),
+      deleteCategory: (id: string) => setCategories(prev => prev.filter(item => item.id !== id)),
+      orders,
+      addOrder: (o: Order) => setOrders(prev => [o, ...prev]),
+      updateOrderStatus: (id: string, status: Order['status']) =>
+        setOrders(prev =>
+          prev.map(o => (o.id === id ? { ...o, status, updatedAt: new Date().toISOString() } : o))
+        ),
+      deleteOrder: (id: string) => setOrders(prev => prev.filter(o => o.id !== id)),
+      deliveryZones,
+      addDeliveryZone: (z: DeliveryZone) => setDeliveryZones(prev => [...prev, z]),
+      updateDeliveryZone: (z: DeliveryZone) =>
+        setDeliveryZones(prev => prev.map(item => (item.id === z.id ? z : item))),
+      deleteDeliveryZone: (id: string) => setDeliveryZones(prev => prev.filter(item => item.id !== id)),
+    }),
+    [config, products, categories, orders, deliveryZones]
+  )
+
+  return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>
 }
 
 export function useStore() {

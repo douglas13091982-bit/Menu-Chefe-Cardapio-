@@ -1,39 +1,51 @@
-// @ts-nocheck -- código original migrado sem alterações de lógica
 import { useState } from 'react'
 
 interface LoginScreenProps {
-  onLogin: () => void
+  onLogin: (remember: boolean) => void
   onBack: () => void
+}
+
+const ADMIN_PASSWORD_KEY = 'admin_password'
+const DEFAULT_ADMIN_PASSWORD = 'admin123'
+
+/** Lê a senha configurada diretamente do storage no momento da validação. */
+function readStoredPassword(): string {
+  try {
+    return localStorage.getItem(ADMIN_PASSWORD_KEY) || DEFAULT_ADMIN_PASSWORD
+  } catch {
+    return DEFAULT_ADMIN_PASSWORD
+  }
 }
 
 function LoginScreen({ onLogin, onBack }: LoginScreenProps) {
   const [password, setPassword] = useState('')
+  const [remember, setRemember] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-  // Senha do admin (pode ser alterada nas configurações)
-  const ADMIN_PASSWORD = localStorage.getItem('admin_password') || 'admin123'
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    if (loading) return
     setLoading(true)
     setError('')
 
     // Simula delay de autenticação
     setTimeout(() => {
-      if (password === ADMIN_PASSWORD) {
-        onLogin()
+      // A senha é lida no momento do submit: alterações feitas no painel
+      // passam a valer imediatamente, sem precisar recarregar a página.
+      if (password === readStoredPassword()) {
+        onLogin(remember)
       } else {
         setError('Senha incorreta. Tente novamente.')
         setLoading(false)
       }
-    }, 800)
+    }, 600)
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-4">
       {/* Background decoration */}
-      <div className="absolute inset-0 overflow-hidden">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-red-500/10 rounded-full blur-3xl"></div>
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-orange-500/10 rounded-full blur-3xl"></div>
       </div>
@@ -41,7 +53,7 @@ function LoginScreen({ onLogin, onBack }: LoginScreenProps) {
       <div className="relative w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="w-20 h-20 bg-red-500 rounded-2xl mx-auto flex items-center justify-center shadow-xl shadow-red-500/20 mb-4">
+          <div className="w-20 h-20 bg-red-500 rounded-2xl mx-auto flex items-center justify-center shadow-xl shadow-red-500/20 mb-4" aria-hidden="true">
             <span className="text-white text-3xl font-bold">T</span>
           </div>
           <h1 className="text-2xl font-bold text-white">Tratto Hamburgueria</h1>
@@ -57,11 +69,12 @@ function LoginScreen({ onLogin, onBack }: LoginScreenProps) {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="admin-password" className="block text-sm font-medium text-gray-700 mb-2">
                 Senha do Administrador
               </label>
               <div className="relative">
                 <input
+                  id="admin-password"
                   type="password"
                   value={password}
                   onChange={e => { setPassword(e.target.value); setError('') }}
@@ -69,18 +82,29 @@ function LoginScreen({ onLogin, onBack }: LoginScreenProps) {
                     error ? 'border-red-300 bg-red-50' : 'border-gray-200'
                   }`}
                   placeholder="Digite sua senha"
+                  autoComplete="current-password"
                   autoFocus
                 />
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400" aria-hidden="true">
                   🔒
                 </span>
               </div>
               {error && (
-                <p className="text-red-500 text-xs mt-2 flex items-center gap-1">
-                  <span>⚠️</span> {error}
+                <p role="alert" className="text-red-500 text-xs mt-2 flex items-center gap-1">
+                  <span aria-hidden="true">⚠️</span> {error}
                 </p>
               )}
             </div>
+
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={remember}
+                onChange={e => setRemember(e.target.checked)}
+                className="w-4 h-4 rounded border-gray-300 text-red-500 focus:ring-red-500"
+              />
+              <span className="text-sm text-gray-600">Manter conectado neste navegador</span>
+            </label>
 
             <button
               type="submit"
@@ -93,7 +117,7 @@ function LoginScreen({ onLogin, onBack }: LoginScreenProps) {
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
-                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" aria-hidden="true"></span>
                   Entrando...
                 </span>
               ) : (
@@ -101,15 +125,6 @@ function LoginScreen({ onLogin, onBack }: LoginScreenProps) {
               )}
             </button>
           </form>
-
-          <div className="mt-6 pt-4 border-t border-gray-100">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-              <p className="text-xs text-blue-700">
-                💡 <strong>Dica:</strong> A senha padrão é <code className="bg-blue-100 px-1.5 py-0.5 rounded font-mono">admin123</code>. 
-                Você pode alterá-la nas configurações.
-              </p>
-            </div>
-          </div>
         </div>
 
         {/* Back button */}

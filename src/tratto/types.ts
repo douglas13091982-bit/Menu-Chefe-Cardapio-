@@ -1,4 +1,3 @@
-// @ts-nocheck -- código original migrado sem alterações de lógica
 export interface ProductAddOn {
   id: string
   name: string
