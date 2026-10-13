@@ -49,7 +49,8 @@ export interface Order {
   customerAddress: string
   deliveryType?: DeliveryType
   paymentMethod?: PaymentMethod
-  changeFor?: number
+  /** Valor em dinheiro recebido do cliente (para cálculo de troco). */
+  changeFor?: number | undefined
   createdAt: string
   updatedAt: string
 }

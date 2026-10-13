@@ -1,5 +1,15 @@
 // Utilitários compartilhados do domínio Tratto.
 
+/** Formata um valor monetário em Real brasileiro: `R$ 12,50`. */
+export function formatBRL(value: number): string {
+  return `R$ ${value.toFixed(2).replace('.', ',')}`
+}
+
+/** Gera um número de pedido humano e legível no cardápio: `#1000`–`#9999`. */
+export function generateOrderNumber(): string {
+  return '#' + Math.floor(1000 + Math.random() * 9000)
+}
+
 /**
  * Gera um id único e monotônico para entidades criadas no painel.
  * Combina timestamp + contador + aleatoriedade para evitar colisões

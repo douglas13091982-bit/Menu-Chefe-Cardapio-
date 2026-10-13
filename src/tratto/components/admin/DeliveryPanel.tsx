@@ -1,7 +1,7 @@
-// @ts-nocheck -- TODO(dívida técnica): tipar este componente e remover o no-check.
 // A migração do Tratto trouxe o código sem tipos; a correção de severidade alta não
 // dependia da tipagem completa. Revalidar com `tsc` ao longo das próximas iterações.
 import { useState, useRef, useEffect } from 'react'
+import { formatBRL, generateId } from '../../utils'
 import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import { getMapboxToken, MAPBOX_TOKEN_EVENT } from '../../mapboxToken'
@@ -40,7 +40,7 @@ function DeliveryPanel() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     const zone: DeliveryZone = {
-      id: editingZone?.id || Date.now().toString(),
+      id: editingZone?.id || generateId('zona-'),
       name: formData.name,
       price: parseFloat(formData.price) || 0,
       estimatedTime: formData.estimatedTime,
@@ -104,7 +104,7 @@ function DeliveryPanel() {
             <div key={zone.id} className="flex items-center gap-2">
               <div className="w-4 h-4 rounded" style={{ backgroundColor: colors[idx % colors.length], opacity: 0.7 }}></div>
               <span className="text-xs text-gray-700 font-medium">{zone.name}</span>
-              <span className="text-xs text-gray-400">R$ {zone.price.toFixed(2).replace('.', ',')}</span>
+              <span className="text-xs text-gray-400">{formatBRL(zone.price)}</span>
             </div>
           ))}
         </div>
@@ -152,7 +152,7 @@ function DeliveryPanel() {
               <p className="text-xs text-gray-500">{zone.estimatedTime} • {zone.coordinates.length} pontos</p>
             </div>
             <div className="text-right">
-              <p className="font-bold text-green-700">R$ {zone.price.toFixed(2).replace('.', ',')}</p>
+              <p className="font-bold text-green-700">{formatBRL(zone.price)}</p>
             </div>
             <div className="flex gap-2">
               <button
@@ -293,10 +293,10 @@ function MapComponent({ zones, colors }: { zones: DeliveryZone[]; colors: string
 
           zones.forEach((zone, idx) => {
             const coordinates = zone.coordinates.map(c => [c.lng, c.lat])
-            if (coordinates.length > 0 &&
-                (coordinates[0][0] !== coordinates[coordinates.length-1][0] ||
-                 coordinates[0][1] !== coordinates[coordinates.length-1][1])) {
-              coordinates.push(coordinates[0])
+            const first = coordinates[0]
+            const last = coordinates[coordinates.length - 1]
+            if (first && last && (first[0] !== last[0] || first[1] !== last[1])) {
+              coordinates.push(first)
             }
 
             try {
@@ -333,7 +333,7 @@ function MapComponent({ zones, colors }: { zones: DeliveryZone[]; colors: string
               map.on('click', `zone-fill-${zone.id}`, (e: any) => {
                 new mapboxgl.default.Popup()
                   .setLngLat(e.lngLat)
-                  .setHTML(`<div style="padding:4px"><strong>${zone.name}</strong><br>Taxa: R$ ${zone.price.toFixed(2).replace('.', ',')}<br>${zone.estimatedTime}</div>`)
+                  .setHTML(`<div style="padding:4px"><strong>${zone.name}</strong><br>Taxa: ${formatBRL(zone.price)}<br>${zone.estimatedTime}</div>`)
                   .addTo(map)
               })
             } catch (err) {
@@ -417,7 +417,7 @@ function MapFallback({ zones, colors }: { zones: DeliveryZone[]; colors: string[
             <p className="font-semibold text-sm text-gray-800">{zone.name}</p>
             <p className="text-xs text-gray-500 mt-1">{zone.estimatedTime}</p>
             <p className="font-bold text-sm mt-1" style={{ color: colors[idx % colors.length] }}>
-              R$ {zone.price.toFixed(2).replace('.', ',')}
+              {formatBRL(zone.price)}
             </p>
           </div>
         ))}

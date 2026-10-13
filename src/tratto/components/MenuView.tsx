@@ -2,8 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useStore } from '../context/StoreContext'
 import type { Product, CartItem, Order, DeliveryType, PaymentMethod } from '../types'
 import { cartItemKey } from '../types'
-
-const fmt = (v: number) => `R$ ${v.toFixed(2).replace('.', ',')}`
+import { formatBRL as fmt, generateOrderNumber } from '../utils'
 
 // preço unitário do item do carrinho (produto + adicionais selecionados)
 const getItemUnitPrice = (item: CartItem) =>
@@ -144,7 +143,7 @@ function MenuView() {
     if (totalPrice < config.minOrder) return
     const now = new Date().toISOString()
     const order: Order = {
-      id: '#' + Math.floor(1000 + Math.random() * 9000),
+      id: generateOrderNumber(),
       items: cart,
       total: totalPrice,
       deliveryFee: checkoutDeliveryFee,
@@ -1094,7 +1093,8 @@ function MenuView() {
                 {orderPlaced.deliveryType === 'delivery' ? `: ${orderPlaced.customerAddress}` : ''}
               </p>
               <p style={{ fontSize: '13px', color: '#374151', margin: '0 0 6px' }}>
-                💰 Pagamento: {paymentLabels[orderPlaced.paymentMethod]}
+                💰 Pagamento:{' '}
+                {orderPlaced.paymentMethod ? paymentLabels[orderPlaced.paymentMethod] : '—'}
                 {orderPlaced.changeFor ? ` (troco para ${fmt(orderPlaced.changeFor)})` : ''}
               </p>
               <p style={{ fontSize: '13px', color: '#374151', margin: 0 }}>

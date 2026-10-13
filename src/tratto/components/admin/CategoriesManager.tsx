@@ -1,6 +1,6 @@
-// @ts-nocheck -- código original migrado sem alterações de lógica
 import { useState } from 'react'
 import { useStore } from '../../context/StoreContext'
+import { generateId } from '../../utils'
 import { Category } from '../../types'
 
 function CategoriesManager() {
@@ -24,7 +24,7 @@ function CategoriesManager() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     const category: Category = {
-      id: editingCategory?.id || Date.now().toString(),
+      id: editingCategory?.id || generateId('cat-'),
       name: formData.name,
       icon: formData.icon,
       order: formData.order || categories.length + 1

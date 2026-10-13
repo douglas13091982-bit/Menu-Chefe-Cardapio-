@@ -1,5 +1,5 @@
-// @ts-nocheck -- código original migrado sem alterações de lógica
 import { useStore } from '../../context/StoreContext'
+import { formatBRL } from '../../utils'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, Legend } from 'recharts'
 import { useMemo } from 'react'
 
@@ -17,7 +17,7 @@ function Dashboard() {
     for (let i = 6; i >= 0; i--) {
       const date = new Date()
       date.setDate(date.getDate() - i)
-      const dateStr = date.toISOString().split('T')[0]
+      const dateStr = date.toISOString().split('T')[0] ?? ''
       const dayOrders = completedOrders.filter(o => o.createdAt.startsWith(dateStr))
       last7Days.push({
         date: date.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit' }),
@@ -44,11 +44,13 @@ function Dashboard() {
     const productSales: { [key: string]: { name: string; quantity: number; revenue: number } } = {}
     completedOrders.forEach(order => {
       order.items.forEach(item => {
-        if (!productSales[item.product.id]) {
-          productSales[item.product.id] = { name: item.product.name, quantity: 0, revenue: 0 }
-        }
-        productSales[item.product.id].quantity += item.quantity
-        productSales[item.product.id].revenue += item.product.price * item.quantity
+        const entry = (productSales[item.product.id] ??= {
+          name: item.product.name,
+          quantity: 0,
+          revenue: 0,
+        })
+        entry.quantity += item.quantity
+        entry.revenue += item.product.price * item.quantity
       })
     })
     const topProducts = Object.values(productSales)
@@ -69,10 +71,10 @@ function Dashboard() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard title="Faturamento Total" value={`R$ ${stats.totalRevenue.toFixed(2).replace('.', ',')}`} icon="💰" color="green" />
+        <StatCard title="Faturamento Total" value={formatBRL(stats.totalRevenue)} icon="💰" color="green" />
         <StatCard title="Pedidos Completos" value={stats.completedOrders.toString()} icon="✅" color="blue" />
         <StatCard title="Pedidos Pendentes" value={stats.pendingOrders.toString()} icon="⏳" color="orange" />
-        <StatCard title="Ticket Médio" value={`R$ ${stats.avgTicket.toFixed(2).replace('.', ',')}`} icon="📈" color="purple" />
+        <StatCard title="Ticket Médio" value={formatBRL(stats.avgTicket)} icon="📈" color="purple" />
       </div>
 
       {/* Charts Row */}
@@ -85,7 +87,7 @@ function Dashboard() {
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis dataKey="date" tick={{ fontSize: 12 }} />
               <YAxis tick={{ fontSize: 12 }} />
-              <Tooltip formatter={(value: number) => [`R$ ${value.toFixed(2).replace('.', ',')}`, 'Vendas']} />
+              <Tooltip formatter={(value: number) => [formatBRL(value), 'Vendas']} />
               <Bar dataKey="vendas" fill="#ef4444" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
@@ -119,7 +121,7 @@ function Dashboard() {
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value: number) => [`R$ ${value.toFixed(2).replace('.', ',')}`, 'Vendas']} />
+                <Tooltip formatter={(value: number) => [formatBRL(value), 'Vendas']} />
                 <Legend />
               </PieChart>
             </ResponsiveContainer>
@@ -146,7 +148,7 @@ function Dashboard() {
                   <p className="text-xs text-gray-500">{product.quantity} vendidos</p>
                 </div>
                 <span className="text-green-700 font-bold text-sm">
-                  R$ {product.revenue.toFixed(2).replace('.', ',')}
+                  {formatBRL(product.revenue)}
                 </span>
               </div>
             )) : (
@@ -175,7 +177,7 @@ function Dashboard() {
                 <tr key={order.id} className="border-b last:border-0">
                   <td className="py-3 font-medium">{order.id}</td>
                   <td className="py-3">{order.customerName}</td>
-                  <td className="py-3 text-green-700 font-medium">R$ {order.total.toFixed(2).replace('.', ',')}</td>
+                  <td className="py-3 text-green-700 font-medium">{formatBRL(order.total)}</td>
                   <td className="py-3">
                     <StatusBadge status={order.status} />
                   </td>
