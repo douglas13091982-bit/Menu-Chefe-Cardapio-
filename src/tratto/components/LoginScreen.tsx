@@ -1,46 +1,43 @@
-import { useState } from 'react'
+import { useRef, useState } from "react";
+import { verifyAdminPassword } from "../utils";
 
 interface LoginScreenProps {
-  onLogin: (remember: boolean) => void
-  onBack: () => void
-}
-
-const ADMIN_PASSWORD_KEY = 'admin_password'
-const DEFAULT_ADMIN_PASSWORD = 'admin123'
-
-/** Lê a senha configurada diretamente do storage no momento da validação. */
-function readStoredPassword(): string {
-  try {
-    return localStorage.getItem(ADMIN_PASSWORD_KEY) || DEFAULT_ADMIN_PASSWORD
-  } catch {
-    return DEFAULT_ADMIN_PASSWORD
-  }
+  onLogin: (remember: boolean) => void;
+  onBack: () => void;
 }
 
 function LoginScreen({ onLogin, onBack }: LoginScreenProps) {
-  const [password, setPassword] = useState('')
-  const [remember, setRemember] = useState(false)
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [remember, setRemember] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  // A senha fica apenas no input não controlado (nunca em estado/bundle).
+  const passwordRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (loading) return
-    setLoading(true)
-    setError('')
+    e.preventDefault();
+    if (loading) return;
+    const input = passwordRef.current;
+    const value = input?.value ?? "";
+    if (!value) {
+      setError("Digite a senha para continuar.");
+      return;
+    }
+    setLoading(true);
+    setError("");
 
-    // Simula delay de autenticação
+    // Valida no momento do submit: alterações feitas no painel passam a valer
+    // imediatamente. Inclui bloqueio progressivo contra força bruta.
     setTimeout(() => {
-      // A senha é lida no momento do submit: alterações feitas no painel
-      // passam a valer imediatamente, sem precisar recarregar a página.
-      if (password === readStoredPassword()) {
-        onLogin(remember)
-      } else {
-        setError('Senha incorreta. Tente novamente.')
-        setLoading(false)
+      try {
+        verifyAdminPassword(value);
+        if (input) input.value = ""; // não mantém a senha na tela/memória
+        onLogin(remember);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Falha ao autenticar.");
+        setLoading(false);
       }
-    }, 600)
-  }
+    }, 400);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-4">
@@ -53,7 +50,10 @@ function LoginScreen({ onLogin, onBack }: LoginScreenProps) {
       <div className="relative w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="w-20 h-20 bg-red-500 rounded-2xl mx-auto flex items-center justify-center shadow-xl shadow-red-500/20 mb-4" aria-hidden="true">
+          <div
+            className="w-20 h-20 bg-red-500 rounded-2xl mx-auto flex items-center justify-center shadow-xl shadow-red-500/20 mb-4"
+            aria-hidden="true"
+          >
             <span className="text-white text-3xl font-bold">T</span>
           </div>
           <h1 className="text-2xl font-bold text-white">Tratto Hamburgueria</h1>
@@ -69,23 +69,29 @@ function LoginScreen({ onLogin, onBack }: LoginScreenProps) {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label htmlFor="admin-password" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="admin-password"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Senha do Administrador
               </label>
               <div className="relative">
                 <input
+                  ref={passwordRef}
                   id="admin-password"
                   type="password"
-                  value={password}
-                  onChange={e => { setPassword(e.target.value); setError('') }}
                   className={`w-full border rounded-xl px-4 py-3 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 transition-all ${
-                    error ? 'border-red-300 bg-red-50' : 'border-gray-200'
+                    error ? "border-red-300 bg-red-50" : "border-gray-200"
                   }`}
                   placeholder="Digite sua senha"
                   autoComplete="current-password"
                   autoFocus
+                  onChange={() => setError("")}
                 />
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400" aria-hidden="true">
+                <span
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"
+                  aria-hidden="true"
+                >
                   🔒
                 </span>
               </div>
@@ -100,7 +106,7 @@ function LoginScreen({ onLogin, onBack }: LoginScreenProps) {
               <input
                 type="checkbox"
                 checked={remember}
-                onChange={e => setRemember(e.target.checked)}
+                onChange={(e) => setRemember(e.target.checked)}
                 className="w-4 h-4 rounded border-gray-300 text-red-500 focus:ring-red-500"
               />
               <span className="text-sm text-gray-600">Manter conectado neste navegador</span>
@@ -108,20 +114,23 @@ function LoginScreen({ onLogin, onBack }: LoginScreenProps) {
 
             <button
               type="submit"
-              disabled={loading || !password}
+              disabled={loading}
               className={`w-full py-3 rounded-xl font-bold text-sm transition-all ${
-                loading || !password
-                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/20'
+                loading
+                  ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  : "bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/20"
               }`}
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
-                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" aria-hidden="true"></span>
+                  <span
+                    className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"
+                    aria-hidden="true"
+                  ></span>
                   Entrando...
                 </span>
               ) : (
-                'Acessar Painel'
+                "Acessar Painel"
               )}
             </button>
           </form>
@@ -138,7 +147,7 @@ function LoginScreen({ onLogin, onBack }: LoginScreenProps) {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-export default LoginScreen
+export default LoginScreen;

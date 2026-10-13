@@ -1,83 +1,83 @@
 export interface ProductAddOn {
-  id: string
-  name: string
-  price: number
+  id: string;
+  name: string;
+  price: number;
 }
 
 export interface Product {
-  id: string
-  name: string
-  description: string
-  price: number
-  image: string
-  categoryId: string
-  popular?: boolean
-  available: boolean
-  addOns?: ProductAddOn[]
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  image: string;
+  categoryId: string;
+  popular?: boolean;
+  available: boolean;
+  addOns?: ProductAddOn[];
 }
 
 export interface Category {
-  id: string
-  name: string
-  icon: string
-  order: number
+  id: string;
+  name: string;
+  icon: string;
+  order: number;
 }
 
 export interface CartItem {
-  product: Product
-  quantity: number
-  observation?: string
-  selectedAddOns?: ProductAddOn[]
+  product: Product;
+  quantity: number;
+  observation?: string;
+  selectedAddOns?: ProductAddOn[];
 }
 
 /** Chave que identifica univocamente a linha do carrinho (produto + adicionais). */
 export function cartItemKey(productId: string, addOnIds?: readonly string[]): string {
-  return productId + '|' + [...(addOnIds ?? [])].sort().join(',')
+  return productId + "|" + [...(addOnIds ?? [])].sort().join(",");
 }
 
-export type DeliveryType = 'pickup' | 'delivery'
-export type PaymentMethod = 'card' | 'pix' | 'cash'
+export type DeliveryType = "pickup" | "delivery";
+export type PaymentMethod = "card" | "pix" | "cash";
 
 export interface Order {
-  id: string
-  items: CartItem[]
-  total: number
-  deliveryFee: number
-  status: 'pending' | 'preparing' | 'delivering' | 'completed' | 'cancelled'
-  customerName: string
-  customerPhone: string
-  customerAddress: string
-  deliveryType?: DeliveryType
-  paymentMethod?: PaymentMethod
+  id: string;
+  items: CartItem[];
+  total: number;
+  deliveryFee: number;
+  status: "pending" | "preparing" | "delivering" | "completed" | "cancelled";
+  customerName: string;
+  customerPhone: string;
+  customerAddress: string;
+  deliveryType?: DeliveryType;
+  paymentMethod?: PaymentMethod;
   /** Valor em dinheiro recebido do cliente (para cálculo de troco). */
-  changeFor?: number | undefined
-  createdAt: string
-  updatedAt: string
+  changeFor?: number | undefined;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface StoreConfig {
-  name: string
-  subtitle: string
-  logoUrl?: string
-  phone: string
-  address: string
-  deliveryFee: number
-  minOrder: number
-  openTime: string
-  closeTime: string
-  isOpen: boolean
+  name: string;
+  subtitle: string;
+  logoUrl?: string;
+  phone: string;
+  address: string;
+  deliveryFee: number;
+  minOrder: number;
+  openTime: string;
+  closeTime: string;
+  isOpen: boolean;
 }
 
 export interface DeliveryZone {
-  id: string
-  name: string
-  price: number
-  estimatedTime: string
-  coordinates: { lat: number; lng: number }[]
+  id: string;
+  name: string;
+  price: number;
+  estimatedTime: string;
+  coordinates: { lat: number; lng: number }[];
 }
 
 export interface DailySales {
-  date: string
-  total: number
-  orders: number
+  date: string;
+  total: number;
+  orders: number;
 }
