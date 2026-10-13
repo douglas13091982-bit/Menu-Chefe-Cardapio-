@@ -1689,3 +1689,172 @@ main .rounded-2xl {
     font-size: 20px !important;
   }
 }
+
+
+/* Hero polish — composição integrada inspirada no layout de referência */
+.home-header {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 40;
+  border-bottom-color: rgba(255, 255, 255, 0.1) !important;
+  background: linear-gradient(180deg, rgba(5, 7, 9, 0.82), rgba(5, 7, 9, 0.18)) !important;
+  box-shadow: none;
+}
+.home-header .home-container {
+  height: 88px;
+}
+.home-hero {
+  min-height: 760px;
+  isolation: isolate;
+  background:
+    radial-gradient(circle at 79% 34%, rgba(215, 42, 45, 0.16), transparent 31%),
+    radial-gradient(circle at 53% 100%, rgba(119, 56, 22, 0.18), transparent 35%),
+    linear-gradient(112deg, #07090b 0%, #0a0c0e 44%, #13100e 100%);
+}
+.home-hero::before {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: 0.28;
+  background-image: linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+  background-size: 72px 72px;
+  mask-image: linear-gradient(90deg, #000 0%, transparent 72%);
+}
+.home-hero::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(90deg, rgba(5,7,9,.34) 0%, transparent 48%, rgba(5,7,9,.26) 100%), linear-gradient(0deg, rgba(5,7,9,.75), transparent 32%);
+}
+.home-hero-grid {
+  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  gap: 18px;
+  min-height: 720px;
+  padding-top: 122px;
+  padding-bottom: 42px;
+}
+.home-hero-copy {
+  padding-block: 0 22px;
+}
+.home-kicker {
+  border: 0;
+  border-left: 3px solid var(--home-red);
+  border-radius: 0;
+  padding: 4px 0 4px 12px;
+  background: transparent;
+  color: #d7dbe0;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+.home-hero h1 {
+  max-width: 630px;
+  font-size: clamp(3.35rem, 5.65vw, 5.65rem) !important;
+  line-height: 0.99 !important;
+  letter-spacing: -0.068em !important;
+  text-wrap: balance;
+}
+.home-red-text {
+  color: #ff3441;
+  text-shadow: 0 0 28px rgba(237, 37, 45, 0.16);
+}
+.home-hero-underline {
+  width: min(430px, 92%);
+  margin-top: 13px;
+  color: #ff3441;
+}
+.home-hero-copy > p {
+  max-width: 510px;
+  color: #c1c7cd !important;
+  line-height: 1.58 !important;
+}
+.home-hero-visual {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 530px;
+  transform: translate(3%, 1%);
+}
+.home-hero-image-frame {
+  width: min(100%, 760px);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 30px;
+  background: linear-gradient(145deg, rgba(255,255,255,.08), rgba(255,255,255,.015));
+  box-shadow: 0 34px 80px rgba(0, 0, 0, 0.48), 0 0 0 10px rgba(255,255,255,.018);
+}
+.home-hero-image {
+  aspect-ratio: 736 / 690;
+  object-fit: contain;
+  mask-image: none;
+  transform: scale(1.015);
+  transition: transform 500ms cubic-bezier(.2,.75,.25,1);
+}
+.home-hero-image-frame:hover .home-hero-image {
+  transform: scale(1.035);
+}
+.home-hero-orbit {
+  top: 8%;
+  right: 6%;
+  width: 82%;
+  background: radial-gradient(circle, rgba(255, 55, 61, 0.22), rgba(182, 31, 35, 0.06) 42%, transparent 70%);
+}
+.home-live-badge {
+  left: 0;
+  bottom: 11%;
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(7, 9, 11, 0.72);
+}
+.home-proof-row {
+  position: relative;
+  z-index: 2;
+  border-top: 1px solid rgba(255,255,255,.1);
+  padding-top: 20px;
+}
+.home-header .home-brand-mark {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px !important;
+}
+.home-header .home-cta {
+  border-radius: 9px;
+  box-shadow: 0 9px 24px rgba(237, 37, 45, 0.2);
+}
+@media (max-width: 900px) {
+  .home-hero-grid {
+    padding-top: 126px;
+  }
+  .home-hero-visual {
+    min-height: auto;
+    transform: none;
+  }
+}
+@media (max-width: 640px) {
+  .home-header .home-container {
+    height: 72px;
+  }
+  .home-hero {
+    min-height: auto;
+  }
+  .home-hero-grid {
+    padding-top: 116px;
+    padding-bottom: 18px;
+  }
+  .home-hero h1 {
+    font-size: clamp(3rem, 14vw, 4.4rem) !important;
+    line-height: 0.98 !important;
+  }
+  .home-hero-image-frame {
+    border-radius: 21px;
+    box-shadow: 0 22px 45px rgba(0,0,0,.42), 0 0 0 6px rgba(255,255,255,.018);
+  }
+  .home-hero-copy > p {
+    font-size: 16px !important;
+  }
+  .home-proof-row {
+    border-top: 0;
+  }
+}
