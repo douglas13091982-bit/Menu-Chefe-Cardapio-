@@ -1,5 +1,5 @@
 // @ts-nocheck -- código original migrado sem alterações de lógica
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react'
 import { Product, Category, Order, StoreConfig, DeliveryZone } from '../types'
 import { supabase } from '@/integrations/supabase/client'
 import { setDbMapboxToken } from '../mapboxToken'
@@ -78,6 +78,18 @@ export function StoreProvider({ children, slug, storeId: storeIdProp, isAdmin = 
   const [orders, setOrders] = useState<Order[]>([])
   const [lastIncomingOrder, setLastIncomingOrder] = useState<Order | null>(null)
   const [deliveryZones, setDeliveryZones] = useState<DeliveryZone[]>([])
+  // Falhas ao gravar (permissão, assinatura inativa, rede) aparecem para o usuário em vez de ficarem só no console
+  const [saveError, setSaveError] = useState<string | null>(null)
+  const notifyError = (action: string, error: any) => {
+    if (!error) return
+    console.error(`Erro ao ${action}:`, error)
+    const denied = error.code === '42501' || /row-level security|permission denied/i.test(error.message || '')
+    setSaveError(denied
+      ? `Não foi possível ${action}: sem permissão ou assinatura da loja inativa.`
+      : `Não foi possível ${action}. Verifique a conexão e tente novamente.`)
+  }
+  const soundUrlRef = useRef<string | undefined>(undefined)
+  soundUrlRef.current = config.orderNotificationSoundUrl
 
   // 1) Descobre a loja pelo endereço (cardápio público)
   useEffect(() => {
@@ -132,6 +144,7 @@ export function StoreProvider({ children, slug, storeId: storeIdProp, isAdmin = 
   // 3) Painel: pedidos em tempo real
   useEffect(() => {
     if (!isAdmin || !sid) { setOrders([]); return }
+    let cancelled = false
     const channel = supabase
       .channel('orders-live-' + sid)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `store_id=eq.${sid}` }, payload => {
@@ -141,9 +154,9 @@ export function StoreProvider({ children, slug, storeId: storeIdProp, isAdmin = 
           setOrders(prev => prev.filter(order => order.id !== row.id))
           return
         }
-        if (payload.eventType === 'INSERT' && config.orderNotificationSoundUrl && typeof window !== 'undefined' && window.localStorage.getItem('tratto_order_sound_enabled') === '1') {
+        if (payload.eventType === 'INSERT' && soundUrlRef.current && typeof window !== 'undefined' && window.localStorage.getItem('tratto_order_sound_enabled') === '1') {
           try {
-            const notificationAudio = new Audio(config.orderNotificationSoundUrl)
+            const notificationAudio = new Audio(soundUrlRef.current)
             notificationAudio.volume = 1
             void notificationAudio.play().catch(error => console.warn('Som de novo pedido bloqueado pelo navegador. Ative o som no painel e teste novamente.', error))
           } catch (error) {
@@ -162,43 +175,50 @@ export function StoreProvider({ children, slug, storeId: storeIdProp, isAdmin = 
       .subscribe()
     supabase.from('orders').select('data, status').eq('store_id', sid).order('created_at', { ascending: false })
       .then(({ data, error }) => {
+        if (cancelled) return
         logError('carregar pedidos', error)
-        if (data) setOrders(data.map(r => ({ ...r.data, status: r.status })))
+        if (!data) return
+        const loaded = data.map(r => ({ ...r.data, status: r.status }))
+        // mantém pedidos que chegaram em tempo real enquanto a lista carregava
+        setOrders(prev => {
+          const ids = new Set(loaded.map(o => o.id))
+          return [...prev.filter(o => !ids.has(o.id)), ...loaded]
+        })
       })
-    return () => { supabase.removeChannel(channel) }
-  }, [isAdmin, sid, config.orderNotificationSoundUrl])
+    return () => { cancelled = true; supabase.removeChannel(channel) }
+  }, [isAdmin, sid])
 
   const setConfig = (c: StoreConfig) => {
     setConfigState(c)
     supabase.from('store_settings').upsert({ store_id: sid, config: c, updated_at: new Date().toISOString() })
-      .then(({ error }) => logError('salvar configurações', error))
+      .then(({ error }) => notifyError('salvar configurações', error))
   }
   const saveProduct = (p: Product, sortOrder?: number) => {
     const row: any = { store_id: sid, id: p.id, data: p }
     if (sortOrder !== undefined) row.sort_order = sortOrder
-    supabase.from('products').upsert(row, { onConflict: 'store_id,id' }).then(({ error }) => logError('salvar produto', error))
+    supabase.from('products').upsert(row, { onConflict: 'store_id,id' }).then(({ error }) => notifyError('salvar produto', error))
   }
-  const addProduct = (p: Product) => { setProducts(prev => { saveProduct(p, prev.length); return [...prev, p] }) }
+  const addProduct = (p: Product) => { saveProduct(p, products.length); setProducts(prev => [...prev, p]) }
   const updateProduct = (p: Product) => { setProducts(prev => prev.map(item => item.id === p.id ? p : item)); saveProduct(p) }
   const deleteProduct = (id: string) => {
     setProducts(prev => prev.filter(item => item.id !== id))
-    supabase.from('products').delete().eq('store_id', sid).eq('id', id).then(({ error }) => logError('apagar produto', error))
+    supabase.from('products').delete().eq('store_id', sid).eq('id', id).then(({ error }) => notifyError('apagar produto', error))
   }
   const saveCategory = (c: Category) => {
     supabase.from('categories').upsert({ store_id: sid, id: c.id, data: c, sort_order: c.order ?? 0 }, { onConflict: 'store_id,id' })
-      .then(({ error }) => logError('salvar categoria', error))
+      .then(({ error }) => notifyError('salvar categoria', error))
   }
   const addCategory = (c: Category) => { setCategories(prev => [...prev, c]); saveCategory(c) }
   const updateCategory = (c: Category) => { setCategories(prev => prev.map(item => item.id === c.id ? c : item)); saveCategory(c) }
   const deleteCategory = (id: string) => {
     setCategories(prev => prev.filter(item => item.id !== id))
-    supabase.from('categories').delete().eq('store_id', sid).eq('id', id).then(({ error }) => logError('apagar categoria', error))
+    supabase.from('categories').delete().eq('store_id', sid).eq('id', id).then(({ error }) => notifyError('apagar categoria', error))
   }
   const addOrder = (o: Order) => {
-    setOrders(prev => [o, ...prev])
+    setOrders(prev => (prev.some(x => x.id === o.id) ? prev : [o, ...prev]))
     // O cliente só insere o pedido (sem .select(), pois não pode ler pedidos)
     supabase.from('orders').insert({ store_id: sid, id: o.id, data: o, status: 'pending' })
-      .then(({ error }) => logError('enviar pedido', error))
+      .then(({ error }) => notifyError('enviar pedido', error))
   }
   const updateOrderStatus = (id: string, status: Order['status']) => {
     const updatedAt = new Date().toISOString()
@@ -212,17 +232,17 @@ export function StoreProvider({ children, slug, storeId: storeIdProp, isAdmin = 
     const data = updated || (current ? { ...current, status, updatedAt } : undefined)
     if (!data) return
     supabase.from('orders').update({ data, status, updated_at: updatedAt }).eq('store_id', sid).eq('id', id)
-      .then(({ error }) => logError('atualizar pedido', error))
+      .then(({ error }) => notifyError('atualizar pedido', error))
   }
   const saveZone = (z: DeliveryZone) => {
     supabase.from('delivery_zones').upsert({ store_id: sid, id: z.id, data: z }, { onConflict: 'store_id,id' })
-      .then(({ error }) => logError('salvar zona', error))
+      .then(({ error }) => notifyError('salvar zona', error))
   }
   const addDeliveryZone = (z: DeliveryZone) => { setDeliveryZones(prev => [...prev, z]); saveZone(z) }
   const updateDeliveryZone = (z: DeliveryZone) => { setDeliveryZones(prev => prev.map(item => item.id === z.id ? z : item)); saveZone(z) }
   const deleteDeliveryZone = (id: string) => {
     setDeliveryZones(prev => prev.filter(item => item.id !== id))
-    supabase.from('delivery_zones').delete().eq('store_id', sid).eq('id', id).then(({ error }) => logError('apagar zona', error))
+    supabase.from('delivery_zones').delete().eq('store_id', sid).eq('id', id).then(({ error }) => notifyError('apagar zona', error))
   }
 
   return (
@@ -235,6 +255,12 @@ export function StoreProvider({ children, slug, storeId: storeIdProp, isAdmin = 
       storeId: sid, storeName: storeName || config.name, storeState, dataReady
     }}>
       {children}
+      {saveError && (
+        <div role="alert" className="fixed inset-x-3 bottom-3 z-[200] mx-auto max-w-md rounded-xl bg-red-600 px-4 py-3 text-sm text-white shadow-xl flex items-start gap-3">
+          <span className="flex-1">{saveError}</span>
+          <button type="button" aria-label="Fechar aviso" onClick={() => setSaveError(null)} className="text-lg leading-none">×</button>
+        </div>
+      )}
     </StoreContext.Provider>
   )
 }
