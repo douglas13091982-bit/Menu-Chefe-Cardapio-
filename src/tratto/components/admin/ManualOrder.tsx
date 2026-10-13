@@ -134,7 +134,7 @@ function ManualOrder() {
           </section>
         </div>
 
-        <aside className="space-y-5">
+        <div className="space-y-5">
           <section className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-5">
             <h2 className="mb-4 font-semibold text-gray-900">Resumo do pedido</h2>
             {cartItems.length ? <div className="mb-4 space-y-3">
@@ -156,7 +156,7 @@ function ManualOrder() {
             </button>
             <p className="mt-2 text-center text-xs text-gray-500">O pedido será salvo como pendente na lista de pedidos.</p>
           </section>
-        </aside>
+        </div>
       </form>
     </div>
   )
