@@ -84,9 +84,10 @@ export function StoreProvider({ children, slug, storeId: storeIdProp, isAdmin = 
     if (!error) return
     console.error(`Erro ao ${action}:`, error)
     const denied = error.code === '42501' || /row-level security|permission denied/i.test(error.message || '')
+    const detail = typeof error?.message === 'string' ? error.message.trim() : ''
     setSaveError(denied
-      ? `Não foi possível ${action}: sem permissão ou assinatura da loja inativa.`
-      : `Não foi possível ${action}. Verifique a conexão e tente novamente.`)
+      ? `Não foi possível ${action}: sem permissão ou assinatura da loja inativa.${detail ? ' Detalhe: ' + detail : ''}`
+      : `Não foi possível ${action}.${detail ? ' Detalhe: ' + detail : ' Verifique a conexão e tente novamente.'}`)
   }
   const soundUrlRef = useRef<string | undefined>(undefined)
   soundUrlRef.current = config.orderNotificationSoundUrl
@@ -285,9 +286,9 @@ export function StoreProvider({ children, slug, storeId: storeIdProp, isAdmin = 
     }}>
       {children}
       {saveError && (
-        <div role="alert" className="fixed inset-x-3 bottom-3 z-[200] mx-auto max-w-md rounded-xl bg-red-600 px-4 py-3 text-sm text-white shadow-xl flex items-start gap-3">
-          <span className="flex-1">{saveError}</span>
-          <button type="button" aria-label="Fechar aviso" onClick={() => setSaveError(null)} className="text-lg leading-none">×</button>
+        <div role="alert" style={{ position: 'fixed', left: '12px', right: '12px', bottom: '12px', zIndex: 9999, margin: '0 auto', maxWidth: '520px', maxHeight: '35vh', overflowY: 'auto', boxSizing: 'border-box', borderRadius: '12px', background: '#b91c1c', color: '#fff', padding: '14px 16px', fontSize: '14px', lineHeight: 1.45, boxShadow: '0 8px 28px rgba(0,0,0,.28)', display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+          <span style={{ flex: 1, overflowWrap: 'anywhere' }}>{saveError}</span>
+          <button type="button" aria-label="Fechar aviso" onClick={() => setSaveError(null)} style={{ color: '#fff', background: 'transparent', border: 0, fontSize: '22px', lineHeight: 1, cursor: 'pointer' }}>×</button>
         </div>
       )}
     </StoreContext.Provider>
