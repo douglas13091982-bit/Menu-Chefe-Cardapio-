@@ -161,6 +161,46 @@ function SettingsPanel() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Personalização visual do cardápio */}
+        <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+          <div className="mb-4">
+            <h3 className="text-base font-bold text-gray-800">Identidade visual do cardápio</h3>
+            <p className="mt-1 text-sm text-gray-500">Escolha cores que combinem com a logo da sua loja. As alterações aparecem no cardápio público após salvar.</p>
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              { key: 'menuBackground', label: 'Fundo do cardápio', fallback: '#f3f4f6' },
+              { key: 'menuButton', label: 'Botões e ações', fallback: '#d9273f' },
+              { key: 'menuPrice', label: 'Preço dos produtos', fallback: '#d9273f' },
+              { key: 'menuCategory', label: 'Categorias', fallback: '#d9273f' },
+              { key: 'menuTitle', label: 'Título e nome dos produtos', fallback: '#30231e' },
+              { key: 'menuDescription', label: 'Descrição dos produtos', fallback: '#776960' },
+            ].map((item) => (
+              <label key={item.key} className="flex items-center justify-between gap-3 rounded-lg border border-gray-200 p-3">
+                <span className="text-sm font-medium text-gray-700">{item.label}</span>
+                <span className="flex shrink-0 items-center gap-2">
+                  <span className="text-xs uppercase text-gray-400">{formData[item.key] || item.fallback}</span>
+                  <input
+                    type="color"
+                    aria-label={item.label}
+                    value={formData[item.key] || item.fallback}
+                    onChange={(e) => setFormData(prev => ({ ...prev, [item.key]: e.target.value }))}
+                    className="h-9 w-10 cursor-pointer rounded border border-gray-200 bg-white p-1"
+                  />
+                </span>
+              </label>
+            ))}
+          </div>
+          <div className="mt-4 flex flex-wrap items-center gap-3 rounded-lg border border-gray-100 p-3">
+            <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">Prévia</span>
+            <span style={{ background: formData.menuButton || '#d9273f' }} className="rounded-full px-3 py-2 text-xs font-bold text-white">+ Adicionar</span>
+            <span style={{ color: formData.menuPrice || '#d9273f' }} className="text-sm font-extrabold">R$ 29,90</span>
+            <span style={{ color: formData.menuCategory || '#d9273f', borderColor: formData.menuCategory || '#d9273f' }} className="rounded-full border px-3 py-1 text-xs font-semibold">Categoria</span>
+            <span style={{ color: formData.menuTitle || '#30231e' }} className="text-sm font-bold">Nome do produto</span>
+            <span style={{ color: formData.menuDescription || '#776960' }} className="text-xs">Descrição do produto</span>
+          </div>
+          <button type="button" onClick={() => setFormData(prev => ({ ...prev, menuBackground: '#f3f4f6', menuButton: '#d9273f', menuPrice: '#d9273f', menuCategory: '#d9273f', menuTitle: '#30231e', menuDescription: '#776960' }))} className="mt-3 text-sm font-semibold text-gray-600 underline underline-offset-2">Restaurar cores padrão</button>
+        </section>
         {/* Store Info */}
         <div className="bg-white rounded-xl shadow-sm p-6">
           <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
