@@ -6,14 +6,16 @@ import { trackMenuPageView } from '../marketing'
 import { BRAND } from './brand'
 
 function Inner() {
-  const { storeState, dataReady, storeId, config } = useStore()
+  const store = useStore()
+  const { storeState, dataReady, storeId } = store
+  const storeConfig = store?.config ?? {}
 
   useEffect(() => {
     if (storeState === 'ready' && storeId) trackMenuPageView(storeId)
   }, [storeState, storeId])
   useEffect(() => {
-    if (dataReady && config.name) document.title = `${config.name} - Cardápio`
-  }, [dataReady, config.name])
+    if (dataReady && storeConfig.name) document.title = `${storeConfig.name} - Cardápio`
+  }, [dataReady, storeConfig.name])
 
   if (storeState === 'notfound') {
     return (
