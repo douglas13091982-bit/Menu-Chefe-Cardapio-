@@ -4,8 +4,10 @@ import { StoreProvider, useStore } from '../context/StoreContext'
 import MenuView from '../components/MenuView'
 import { trackMenuPageView } from '../marketing'
 import { BRAND } from './brand'
+import InstallAppBanner from '../components/InstallAppBanner'
+import { applyStorePwa } from '../pwa'
 
-function Inner() {
+function Inner({ slug }) {
   const store = useStore()
   const { storeState, dataReady, storeId } = store
   const storeConfig = store?.config ?? {}
@@ -16,6 +18,19 @@ function Inner() {
   useEffect(() => {
     if (dataReady && storeConfig.name) document.title = `${storeConfig.name} - Cardápio`
   }, [dataReady, storeConfig.name])
+
+  // PWA da loja: nome, logo e cores do painel viram o app instalável deste cardápio
+  const pwaReady = storeState === 'ready' && dataReady
+  useEffect(() => {
+    if (!pwaReady || !slug) return
+    return applyStorePwa({
+      slug,
+      name: storeConfig.name || '',
+      logoUrl: storeConfig.logoUrl,
+      themeColor: storeConfig.menuButton,
+      backgroundColor: storeConfig.menuBackground,
+    })
+  }, [pwaReady, slug, storeConfig.name, storeConfig.logoUrl, storeConfig.menuButton, storeConfig.menuBackground])
 
   if (storeState === 'notfound') {
     return (
@@ -39,6 +54,7 @@ function Inner() {
   }
   return (
     <>
+      <InstallAppBanner slug={slug} storeName={storeConfig.name} accent={storeConfig.menuButton} />
       <MenuView />
       <p className="text-center text-xs text-gray-400 py-6 bg-[#f3f4f6]">
         Cardápio criado com <a href="/" className="underline">{BRAND}</a>
@@ -50,7 +66,7 @@ function Inner() {
 export default function MenuPage({ slug }) {
   return (
     <StoreProvider slug={slug}>
-      <Inner />
+      <Inner slug={slug} />
     </StoreProvider>
   )
 }
