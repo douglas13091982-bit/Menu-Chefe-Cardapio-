@@ -378,10 +378,11 @@ function MenuView() {
   }
 
   const placingRef = useRef(false)
-  const placeOrder = () => {
+  const [placingOrder, setPlacingOrder] = useState(false)
+  const placeOrder = async () => {
     if (!canPlaceOrder || placingRef.current) return
-    placingRef.current = true // evita pedido duplicado por clique duplo
-    setTimeout(() => { placingRef.current = false }, 1500)
+    placingRef.current = true
+    setPlacingOrder(true)
     const now = new Date().toISOString()
     const order: Order = {
       id: '#' + Date.now().toString(36).slice(-6).toUpperCase() + Math.floor(Math.random() * 1296).toString(36).toUpperCase().padStart(2, '0'),
@@ -404,7 +405,17 @@ function MenuView() {
       createdAt: now,
       updatedAt: now,
     }
-    addOrder(order)
+    try {
+      const saved = await addOrder(order)
+      if (!saved) return
+    } catch (error) {
+      console.error('Falha ao registrar pedido:', error)
+      alert('Não foi possível registrar o pedido. Nenhuma cobrança foi confirmada. Tente novamente ou fale com a loja.')
+      return
+    } finally {
+      placingRef.current = false
+      setPlacingOrder(false)
+    }
     setOrderPlaced(order)
     setShowCheckout(false)
     setCart([])
@@ -1547,7 +1558,7 @@ function MenuView() {
                 {checkoutStep < 3 ? (
                   <button type="button" onClick={() => { if (checkoutStep === 1 && canContinueCheckoutStep1) setCheckoutStep(2); else if (checkoutStep === 2 && paymentMethod) setCheckoutStep(3) }} disabled={checkoutStep === 1 ? !canContinueCheckoutStep1 : !paymentMethod} style={{ flex: 1, background: (checkoutStep === 1 ? canContinueCheckoutStep1 : !!paymentMethod) ? (config.menuButton || '#d9273f') : '#d1d5db', color: '#fff', border: 'none', borderRadius: '12px', padding: '13px 12px', fontWeight: 800, fontSize: '14px', cursor: (checkoutStep === 1 ? canContinueCheckoutStep1 : !!paymentMethod) ? 'pointer' : 'not-allowed' }}>Continuar <span aria-hidden="true">→</span></button>
                 ) : (
-                  <button type="button" onClick={placeOrder} disabled={!canPlaceOrder} style={{ flex: 1, background: canPlaceOrder ? (config.menuButton || '#d9273f') : '#d1d5db', color: '#fff', border: 'none', borderRadius: '12px', padding: '13px 12px', fontWeight: 800, fontSize: '14px', cursor: canPlaceOrder ? 'pointer' : 'not-allowed' }}>Confirmar pedido</button>
+                  <button type="button" onClick={placeOrder} disabled={!canPlaceOrder || placingOrder} style={{ flex: 1, background: canPlaceOrder && !placingOrder ? (config.menuButton || '#d9273f') : '#d1d5db', color: '#fff', border: 'none', borderRadius: '12px', padding: '13px 12px', fontWeight: 800, fontSize: '14px', cursor: canPlaceOrder ? 'pointer' : 'not-allowed' }}>{placingOrder ? 'Enviando pedido…' : 'Confirmar pedido'}</button>
                 )}
               </div>
             </div>
