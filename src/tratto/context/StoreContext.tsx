@@ -233,11 +233,21 @@ export function StoreProvider({ children, slug, storeId: storeIdProp, isAdmin = 
     setCategories(prev => prev.filter(item => item.id !== id))
     supabase.from('categories').delete().eq('store_id', sid).eq('id', id).then(({ error }) => notifyError('apagar categoria', error))
   }
-  const addOrder = (o: Order) => {
+  const addOrder = async (o: Order): Promise<boolean> => {
+    if (!sid) {
+      notifyError('enviar pedido', { message: 'Loja não identificada.' })
+      return false
+    }
+    // Só confirma o pedido na interface depois que o banco aceitar a gravação.
+    const { error } = await supabase.from('orders').insert({
+      store_id: sid, id: o.id, data: o, status: 'pending'
+    })
+    if (error) {
+      notifyError('enviar pedido', error)
+      return false
+    }
     setOrders(prev => (prev.some(x => x.id === o.id) ? prev : [o, ...prev]))
-    // O cliente só insere o pedido (sem .select(), pois não pode ler pedidos)
-    supabase.from('orders').insert({ store_id: sid, id: o.id, data: o, status: 'pending' })
-      .then(({ error }) => notifyError('enviar pedido', error))
+    return true
   }
   const updateOrderStatus = (id: string, status: Order['status']) => {
     const updatedAt = new Date().toISOString()
