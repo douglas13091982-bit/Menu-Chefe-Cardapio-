@@ -15,6 +15,8 @@ export interface Product {
   popular?: boolean
   available: boolean
   addOns?: ProductAddOn[]
+  /** Dias permitidos para entrega/agendamento: 0=domingo ... 6=sábado. Vazio = sem restrição. */
+  deliveryDays?: number[]
 }
 
 export interface Category {
