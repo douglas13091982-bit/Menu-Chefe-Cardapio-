@@ -2109,3 +2109,9 @@ main .rounded-2xl {
   .auth-shell { padding: 20px 16px; }
   .auth-card { padding: 22px !important; }
 }
+
+
+/* Oculta a badge do Lovable, quando presente no DOM. */
+#lovable-badge {
+  display: none !important;
+}
