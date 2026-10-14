@@ -12,6 +12,7 @@ function SettingsPanel() {
   const { config, setConfig } = useStore()
   const [formData, setFormData] = useState(config)
   const [saved, setSaved] = useState(false)
+  const [saveError, setSaveError] = useState('')
   const [showPasswordChange, setShowPasswordChange] = useState(false)
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -97,11 +98,22 @@ function SettingsPanel() {
     })
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setConfig({ ...formData, weeklyHours: getWeeklyHours(formData) })
-    setSaved(true)
-    setTimeout(() => setSaved(false), 3000)
+    setSaved(false)
+    setSaveError('')
+    try {
+      const ok = await setConfig({ ...formData, weeklyHours: getWeeklyHours(formData) })
+      if (!ok) {
+        setSaveError('Não foi possível salvar. Verifique sua conexão e se sua sessão continua ativa; suas alterações ainda não foram confirmadas.')
+        return
+      }
+      setSaved(true)
+      setTimeout(() => setSaved(false), 3000)
+    } catch (error) {
+      console.error('Falha ao salvar as configurações da loja:', error)
+      setSaveError('Ocorreu um erro ao salvar. Tente novamente.')
+    }
   }
 
   const handleChangePassword = async (e: React.FormEvent) => {
@@ -157,6 +169,11 @@ function SettingsPanel() {
         <div className="bg-green-50 border border-green-200 text-green-700 rounded-lg p-3 flex items-center gap-2">
           <CheckCircle2 size={18} />
           <span className="text-sm font-medium">Configurações salvas com sucesso!</span>
+        </div>
+      )}
+      {saveError && (
+        <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-700">
+          {saveError}
         </div>
       )}
 
