@@ -435,7 +435,15 @@ function MenuView() {
   const sortedCategories = [...categories].sort((a, b) => a.order - b.order)
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#f3f4f6' }}>
+    <div style={{
+      minHeight: '100vh',
+      backgroundColor: config.menuBackground || '#f3f4f6',
+      '--menu-button': config.menuButton || '#d9273f',
+      '--menu-price': config.menuPrice || '#d9273f',
+      '--menu-category': config.menuCategory || '#d9273f',
+      '--menu-title': config.menuTitle || '#30231e',
+      '--menu-description': config.menuDescription || '#776960',
+    } as React.CSSProperties}>
       {/* Hero Banner - Mobile Optimized */}
       <div style={{
         position: 'relative',
@@ -700,8 +708,8 @@ function MenuView() {
                   border: 'none',
                   cursor: 'pointer',
                   transition: 'all 0.2s',
-                  backgroundColor: activeCategory === cat.id ? '#d9273f' : '#fff0f2',
-                  color: activeCategory === cat.id ? '#ffffff' : '#54111e',
+                  backgroundColor: activeCategory === cat.id ? (config.menuCategory || '#d9273f') : '#fff0f2',
+                  color: activeCategory === cat.id ? '#ffffff' : (config.menuCategory || '#54111e'),
                   boxShadow: activeCategory === cat.id ? '0 4px 12px rgba(217, 39, 63, 0.2)' : 'none',
                   flexShrink: 0
                 }}
@@ -836,7 +844,7 @@ function MenuView() {
               onClick={() => setShowCart(true)}
               style={{
                 width: '100%',
-                backgroundColor: '#d9273f',
+                backgroundColor: config.menuButton || '#d9273f',
                 color: '#ffffff',
                 borderRadius: '14px',
                 padding: isMobile ? '14px 16px' : '16px 24px',
@@ -1522,9 +1530,9 @@ function MenuView() {
               <div style={{ display: 'flex', gap: '10px' }}>
                 <button type="button" onClick={() => checkoutStep === 1 ? (setShowCheckout(false), setShowCart(true)) : setCheckoutStep(checkoutStep - 1)} style={{ flex: '0 0 34%', background: '#fff', color: '#374151', border: '1px solid #d1d5db', borderRadius: '12px', padding: '13px 10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}>{checkoutStep === 1 ? 'Voltar ao carrinho' : 'Voltar'}</button>
                 {checkoutStep < 3 ? (
-                  <button type="button" onClick={() => { if (checkoutStep === 1 && canContinueCheckoutStep1) setCheckoutStep(2); else if (checkoutStep === 2 && paymentMethod) setCheckoutStep(3) }} disabled={checkoutStep === 1 ? !canContinueCheckoutStep1 : !paymentMethod} style={{ flex: 1, background: (checkoutStep === 1 ? canContinueCheckoutStep1 : !!paymentMethod) ? '#d9273f' : '#d1d5db', color: '#fff', border: 'none', borderRadius: '12px', padding: '13px 12px', fontWeight: 800, fontSize: '14px', cursor: (checkoutStep === 1 ? canContinueCheckoutStep1 : !!paymentMethod) ? 'pointer' : 'not-allowed' }}>Continuar <span aria-hidden="true">→</span></button>
+                  <button type="button" onClick={() => { if (checkoutStep === 1 && canContinueCheckoutStep1) setCheckoutStep(2); else if (checkoutStep === 2 && paymentMethod) setCheckoutStep(3) }} disabled={checkoutStep === 1 ? !canContinueCheckoutStep1 : !paymentMethod} style={{ flex: 1, background: (checkoutStep === 1 ? canContinueCheckoutStep1 : !!paymentMethod) ? (config.menuButton || '#d9273f') : '#d1d5db', color: '#fff', border: 'none', borderRadius: '12px', padding: '13px 12px', fontWeight: 800, fontSize: '14px', cursor: (checkoutStep === 1 ? canContinueCheckoutStep1 : !!paymentMethod) ? 'pointer' : 'not-allowed' }}>Continuar <span aria-hidden="true">→</span></button>
                 ) : (
-                  <button type="button" onClick={placeOrder} disabled={!canPlaceOrder} style={{ flex: 1, background: canPlaceOrder ? '#d9273f' : '#d1d5db', color: '#fff', border: 'none', borderRadius: '12px', padding: '13px 12px', fontWeight: 800, fontSize: '14px', cursor: canPlaceOrder ? 'pointer' : 'not-allowed' }}>Confirmar pedido</button>
+                  <button type="button" onClick={placeOrder} disabled={!canPlaceOrder} style={{ flex: 1, background: canPlaceOrder ? (config.menuButton || '#d9273f') : '#d1d5db', color: '#fff', border: 'none', borderRadius: '12px', padding: '13px 12px', fontWeight: 800, fontSize: '14px', cursor: canPlaceOrder ? 'pointer' : 'not-allowed' }}>Confirmar pedido</button>
                 )}
               </div>
             </div>
@@ -2028,7 +2036,7 @@ function ProductCard({ product, quantity, onAdd, onRemove, onClick, isMobile }: 
         {quantity > 0 && (
           <span style={{
             position: 'absolute', right: '8px', bottom: '8px',
-            background: '#d9273f', color: '#ffffff',
+            background: config.menuButton || '#d9273f', color: '#ffffff',
             minWidth: '26px', height: '26px', padding: '0 6px',
             borderRadius: '999px', display: 'flex', alignItems: 'center',
             justifyContent: 'center', fontSize: '12px', fontWeight: 800,
@@ -2048,13 +2056,13 @@ function ProductCard({ product, quantity, onAdd, onRemove, onClick, isMobile }: 
       }}>
         <div>
           <h4 style={{
-            fontWeight: 750, color: '#30231e',
+            fontWeight: 750, color: config.menuTitle || '#30231e',
             fontSize: isMobile ? '13px' : '15px',
             lineHeight: 1.3, margin: 0,
             letterSpacing: '-.015em',
           }}>{product.name}</h4>
           <p style={{
-            color: '#776960',
+            color: config.menuDescription || '#776960',
             fontSize: isMobile ? '11px' : '12px',
             lineHeight: 1.45,
             margin: '5px 0 0',
@@ -2070,7 +2078,7 @@ function ProductCard({ product, quantity, onAdd, onRemove, onClick, isMobile }: 
           flexWrap: 'wrap',
         }}>
           <span style={{
-            color: '#d9273f', fontWeight: 850,
+            color: config.menuPrice || '#d9273f', fontWeight: 850,
             fontSize: isMobile ? '15px' : '18px',
             lineHeight: 1.1, whiteSpace: 'nowrap',
             letterSpacing: '-.025em',
@@ -2098,7 +2106,7 @@ function ProductCard({ product, quantity, onAdd, onRemove, onClick, isMobile }: 
                   onClick={onAdd}
                   style={{
                     width: '30px', height: '30px', borderRadius: '50%',
-                    border: 'none', color: '#ffffff', background: '#d9273f',
+                    border: 'none', color: '#ffffff', background: config.menuButton || '#d9273f',
                     cursor: 'pointer', display: 'flex', alignItems: 'center',
                     justifyContent: 'center', fontSize: '18px', fontWeight: 600, padding: 0,
                   }}>+</button>
@@ -2110,7 +2118,7 @@ function ProductCard({ product, quantity, onAdd, onRemove, onClick, isMobile }: 
                 onClick={e => { e.stopPropagation(); onAdd() }}
                 style={{
                   border: 'none', color: '#ffffff',
-                  background: '#d9273f', borderRadius: '999px',
+                  background: config.menuButton || '#d9273f', borderRadius: '999px',
                   padding: isMobile ? '9px 12px' : '10px 15px',
                   fontSize: isMobile ? '11px' : '12px',
                   fontWeight: 750, cursor: 'pointer', whiteSpace: 'nowrap',
