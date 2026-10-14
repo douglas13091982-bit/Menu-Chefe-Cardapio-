@@ -18,8 +18,23 @@ import { money, money as fmt } from '../format'
 const getItemUnitPrice = (item: CartItem) =>
   item.product.price + (item.selectedAddOns || []).reduce((sum, a) => sum + a.price, 0)
 
+// ---- Cor de destaque da loja (botões, seleção, bordas) ----
+// Vem do painel (Configurações > cores do cardápio). Os vermelhos de status/erro continuam fixos.
+const DEFAULT_ACCENT = '#d9273f'
+function tint(hex: string | undefined, alpha: number): string {
+  const m = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec((hex || '').trim())
+  if (!m) return `rgba(217, 39, 63, ${alpha})`
+  let h = m[1]
+  if (h.length === 3) h = h.split('').map(c => c + c).join('')
+  const n = parseInt(h, 16)
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`
+}
+
 function MenuView() {
   const { config, products, categories, deliveryZones, addOrder } = useStore()
+  const accent = config.menuButton || DEFAULT_ACCENT
+  const accentSoft = tint(accent, 0.1) // fundo de opção selecionada
+  const accentShadow = tint(accent, 0.3) // sombra dos botões principais
   const [activeCategory, setActiveCategory] = useState(categories[0]?.id || '')
   const [cart, setCart] = useState<CartItem[]>([])
   const [showCart, setShowCart] = useState(false)
@@ -708,7 +723,7 @@ function MenuView() {
                   border: 'none',
                   cursor: 'pointer',
                   transition: 'all 0.2s',
-                  backgroundColor: activeCategory === cat.id ? (config.menuCategory || '#d9273f') : '#fff0f2',
+                  backgroundColor: activeCategory === cat.id ? (config.menuCategory || '#d9273f') : tint(config.menuCategory, 0.1),
                   color: activeCategory === cat.id ? '#ffffff' : (config.menuCategory || '#54111e'),
                   boxShadow: activeCategory === cat.id ? '0 4px 12px rgba(217, 39, 63, 0.2)' : 'none',
                   flexShrink: 0
@@ -996,7 +1011,7 @@ function MenuView() {
                                 type="checkbox"
                                 checked={checked}
                                 onChange={() => toggleCartItemAddOn(item, addOn.id)}
-                                style={{ accentColor: '#ef4444', width: '20px', height: '20px', cursor: 'pointer', flexShrink: 0 }}
+                                style={{ accentColor: accent, width: '20px', height: '20px', cursor: 'pointer', flexShrink: 0 }}
                               />
                               <span>{addOn.name}</span>
                               <span style={{ color: '#15803d', fontWeight: 700, fontSize: '15px', whiteSpace: 'nowrap' }}>+ {fmt(addOn.price)}</span>
@@ -1006,7 +1021,7 @@ function MenuView() {
                       </div>
                     )}
                     <p style={{ 
-                      color: '#ef4444', 
+                      color: accent, 
                       fontWeight: 600, 
                       fontSize: '13px',
                       margin: '2px 0 0 0'
@@ -1021,8 +1036,8 @@ function MenuView() {
                         width: '30px',
                         height: '30px',
                         borderRadius: '50%',
-                        border: '1.5px solid #ef4444',
-                        color: '#ef4444',
+                        border: `1.5px solid ${accent}`,
+                        color: accent,
                         backgroundColor: 'white',
                         cursor: 'pointer',
                         display: 'flex',
@@ -1044,7 +1059,7 @@ function MenuView() {
                         height: '30px',
                         borderRadius: '50%',
                         border: 'none',
-                        backgroundColor: '#ef4444',
+                        backgroundColor: accent,
                         color: 'white',
                         cursor: 'pointer',
                         display: 'flex',
@@ -1119,7 +1134,7 @@ function MenuView() {
                 disabled={cart.length === 0}
                 style={{
                   width: '100%',
-                  backgroundColor: cart.length === 0 ? '#d1d5db' : '#ef4444',
+                  backgroundColor: cart.length === 0 ? '#d1d5db' : accent,
                   color: 'white',
                   borderRadius: '12px',
                   padding: '14px',
@@ -1127,7 +1142,7 @@ function MenuView() {
                   fontSize: '15px',
                   border: 'none',
                   cursor: cart.length === 0 ? 'not-allowed' : 'pointer',
-                  boxShadow: cart.length === 0 ? 'none' : '0 4px 12px rgba(239, 68, 68, 0.3)'
+                  boxShadow: cart.length === 0 ? 'none' : `0 4px 12px ${accentShadow}`
                 }}
               >
                 Finalizar pedido
@@ -1219,8 +1234,8 @@ function MenuView() {
                     style={{
                       padding: '14px 10px',
                       borderRadius: '12px',
-                      border: deliveryType === opt.value ? '2px solid #ef4444' : '1px solid #e5e7eb',
-                      backgroundColor: deliveryType === opt.value ? '#fef2f2' : 'white',
+                      border: deliveryType === opt.value ? `2px solid ${accent}` : '1px solid #e5e7eb',
+                      backgroundColor: deliveryType === opt.value ? accentSoft : 'white',
                       cursor: 'pointer',
                       textAlign: 'center'
                     }}
@@ -1369,8 +1384,8 @@ function MenuView() {
                         <button key={o.v} type="button" onClick={() => setWhenMode(o.v as any)}
                           style={{
                             padding: '12px 8px', borderRadius: '12px', cursor: 'pointer', fontWeight: 600, fontSize: '14px', color: config.menuTitle || '#1f2937',
-                            border: whenMode === o.v ? '2px solid #ef4444' : '1px solid #e5e7eb',
-                            backgroundColor: whenMode === o.v ? '#fef2f2' : 'white'
+                            border: whenMode === o.v ? `2px solid ${accent}` : '1px solid #e5e7eb',
+                            backgroundColor: whenMode === o.v ? accentSoft : 'white'
                           }}>{o.t}</button>
                       ))}
                     </div>
@@ -1389,8 +1404,8 @@ function MenuView() {
                           <button key={d.date} type="button" onClick={() => { setSchedDate(d.date); setSchedTime('') }}
                             style={{
                               flexShrink: 0, padding: '8px 14px', borderRadius: '999px', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
-                              border: schedDate === d.date ? '2px solid #ef4444' : '1px solid #e5e7eb',
-                              backgroundColor: schedDate === d.date ? '#fef2f2' : 'white', color: config.menuTitle || '#1f2937'
+                              border: schedDate === d.date ? `2px solid ${accent}` : '1px solid #e5e7eb',
+                              backgroundColor: schedDate === d.date ? accentSoft : 'white', color: config.menuTitle || '#1f2937'
                             }}>{d.label}</button>
                         ))}
                       </div>
@@ -1402,8 +1417,8 @@ function MenuView() {
                               <button key={t} type="button" onClick={() => setSchedTime(t)}
                                 style={{
                                   padding: '8px 12px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
-                                  border: schedTime === t ? '2px solid #ef4444' : '1px solid #e5e7eb',
-                                  backgroundColor: schedTime === t ? '#fef2f2' : 'white', color: config.menuTitle || '#1f2937'
+                                  border: schedTime === t ? `2px solid ${accent}` : '1px solid #e5e7eb',
+                                  backgroundColor: schedTime === t ? accentSoft : 'white', color: config.menuTitle || '#1f2937'
                                 }}>{t}</button>
                             ))}
                           </div>
@@ -1435,8 +1450,8 @@ function MenuView() {
                     style={{
                       padding: '12px 8px',
                       borderRadius: '12px',
-                      border: paymentMethod === opt.value ? '2px solid #ef4444' : '1px solid #e5e7eb',
-                      backgroundColor: paymentMethod === opt.value ? '#fef2f2' : 'white',
+                      border: paymentMethod === opt.value ? `2px solid ${accent}` : '1px solid #e5e7eb',
+                      backgroundColor: paymentMethod === opt.value ? accentSoft : 'white',
                       cursor: 'pointer',
                       textAlign: 'center'
                     }}
@@ -1502,7 +1517,7 @@ function MenuView() {
                     <p style={{ margin: 0, fontSize: '13px', color: '#4b5563' }}>{paymentMethod ? paymentLabels[paymentMethod as PaymentMethod] : 'Não selecionado'}{paymentMethod === 'cash' && changeValue > checkoutTotal ? ' • Troco para ' + fmt(changeValue) : ''}</p>
                   </div>
                   <div style={{ border: '1px solid #f3d0d5', background: '#fff7f8', borderRadius: '14px', padding: '14px' }}>
-                    <p style={{ margin: '0 0 8px', fontSize: '13px', fontWeight: 800, color: '#54111e' }}>Itens do pedido ({totalItems})</p>
+                    <p style={{ margin: '0 0 8px', fontSize: '13px', fontWeight: 800, color: config.menuTitle || '#54111e' }}>Itens do pedido ({totalItems})</p>
                     {cart.map((item, index) => (
                       <div key={item.product.id + '-' + index} style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', padding: '6px 0', fontSize: '13px', color: '#4b5563' }}>
                         <span>{item.quantity}× {item.product.name}{(item.selectedAddOns || []).length ? ' + ' + item.selectedAddOns.map(a => a.name).join(', ') : ''}</span>
@@ -1602,6 +1617,7 @@ function MenuView() {
                   Pague com Pix: {fmt(orderPlaced.total + orderPlaced.deliveryFee - (orderPlaced.discount || 0))}
                 </p>
                 <PixQrCode
+                  accentColor={accent}
                   payload={pixPayload(
                     config.pixKey,
                     config.pixHolder || config.name || '',
@@ -1639,7 +1655,7 @@ function MenuView() {
               <button
                 onClick={() => setOrderPlaced(null)}
                 style={{
-                  width: '100%', backgroundColor: '#ef4444', color: 'white', borderRadius: '12px',
+                  width: '100%', backgroundColor: accent, color: 'white', borderRadius: '12px',
                   padding: '14px', fontWeight: 'bold', fontSize: '15px', border: 'none', cursor: 'pointer'
                 }}
               >
@@ -1706,7 +1722,7 @@ function MenuView() {
                 <div style={{
                   width: '100%',
                   height: '100%',
-                  background: 'linear-gradient(135deg, #fb923c, #ef4444)',
+                  background: `linear-gradient(135deg, ${tint(accent, 0.55)}, ${accent})`,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center'
@@ -1787,8 +1803,8 @@ function MenuView() {
                       width: '38px',
                       height: '38px',
                       borderRadius: '50%',
-                      border: '2px solid #ef4444',
-                      color: '#ef4444',
+                      border: `2px solid ${accent}`,
+                      color: accent,
                       backgroundColor: 'white',
                       cursor: 'pointer',
                       display: 'flex',
@@ -1810,7 +1826,7 @@ function MenuView() {
                       height: '38px',
                       borderRadius: '50%',
                       border: 'none',
-                      backgroundColor: '#ef4444',
+                      backgroundColor: accent,
                       color: 'white',
                       cursor: 'pointer',
                       display: 'flex',
@@ -1851,8 +1867,8 @@ function MenuView() {
                             gap: '10px',
                             padding: '10px 12px',
                             borderRadius: '10px',
-                            border: checked ? '2px solid #ef4444' : '1.5px solid #e5e7eb',
-                            backgroundColor: checked ? '#fef2f2' : 'white',
+                            border: checked ? `2px solid ${accent}` : '1.5px solid #e5e7eb',
+                            backgroundColor: checked ? accentSoft : 'white',
                             cursor: 'pointer',
                             transition: 'all 0.15s'
                           }}
@@ -1861,7 +1877,7 @@ function MenuView() {
                             type="checkbox"
                             checked={checked}
                             onChange={() => toggleAddOn(addOn.id)}
-                            style={{ width: '18px', height: '18px', accentColor: '#ef4444', flexShrink: 0 }}
+                            style={{ width: '18px', height: '18px', accentColor: accent, flexShrink: 0 }}
                           />
                           <span style={{ flex: 1, fontSize: '14px', color: '#374151', fontWeight: 500 }}>
                             {addOn.name}
@@ -1889,7 +1905,7 @@ function MenuView() {
                 }}
                 style={{
                   width: '100%',
-                  backgroundColor: '#ef4444',
+                  backgroundColor: accent,
                   color: 'white',
                   borderRadius: '12px',
                   padding: '14px',
@@ -1901,7 +1917,7 @@ function MenuView() {
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: '8px',
-                  boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)'
+                  boxShadow: `0 4px 12px ${accentShadow}`
                 }}
               >
                 {editingCartKey ? 'Salvar alterações' : (
