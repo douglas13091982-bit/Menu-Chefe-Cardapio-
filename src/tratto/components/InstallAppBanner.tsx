@@ -33,7 +33,12 @@ export default function InstallAppBanner({ slug, storeName, accent }: { slug: st
   }
 
   return (
-    <div role="region" aria-label="Instalar aplicativo" style={{ background: color, color: text }}>
+    <div
+      role="region"
+      aria-label="Instalar aplicativo"
+      // minHeight: 0 anula o `body > div { min-height: 100vh }` global, que faria a faixa ocupar a tela toda
+      style={{ background: color, color: text, minHeight: 0 }}
+    >
       <div style={{ maxWidth: '896px', margin: '0 auto', padding: '8px 12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
         <span aria-hidden style={{ fontSize: '18px' }}>📲</span>
         <span style={{ flex: 1, minWidth: 0, fontSize: '13px', fontWeight: 600, lineHeight: 1.3 }}>
