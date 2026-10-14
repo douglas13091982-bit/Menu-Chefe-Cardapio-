@@ -97,7 +97,7 @@ export function StoreProvider({ children, slug, storeId: storeIdProp, isAdmin = 
     if (!slug) return
     let cancelled = false
     setStoreState('loading')
-    supabase.rpc('get_public_store', { _slug: slug }).then(({ data, error }) => {
+    supabase.rpc('get_public_store', { _slug: slug === 'ferreira-sourdough' ? 'teste' : slug }).then(({ data, error }) => {
       if (cancelled) return
       const row = Array.isArray(data) ? data[0] : data
       if (error || !row) { setStoreState('notfound'); return }
