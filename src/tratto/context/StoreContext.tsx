@@ -8,7 +8,7 @@ import { setCurrentStoreId } from '../tenant'
 interface StoreContextType {
   // Config
   config: StoreConfig
-  setConfig: (config: StoreConfig) => void
+  setConfig: (config: StoreConfig) => Promise<boolean>
   // Products
   products: Product[]
   addProduct: (product: Product) => void
@@ -195,10 +195,20 @@ export function StoreProvider({ children, slug, storeId: storeIdProp, isAdmin = 
     return () => { cancelled = true; supabase.removeChannel(channel) }
   }, [isAdmin, sid])
 
-  const setConfig = (c: StoreConfig) => {
+  const setConfig = async (c: StoreConfig): Promise<boolean> => {
+    if (!sid) {
+      console.error('Não foi possível salvar as configurações: loja não identificada.')
+      return false
+    }
+    const { error } = await supabase
+      .from('store_settings')
+      .upsert({ store_id: sid, config: c, updated_at: new Date().toISOString() })
+    if (error) {
+      console.error('Erro ao salvar configurações:', error)
+      return false
+    }
     setConfigState(c)
-    supabase.from('store_settings').upsert({ store_id: sid, config: c, updated_at: new Date().toISOString() })
-      .then(({ error }) => notifyError('salvar configurações', error))
+    return true
   }
   const saveProduct = (p: Product, sortOrder?: number) => {
     const row: any = { store_id: sid, id: p.id, data: p }
