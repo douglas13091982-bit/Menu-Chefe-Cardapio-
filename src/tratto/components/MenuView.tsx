@@ -435,15 +435,7 @@ function MenuView() {
   const sortedCategories = [...categories].sort((a, b) => a.order - b.order)
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      backgroundColor: config.menuBackground || '#f3f4f6',
-      '--menu-button': config.menuButton || '#d9273f',
-      '--menu-price': config.menuPrice || '#d9273f',
-      '--menu-category': config.menuCategory || '#d9273f',
-      '--menu-title': config.menuTitle || '#30231e',
-      '--menu-description': config.menuDescription || '#776960',
-    } as React.CSSProperties}>
+    <div style={{ minHeight: '100vh', backgroundColor: '#f3f4f6' }}>
       {/* Hero Banner - Mobile Optimized */}
       <div style={{
         position: 'relative',
@@ -519,11 +511,11 @@ function MenuView() {
               {/* Versão compacta para celular */}
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px' }}>
                 <div style={{ minWidth: 0 }}>
-                  <h2 style={{ fontSize: '16px', fontWeight: 'bold', color: config.menuTitle || '#1f2937', margin: 0, lineHeight: 1.25 }}>
+                  <h2 style={{ fontSize: '16px', fontWeight: 'bold', color: '#1f2937', margin: 0, lineHeight: 1.25 }}>
                     {config.name}
                   </h2>
                   {config.subtitle && (
-                    <p style={{ fontSize: '12px', color: config.menuDescription || '#6b7280', margin: '1px 0 0 0' }}>{config.subtitle}</p>
+                    <p style={{ fontSize: '12px', color: '#6b7280', margin: '1px 0 0 0' }}>{config.subtitle}</p>
                   )}
                 </div>
                 <span style={{
@@ -569,13 +561,13 @@ function MenuView() {
           <h2 style={{ 
             fontSize: isMobile ? '16px' : '22px', 
             fontWeight: 'bold', 
-            color: config.menuTitle || '#1f2937',
+            color: '#1f2937',
             margin: 0,
             lineHeight: 1.3
           }}>
             {config.name}
           </h2>
-          <p style={{ fontSize: '13px', color: config.menuDescription || '#6b7280', margin: '2px 0 0 0' }}>
+          <p style={{ fontSize: '13px', color: '#6b7280', margin: '2px 0 0 0' }}>
             {config.subtitle}
           </p>
 
@@ -598,7 +590,7 @@ function MenuView() {
               fontSize: '12px',
               fontWeight: 600
             }}>
-              ★ 4.8 <span style={{ color: config.menuDescription || '#6b7280', fontWeight: 400 }}>(2.4k+)</span>
+              ★ 4.8 <span style={{ color: '#6b7280', fontWeight: 400 }}>(2.4k+)</span>
             </span>
             <span style={{
               display: 'inline-flex',
@@ -708,8 +700,8 @@ function MenuView() {
                   border: 'none',
                   cursor: 'pointer',
                   transition: 'all 0.2s',
-                  backgroundColor: activeCategory === cat.id ? (config.menuCategory || '#d9273f') : '#fff0f2',
-                  color: activeCategory === cat.id ? '#ffffff' : (config.menuCategory || '#54111e'),
+                  backgroundColor: activeCategory === cat.id ? '#d9273f' : '#fff0f2',
+                  color: activeCategory === cat.id ? '#ffffff' : '#54111e',
                   boxShadow: activeCategory === cat.id ? '0 4px 12px rgba(217, 39, 63, 0.2)' : 'none',
                   flexShrink: 0
                 }}
@@ -739,7 +731,7 @@ function MenuView() {
               <h3 style={{
                 fontSize: isMobile ? '18px' : '22px',
                 fontWeight: 'bold',
-                color: config.menuTitle || '#1f2937',
+                color: '#1f2937',
                 marginBottom: isMobile ? '12px' : '16px',
                 display: 'flex',
                 alignItems: 'center',
@@ -787,7 +779,7 @@ function MenuView() {
             <h3 style={{
               fontSize: isMobile ? '18px' : '22px',
               fontWeight: 'bold',
-              color: config.menuTitle || '#1f2937',
+              color: '#1f2937',
               marginBottom: '12px',
               display: 'flex',
               alignItems: 'center',
@@ -814,11 +806,11 @@ function MenuView() {
                     padding: '12px',
                     textAlign: 'center'
                   }}>
-                    <p style={{ fontWeight: 600, color: config.menuTitle || '#1f2937', fontSize: '13px', margin: 0 }}>{zone.name}</p>
+                    <p style={{ fontWeight: 600, color: '#1f2937', fontSize: '13px', margin: 0 }}>{zone.name}</p>
                     <p style={{ color: '#15803d', fontWeight: 'bold', fontSize: '14px', margin: '4px 0 0 0' }}>
                       {money(zone.price)}
                     </p>
-                    <p style={{ fontSize: '11px', color: config.menuDescription || '#6b7280', margin: '2px 0 0 0' }}>{zone.estimatedTime}</p>
+                    <p style={{ fontSize: '11px', color: '#6b7280', margin: '2px 0 0 0' }}>{zone.estimatedTime}</p>
                   </div>
                 ))}
               </div>
@@ -844,7 +836,7 @@ function MenuView() {
               onClick={() => setShowCart(true)}
               style={{
                 width: '100%',
-                backgroundColor: config.menuButton || '#d9273f',
+                backgroundColor: '#d9273f',
                 color: '#ffffff',
                 borderRadius: '14px',
                 padding: isMobile ? '14px 16px' : '16px 24px',
@@ -926,7 +918,7 @@ function MenuView() {
             )}
             <div style={{ padding: isMobile ? '12px 16px' : '20px', borderBottom: '1px solid #f3f4f6' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: config.menuTitle || '#1f2937', margin: 0 }}>
+                <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#1f2937', margin: 0 }}>
                   Seu Pedido
                 </h3>
                 <button 
@@ -973,7 +965,7 @@ function MenuView() {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <p style={{ 
                       fontWeight: 500, 
-                      color: config.menuTitle || '#1f2937', 
+                      color: '#1f2937', 
                       fontSize: '14px',
                       margin: 0,
                       overflow: 'hidden',
@@ -984,7 +976,7 @@ function MenuView() {
                     </p>
                     {(item.product.addOns || []).length > 0 && (
                       <div style={{ margin: '6px 0 2px 0', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <p style={{ margin: 0, fontSize: '12px', fontWeight: 600, color: config.menuDescription || '#6b7280' }}>Adicionais:</p>
+                        <p style={{ margin: 0, fontSize: '12px', fontWeight: 600, color: '#6b7280' }}>Adicionais:</p>
                         {item.product.addOns.map(addOn => {
                           const checked = (item.selectedAddOns || []).some(a => a.id === addOn.id)
                           return (
@@ -1090,7 +1082,7 @@ function MenuView() {
                 )}
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                <span style={{ color: config.menuDescription || '#6b7280', fontSize: '13px' }}>Subtotal</span>
+                <span style={{ color: '#6b7280', fontSize: '13px' }}>Subtotal</span>
                 <span style={{ fontWeight: 600, fontSize: '13px' }}>{fmt(totalPrice)}</span>
               </div>
               {discount > 0 && (
@@ -1106,8 +1098,8 @@ function MenuView() {
                 borderTop: '1px solid #e5e7eb',
                 marginBottom: '12px'
               }}>
-                <span style={{ fontSize: '16px', fontWeight: 'bold', color: config.menuTitle || '#1f2937' }}>Total</span>
-                <span style={{ fontSize: '16px', fontWeight: 'bold', color: config.menuTitle || '#1f2937' }}>
+                <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#1f2937' }}>Total</span>
+                <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#1f2937' }}>
                   {fmt(totalPrice)}
                 </span>
               </div>
@@ -1154,8 +1146,8 @@ function MenuView() {
             <div style={{ padding: isMobile ? '12px 16px' : '20px 24px 16px', borderBottom: '1px solid #f3f4f6' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
                 <div>
-                  <h3 style={{ fontSize: '19px', fontWeight: 800, color: config.menuTitle || '#1f2937', margin: 0 }}>Finalizar pedido</h3>
-                  <p style={{ margin: '4px 0 0', fontSize: '12px', color: config.menuDescription || '#6b7280' }}>Etapa {checkoutStep} de 3 • Leva só alguns instantes</p>
+                  <h3 style={{ fontSize: '19px', fontWeight: 800, color: '#1f2937', margin: 0 }}>Finalizar pedido</h3>
+                  <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#6b7280' }}>Etapa {checkoutStep} de 3 • Leva só alguns instantes</p>
                 </div>
                 <button onClick={() => setShowCheckout(false)} aria-label="Fechar finalização" style={{ width: '34px', height: '34px', borderRadius: '10px', background: '#f3f4f6', color: '#4b5563', border: 'none', cursor: 'pointer', fontSize: '18px' }}>×</button>
               </div>
@@ -1166,8 +1158,8 @@ function MenuView() {
                   { number: 3, title: 'Revisão', subtitle: 'Confira o pedido' },
                 ].map(step => (
                   <div key={step.number} style={{ minWidth: 0 }}>
-                    <div style={{ height: '4px', borderRadius: '99px', background: checkoutStep >= step.number ? (config.menuButton || '#d9273f') : '#e5e7eb', marginBottom: '8px' }} />
-                    <div style={{ fontSize: '12px', fontWeight: 750, color: checkoutStep === step.number ? (config.menuButton || '#d9273f') : checkoutStep > step.number ? '#374151' : '#9ca3af' }}>{step.number}. {step.title}</div>
+                    <div style={{ height: '4px', borderRadius: '99px', background: checkoutStep >= step.number ? '#d9273f' : '#e5e7eb', marginBottom: '8px' }} />
+                    <div style={{ fontSize: '12px', fontWeight: 750, color: checkoutStep === step.number ? '#d9273f' : checkoutStep > step.number ? '#374151' : '#9ca3af' }}>{step.number}. {step.title}</div>
                     <div style={{ fontSize: '10px', color: '#9ca3af', marginTop: '2px' }}>{step.subtitle}</div>
                   </div>
                 ))}
@@ -1226,14 +1218,14 @@ function MenuView() {
                     }}
                   >
                     
-                    <span style={{ fontWeight: 600, fontSize: '14px', color: config.menuTitle || '#1f2937', display: 'block' }}>{opt.title}</span>
-                    <span style={{ fontSize: '11px', color: config.menuDescription || '#6b7280' }}>{opt.desc}</span>
+                    <span style={{ fontWeight: 600, fontSize: '14px', color: '#1f2937', display: 'block' }}>{opt.title}</span>
+                    <span style={{ fontSize: '11px', color: '#6b7280' }}>{opt.desc}</span>
                   </button>
                 ))}
               </div>
 
               {deliveryType === 'pickup' && (
-                <p style={{ fontSize: '12px', color: config.menuDescription || '#6b7280', backgroundColor: '#f9fafb', padding: '10px 12px', borderRadius: '10px', margin: '0 0 18px 0' }}>
+                <p style={{ fontSize: '12px', color: '#6b7280', backgroundColor: '#f9fafb', padding: '10px 12px', borderRadius: '10px', margin: '0 0 18px 0' }}>
                   Retirada na loja: <strong>{config.address || 'consulte o endereço'}</strong>
                 </p>
               )}
@@ -1368,7 +1360,7 @@ function MenuView() {
                       {[{ v: 'now', t: 'Agora' }, { v: 'schedule', t: 'Agendar' }].map(o => (
                         <button key={o.v} type="button" onClick={() => setWhenMode(o.v as any)}
                           style={{
-                            padding: '12px 8px', borderRadius: '12px', cursor: 'pointer', fontWeight: 600, fontSize: '14px', color: config.menuTitle || '#1f2937',
+                            padding: '12px 8px', borderRadius: '12px', cursor: 'pointer', fontWeight: 600, fontSize: '14px', color: '#1f2937',
                             border: whenMode === o.v ? '2px solid #ef4444' : '1px solid #e5e7eb',
                             backgroundColor: whenMode === o.v ? '#fef2f2' : 'white'
                           }}>{o.t}</button>
@@ -1383,33 +1375,33 @@ function MenuView() {
                     <p style={{ fontSize: '12px', color: '#dc2626', margin: 0 }}>Não há horários disponíveis nos dias permitidos para este carrinho.</p>
                   ) : (
                     <>
-                      <label style={{ display: 'block', fontSize: '12px', color: config.menuDescription || '#6b7280', marginBottom: '4px' }}>Dia</label>
+                      <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Dia</label>
                       <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '6px', marginBottom: '8px' }}>
                         {scheduleDays.map(d => (
                           <button key={d.date} type="button" onClick={() => { setSchedDate(d.date); setSchedTime('') }}
                             style={{
                               flexShrink: 0, padding: '8px 14px', borderRadius: '999px', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
                               border: schedDate === d.date ? '2px solid #ef4444' : '1px solid #e5e7eb',
-                              backgroundColor: schedDate === d.date ? '#fef2f2' : 'white', color: config.menuTitle || '#1f2937'
+                              backgroundColor: schedDate === d.date ? '#fef2f2' : 'white', color: '#1f2937'
                             }}>{d.label}</button>
                         ))}
                       </div>
                       {selectedDay && (
                         <>
-                          <label style={{ display: 'block', fontSize: '12px', color: config.menuDescription || '#6b7280', marginBottom: '4px' }}>Horário</label>
+                          <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Horário</label>
                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                             {selectedDay.times.map(t => (
                               <button key={t} type="button" onClick={() => setSchedTime(t)}
                                 style={{
                                   padding: '8px 12px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
                                   border: schedTime === t ? '2px solid #ef4444' : '1px solid #e5e7eb',
-                                  backgroundColor: schedTime === t ? '#fef2f2' : 'white', color: config.menuTitle || '#1f2937'
+                                  backgroundColor: schedTime === t ? '#fef2f2' : 'white', color: '#1f2937'
                                 }}>{t}</button>
                             ))}
                           </div>
                         </>
                       )}
-                      {!scheduleOk && <p style={{ fontSize: '12px', color: config.menuDescription || '#6b7280', margin: '8px 0 0' }}>Escolha o dia e o horário.</p>}
+                      {!scheduleOk && <p style={{ fontSize: '12px', color: '#6b7280', margin: '8px 0 0' }}>Escolha o dia e o horário.</p>}
                     </>
                   ))}
                 </div>
@@ -1442,17 +1434,17 @@ function MenuView() {
                     }}
                   >
                     
-                    <span style={{ fontWeight: 600, fontSize: '13px', color: config.menuTitle || '#1f2937' }}>{opt.title}</span>
+                    <span style={{ fontWeight: 600, fontSize: '13px', color: '#1f2937' }}>{opt.title}</span>
                   </button>
                 ))}
               </div>
               {paymentMethod === 'card' && (
-                <p style={{ fontSize: '12px', color: config.menuDescription || '#6b7280', backgroundColor: '#f9fafb', padding: '10px 12px', borderRadius: '10px', margin: '0 0 18px 0' }}>
+                <p style={{ fontSize: '12px', color: '#6b7280', backgroundColor: '#f9fafb', padding: '10px 12px', borderRadius: '10px', margin: '0 0 18px 0' }}>
                   O cartão é passado na entrega{deliveryType === 'pickup' ? ' na retirada' : ''} pela nossa equipe.
                 </p>
               )}
               {paymentMethod === 'pix' && (
-                <p style={{ fontSize: '12px', color: config.menuDescription || '#6b7280', backgroundColor: '#f9fafb', padding: '10px 12px', borderRadius: '10px', margin: '0 0 18px 0' }}>
+                <p style={{ fontSize: '12px', color: '#6b7280', backgroundColor: '#f9fafb', padding: '10px 12px', borderRadius: '10px', margin: '0 0 18px 0' }}>
                   {config.pixKey
                     ? 'Ao finalizar o pedido você verá o QR Code do Pix para pagar.'
                     : `Você receberá a chave PIX pelo WhatsApp (${config.phone || 'telefone da loja'}) após finalizar o pedido.`}
@@ -1484,7 +1476,7 @@ function MenuView() {
               )}
               {checkoutStep === 3 && (
                 <div>
-                  <h4 style={{ margin: '0 0 12px', fontSize: '16px', color: config.menuTitle || '#1f2937' }}>Confira os dados antes de confirmar</h4>
+                  <h4 style={{ margin: '0 0 12px', fontSize: '16px', color: '#1f2937' }}>Confira os dados antes de confirmar</h4>
                   <div style={{ border: '1px solid #e5e7eb', borderRadius: '14px', padding: '14px', marginBottom: '12px' }}>
                     <p style={{ margin: '0 0 6px', fontSize: '13px', fontWeight: 800, color: '#374151' }}>Cliente</p>
                     <p style={{ margin: 0, fontSize: '13px', color: '#4b5563' }}>{customerName}</p>
@@ -1514,25 +1506,25 @@ function MenuView() {
               )}
             </div>
             <div style={{ padding: isMobile ? '14px 16px 18px' : '16px 24px 22px', borderTop: '1px solid #f3f4f6', background: '#fafafa' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '13px', color: config.menuDescription || '#6b7280' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '13px', color: '#6b7280' }}>
                 <span>Subtotal</span><strong style={{ color: '#374151' }}>{fmt(totalPrice)}</strong>
               </div>
               {discount > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '13px', color: '#15803d' }}><span>Desconto ({activeCouponCode})</span><strong>− {fmt(discount)}</strong></div>}
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', fontSize: '13px', color: config.menuDescription || '#6b7280' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', fontSize: '13px', color: '#6b7280' }}>
                 <span>{deliveryType === 'delivery' ? 'Taxa de entrega' : 'Retirada no local'}</span><strong style={{ color: '#374151' }}>{deliveryType === 'delivery' ? deliveryFeeLabel : 'Grátis'}</strong>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '10px', borderTop: '1px solid #e5e7eb', marginBottom: '12px' }}>
-                <span style={{ fontSize: '16px', fontWeight: 800, color: config.menuTitle || '#1f2937' }}>Total do pedido</span>
-                <span style={{ fontSize: '20px', fontWeight: 850, color: config.menuPrice || '#d9273f' }}>{fmt(checkoutTotal)}</span>
+                <span style={{ fontSize: '16px', fontWeight: 800, color: '#1f2937' }}>Total do pedido</span>
+                <span style={{ fontSize: '20px', fontWeight: 850, color: '#d9273f' }}>{fmt(checkoutTotal)}</span>
               </div>
               {checkoutStep === 1 && !canContinueCheckoutStep1 && <p style={{ fontSize: '11px', color: '#b91c1c', margin: '0 0 8px', textAlign: 'center' }}>Preencha os dados de contato e os campos obrigatórios de entrega para continuar.</p>}
               {checkoutStep === 2 && !paymentMethod && <p style={{ fontSize: '11px', color: '#b91c1c', margin: '0 0 8px', textAlign: 'center' }}>Selecione uma forma de pagamento para continuar.</p>}
               <div style={{ display: 'flex', gap: '10px' }}>
                 <button type="button" onClick={() => checkoutStep === 1 ? (setShowCheckout(false), setShowCart(true)) : setCheckoutStep(checkoutStep - 1)} style={{ flex: '0 0 34%', background: '#fff', color: '#374151', border: '1px solid #d1d5db', borderRadius: '12px', padding: '13px 10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}>{checkoutStep === 1 ? 'Voltar ao carrinho' : 'Voltar'}</button>
                 {checkoutStep < 3 ? (
-                  <button type="button" onClick={() => { if (checkoutStep === 1 && canContinueCheckoutStep1) setCheckoutStep(2); else if (checkoutStep === 2 && paymentMethod) setCheckoutStep(3) }} disabled={checkoutStep === 1 ? !canContinueCheckoutStep1 : !paymentMethod} style={{ flex: 1, background: (checkoutStep === 1 ? canContinueCheckoutStep1 : !!paymentMethod) ? (config.menuButton || '#d9273f') : '#d1d5db', color: '#fff', border: 'none', borderRadius: '12px', padding: '13px 12px', fontWeight: 800, fontSize: '14px', cursor: (checkoutStep === 1 ? canContinueCheckoutStep1 : !!paymentMethod) ? 'pointer' : 'not-allowed' }}>Continuar <span aria-hidden="true">→</span></button>
+                  <button type="button" onClick={() => { if (checkoutStep === 1 && canContinueCheckoutStep1) setCheckoutStep(2); else if (checkoutStep === 2 && paymentMethod) setCheckoutStep(3) }} disabled={checkoutStep === 1 ? !canContinueCheckoutStep1 : !paymentMethod} style={{ flex: 1, background: (checkoutStep === 1 ? canContinueCheckoutStep1 : !!paymentMethod) ? '#d9273f' : '#d1d5db', color: '#fff', border: 'none', borderRadius: '12px', padding: '13px 12px', fontWeight: 800, fontSize: '14px', cursor: (checkoutStep === 1 ? canContinueCheckoutStep1 : !!paymentMethod) ? 'pointer' : 'not-allowed' }}>Continuar <span aria-hidden="true">→</span></button>
                 ) : (
-                  <button type="button" onClick={placeOrder} disabled={!canPlaceOrder} style={{ flex: 1, background: canPlaceOrder ? (config.menuButton || '#d9273f') : '#d1d5db', color: '#fff', border: 'none', borderRadius: '12px', padding: '13px 12px', fontWeight: 800, fontSize: '14px', cursor: canPlaceOrder ? 'pointer' : 'not-allowed' }}>Confirmar pedido</button>
+                  <button type="button" onClick={placeOrder} disabled={!canPlaceOrder} style={{ flex: 1, background: canPlaceOrder ? '#d9273f' : '#d1d5db', color: '#fff', border: 'none', borderRadius: '12px', padding: '13px 12px', fontWeight: 800, fontSize: '14px', cursor: canPlaceOrder ? 'pointer' : 'not-allowed' }}>Confirmar pedido</button>
                 )}
               </div>
             </div>
@@ -1571,10 +1563,10 @@ function MenuView() {
             }}>
               ✅
             </div>
-            <h3 style={{ fontSize: '20px', fontWeight: 'bold', color: config.menuTitle || '#1f2937', margin: '0 0 6px' }}>
+            <h3 style={{ fontSize: '20px', fontWeight: 'bold', color: '#1f2937', margin: '0 0 6px' }}>
               Pedido enviado!
             </h3>
-            <p style={{ color: config.menuDescription || '#6b7280', fontSize: '14px', margin: '0 0 16px' }}>
+            <p style={{ color: '#6b7280', fontSize: '14px', margin: '0 0 16px' }}>
               Seu pedido <strong>{orderPlaced.id}</strong> foi registrado.
               {whatsappUrl ? ' Toque no botão abaixo para enviá-lo à loja pelo WhatsApp.' : ''}
             </p>
@@ -1598,7 +1590,7 @@ function MenuView() {
             </div>
             {orderPlaced.paymentMethod === 'pix' && config.pixKey && (
               <div style={{ backgroundColor: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '14px', marginBottom: '18px' }}>
-                <p style={{ fontSize: '14px', fontWeight: 700, color: config.menuTitle || '#1f2937', margin: '0 0 10px' }}>
+                <p style={{ fontSize: '14px', fontWeight: 700, color: '#1f2937', margin: '0 0 10px' }}>
                   Pague com Pix: {fmt(orderPlaced.total + orderPlaced.deliveryFee - (orderPlaced.discount || 0))}
                 </p>
                 <PixQrCode
@@ -1628,7 +1620,7 @@ function MenuView() {
                 <button
                   onClick={() => setOrderPlaced(null)}
                   style={{
-                    width: '100%', backgroundColor: 'transparent', color: config.menuDescription || '#6b7280', borderRadius: '12px',
+                    width: '100%', backgroundColor: 'transparent', color: '#6b7280', borderRadius: '12px',
                     padding: '10px', fontWeight: 600, fontSize: '13px', border: 'none', cursor: 'pointer', marginTop: '6px'
                   }}
                 >
@@ -1742,7 +1734,7 @@ function MenuView() {
                 <h3 style={{ 
                   fontSize: isMobile ? '18px' : '22px', 
                   fontWeight: 'bold', 
-                  color: config.menuTitle || '#1f2937',
+                  color: '#1f2937',
                   margin: 0,
                   flex: 1
                 }}>
@@ -1763,7 +1755,7 @@ function MenuView() {
                 )}
               </div>
               <p style={{ 
-                color: config.menuDescription || '#6b7280', 
+                color: '#6b7280', 
                 marginTop: '10px', 
                 fontSize: isMobile ? '13px' : '14px',
                 lineHeight: 1.6,
@@ -1777,7 +1769,7 @@ function MenuView() {
                 justifyContent: 'space-between', 
                 marginTop: '20px'
               }}>
-                <span style={{ fontSize: isMobile ? '22px' : '26px', fontWeight: 'bold', color: config.menuTitle || '#1f2937' }}>
+                <span style={{ fontSize: isMobile ? '22px' : '26px', fontWeight: 'bold', color: '#1f2937' }}>
                   {money(modalItemTotal)}
                 </span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -1831,7 +1823,7 @@ function MenuView() {
                   <h4 style={{
                     fontSize: '15px',
                     fontWeight: 'bold',
-                    color: config.menuTitle || '#1f2937',
+                    color: '#1f2937',
                     margin: '0 0 8px 0',
                     display: 'flex',
                     alignItems: 'center',
@@ -2036,7 +2028,7 @@ function ProductCard({ product, quantity, onAdd, onRemove, onClick, isMobile }: 
         {quantity > 0 && (
           <span style={{
             position: 'absolute', right: '8px', bottom: '8px',
-            background: config.menuButton || '#d9273f', color: '#ffffff',
+            background: '#d9273f', color: '#ffffff',
             minWidth: '26px', height: '26px', padding: '0 6px',
             borderRadius: '999px', display: 'flex', alignItems: 'center',
             justifyContent: 'center', fontSize: '12px', fontWeight: 800,
@@ -2056,13 +2048,13 @@ function ProductCard({ product, quantity, onAdd, onRemove, onClick, isMobile }: 
       }}>
         <div>
           <h4 style={{
-            fontWeight: 750, color: config.menuTitle || '#30231e',
+            fontWeight: 750, color: '#30231e',
             fontSize: isMobile ? '13px' : '15px',
             lineHeight: 1.3, margin: 0,
             letterSpacing: '-.015em',
           }}>{product.name}</h4>
           <p style={{
-            color: config.menuDescription || '#776960',
+            color: '#776960',
             fontSize: isMobile ? '11px' : '12px',
             lineHeight: 1.45,
             margin: '5px 0 0',
@@ -2078,7 +2070,7 @@ function ProductCard({ product, quantity, onAdd, onRemove, onClick, isMobile }: 
           flexWrap: 'wrap',
         }}>
           <span style={{
-            color: config.menuPrice || '#d9273f', fontWeight: 850,
+            color: '#d9273f', fontWeight: 850,
             fontSize: isMobile ? '15px' : '18px',
             lineHeight: 1.1, whiteSpace: 'nowrap',
             letterSpacing: '-.025em',
@@ -2095,7 +2087,7 @@ function ProductCard({ product, quantity, onAdd, onRemove, onClick, isMobile }: 
                   onClick={onRemove}
                   style={{
                     width: '30px', height: '30px', borderRadius: '50%',
-                    border: '1px solid #dfc5b6', color: config.menuPrice || '#d9273f',
+                    border: '1px solid #dfc5b6', color: '#d9273f',
                     background: '#fffdfa', cursor: 'pointer',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: '18px', fontWeight: 600, padding: 0,
@@ -2106,7 +2098,7 @@ function ProductCard({ product, quantity, onAdd, onRemove, onClick, isMobile }: 
                   onClick={onAdd}
                   style={{
                     width: '30px', height: '30px', borderRadius: '50%',
-                    border: 'none', color: '#ffffff', background: config.menuButton || '#d9273f',
+                    border: 'none', color: '#ffffff', background: '#d9273f',
                     cursor: 'pointer', display: 'flex', alignItems: 'center',
                     justifyContent: 'center', fontSize: '18px', fontWeight: 600, padding: 0,
                   }}>+</button>
@@ -2118,7 +2110,7 @@ function ProductCard({ product, quantity, onAdd, onRemove, onClick, isMobile }: 
                 onClick={e => { e.stopPropagation(); onAdd() }}
                 style={{
                   border: 'none', color: '#ffffff',
-                  background: config.menuButton || '#d9273f', borderRadius: '999px',
+                  background: '#d9273f', borderRadius: '999px',
                   padding: isMobile ? '9px 12px' : '10px 15px',
                   fontSize: isMobile ? '11px' : '12px',
                   fontWeight: 750, cursor: 'pointer', whiteSpace: 'nowrap',
