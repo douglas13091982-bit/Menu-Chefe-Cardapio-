@@ -7,6 +7,13 @@ import CatalogImport from './CatalogImport'
 import { money } from '../../format'
 import { compressImageToWebP, isImageFile } from '@/lib/image-compress'
 
+const DELIVERY_DAYS = [
+  { value: 1, label: 'Segunda' }, { value: 2, label: 'Terça' },
+  { value: 3, label: 'Quarta' }, { value: 4, label: 'Quinta' },
+  { value: 5, label: 'Sexta' }, { value: 6, label: 'Sábado' },
+  { value: 0, label: 'Domingo' },
+]
+
 function ProductsManager() {
   const { products, categories, addProduct, updateProduct, deleteProduct } = useStore()
   const [showForm, setShowForm] = useState(false)
@@ -18,12 +25,12 @@ function ProductsManager() {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [formData, setFormData] = useState({
-    name: '', description: '', price: '', image: '', categoryId: '', popular: false, available: true
+    name: '', description: '', price: '', image: '', categoryId: '', popular: false, available: true, deliveryDays: [] as number[]
   })
   const [addOns, setAddOns] = useState<ProductAddOn[]>([])
 
   const resetForm = () => {
-    setFormData({ name: '', description: '', price: '', image: '', categoryId: categories[0]?.id || '', popular: false, available: true })
+    setFormData({ name: '', description: '', price: '', image: '', categoryId: categories[0]?.id || '', popular: false, available: true, deliveryDays: [] })
     setAddOns([])
     setEditingProduct(null)
     setShowForm(false)
@@ -38,7 +45,8 @@ function ProductsManager() {
       image: product.image,
       categoryId: product.categoryId,
       popular: product.popular || false,
-      available: product.available
+      available: product.available,
+      deliveryDays: Array.isArray(product.deliveryDays) ? [...product.deliveryDays] : []
     })
     setAddOns(product.addOns ? [...product.addOns] : [])
     setShowForm(true)
@@ -94,7 +102,8 @@ function ProductsManager() {
       categoryId: formData.categoryId,
       popular: formData.popular,
       available: formData.available,
-      addOns: cleanedAddOns.length > 0 ? cleanedAddOns : undefined
+      addOns: cleanedAddOns.length > 0 ? cleanedAddOns : undefined,
+      deliveryDays: formData.deliveryDays
     }
     if (editingProduct) {
       updateProduct(product)
@@ -282,6 +291,29 @@ function ProductsManager() {
                     />
                     <span className="text-sm text-gray-700">Disponível</span>
                   </label>
+                </div>
+
+                <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                  <div className="mb-1 text-sm font-semibold text-gray-800">Dias de entrega deste produto</div>
+                  <p className="mb-3 text-xs text-gray-500">Opcional. Selecione os dias em que este produto pode ser entregue. Sem seleção, não há restrição. Quando houver restrição, o cliente precisará agendar uma data compatível.</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {DELIVERY_DAYS.map(day => (
+                      <label key={day.value} className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={formData.deliveryDays.includes(day.value)}
+                          onChange={e => setFormData(prev => ({
+                            ...prev,
+                            deliveryDays: e.target.checked
+                              ? [...prev.deliveryDays, day.value]
+                              : prev.deliveryDays.filter(value => value !== day.value)
+                          }))}
+                          className="h-4 w-4 rounded border-gray-300 text-red-500 focus:ring-red-500"
+                        />
+                        {day.label}
+                      </label>
+                    ))}
+                  </div>
                 </div>
 
                 {/* Adicionais */}

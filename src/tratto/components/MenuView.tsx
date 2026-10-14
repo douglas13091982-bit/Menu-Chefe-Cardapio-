@@ -75,12 +75,25 @@ function MenuView() {
   const storeStatus = getStoreStatus(config)
   // ---- Agendamento ----
   const schedulingEnabled = config.schedulingEnabled === true
-  const mustSchedule = schedulingEnabled && !storeStatus.open
+  const constrainedProducts = cart
+    .map(item => item.product)
+    .filter(product => Array.isArray(product.deliveryDays) && product.deliveryDays.length > 0)
+  const productScheduleRequired = constrainedProducts.length > 0
+  const hasConflictingDeliveryDays = constrainedProducts.length > 1 &&
+    !Array.from({ length: 7 }, (_, day) => day).some(day =>
+      constrainedProducts.every(product => product.deliveryDays!.includes(day))
+    )
+  const mustSchedule = (schedulingEnabled && !storeStatus.open) || productScheduleRequired
   const [whenMode, setWhenMode] = useState<'now' | 'schedule'>('now')
   const [schedDate, setSchedDate] = useState('')
   const [schedTime, setSchedTime] = useState('')
-  const scheduling = schedulingEnabled && (mustSchedule || whenMode === 'schedule')
-  const scheduleDays = schedulingEnabled && showCheckout ? getScheduleSlots(config) : []
+  const scheduling = mustSchedule || (schedulingEnabled && whenMode === 'schedule')
+  const scheduleDays = (schedulingEnabled || productScheduleRequired) && showCheckout
+    ? getScheduleSlots(config).filter(day => {
+        const weekday = new Date(day.date + 'T12:00:00Z').getUTCDay()
+        return constrainedProducts.every(product => product.deliveryDays!.includes(weekday))
+      })
+    : []
   const selectedDay = scheduleDays.find(d => d.date === schedDate)
   const scheduleOk = !scheduling || !!(selectedDay && selectedDay.times.includes(schedTime))
 
@@ -1331,14 +1344,16 @@ function MenuView() {
                   )}
                 </div>
               )}
-              {schedulingEnabled && (
+              {(schedulingEnabled || productScheduleRequired) && (
                 <div style={{ marginBottom: '18px' }}>
                   <p style={{ fontSize: '13px', fontWeight: 600, color: '#374151', margin: '0 0 8px 0' }}>
                     Quando? *
                   </p>
                   {mustSchedule ? (
                     <p style={{ fontSize: '12px', color: '#92400e', backgroundColor: '#fffbeb', border: '1px solid #fde68a', padding: '10px 12px', borderRadius: '10px', margin: '0 0 10px 0' }}>
-                      A loja está fechada agora ({storeStatus.text.replace('Fechado • ', '').replace('Fechado', 'fora do horário')}). Você pode encomendar e agendar para um horário em que a loja estiver aberta.
+                      {productScheduleRequired
+                        ? 'Seu carrinho contém produto(s) com dias de entrega específicos. Escolha uma data permitida para continuar.'
+                        : `A loja está fechada agora (${storeStatus.text.replace('Fechado • ', '').replace('Fechado', 'fora do horário')}). Você pode encomendar e agendar para um horário em que a loja estiver aberta.`}
                     </p>
                   ) : (
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
@@ -1352,8 +1367,12 @@ function MenuView() {
                       ))}
                     </div>
                   )}
-                  {scheduling && (scheduleDays.length === 0 ? (
-                    <p style={{ fontSize: '12px', color: '#dc2626', margin: 0 }}>Não há horários disponíveis para agendamento no momento.</p>
+                  {scheduling && (hasConflictingDeliveryDays ? (
+                    <p style={{ fontSize: '12px', color: '#dc2626', backgroundColor: '#fef2f2', border: '1px solid #fecaca', padding: '10px 12px', borderRadius: '10px', margin: 0 }}>
+                      Os produtos do carrinho não têm dias de entrega em comum. Faça pedidos separados para escolher datas compatíveis.
+                    </p>
+                  ) : scheduleDays.length === 0 ? (
+                    <p style={{ fontSize: '12px', color: '#dc2626', margin: 0 }}>Não há horários disponíveis nos dias permitidos para este carrinho.</p>
                   ) : (
                     <>
                       <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Dia</label>
