@@ -97,11 +97,14 @@ function SettingsPanel() {
     })
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setConfig({ ...formData, weeklyHours: getWeeklyHours(formData) })
-    setSaved(true)
-    setTimeout(() => setSaved(false), 3000)
+    setSaved(false)
+    const ok = await setConfig({ ...formData, weeklyHours: getWeeklyHours(formData) })
+    if (ok) {
+      setSaved(true)
+      setTimeout(() => setSaved(false), 3000)
+    }
   }
 
   const handleChangePassword = async (e: React.FormEvent) => {
