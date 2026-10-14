@@ -239,9 +239,37 @@ export function StoreProvider({ children, slug, storeId: storeIdProp, isAdmin = 
       notifyError('enviar pedido', { message: 'Loja não identificada.' })
       return false
     }
+    // Não copie imagens embutidas em base64 para o JSON do pedido: elas podem
+    // ultrapassar o limite de tamanho da coluna. O catálogo continua com a imagem.
+    const persistedOrder = {
+      ...o,
+      items: (o.items || []).map((item: any) => {
+        const product = item.product || {}
+        const image = typeof product.image === 'string' &&
+          product.image.length < 2000 &&
+          /^https?:\/\//i.test(product.image)
+          ? product.image
+          : ''
+        return {
+          ...item,
+          product: {
+            id: product.id,
+            name: product.name,
+            description: product.description,
+            price: product.price,
+            image,
+            categoryId: product.categoryId,
+            popular: product.popular,
+            available: product.available,
+            addOns: product.addOns,
+          },
+          selectedAddOns: item.selectedAddOns || [],
+        }
+      }),
+    }
     // Só confirma o pedido na interface depois que o banco aceitar a gravação.
     const { error } = await supabase.from('orders').insert({
-      store_id: sid, id: o.id, data: o, status: 'pending'
+      store_id: sid, id: o.id, data: persistedOrder, status: 'pending'
     })
     if (error) {
       notifyError('enviar pedido', error)
