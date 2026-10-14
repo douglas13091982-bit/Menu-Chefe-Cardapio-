@@ -195,10 +195,22 @@ export function StoreProvider({ children, slug, storeId: storeIdProp, isAdmin = 
     return () => { cancelled = true; supabase.removeChannel(channel) }
   }, [isAdmin, sid])
 
-  const setConfig = (c: StoreConfig) => {
+  const setConfig = async (c: StoreConfig): Promise<boolean> => {
+    if (!sid) {
+      setSaveError('Não foi possível salvar as configurações: loja não identificada. Atualize a página e tente novamente.')
+      return false
+    }
+    const { error } = await supabase.from('store_settings').upsert(
+      { store_id: sid, config: c, updated_at: new Date().toISOString() },
+      { onConflict: 'store_id' }
+    )
+    if (error) {
+      notifyError('salvar configurações', error)
+      return false
+    }
     setConfigState(c)
-    supabase.from('store_settings').upsert({ store_id: sid, config: c, updated_at: new Date().toISOString() })
-      .then(({ error }) => notifyError('salvar configurações', error))
+    setSaveError(null)
+    return true
   }
   const saveProduct = (p: Product, sortOrder?: number) => {
     const row: any = { store_id: sid, id: p.id, data: p }
