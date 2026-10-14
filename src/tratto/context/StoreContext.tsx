@@ -181,19 +181,32 @@ export function StoreProvider({ children, slug, storeId: storeIdProp, isAdmin = 
         })
       })
       .subscribe()
-    supabase.from('orders').select('data, status').eq('store_id', sid).order('created_at', { ascending: false })
-      .then(({ data, error }) => {
-        if (cancelled) return
-        logError('carregar pedidos', error)
-        if (!data) return
-        const loaded = data.map(r => ({ ...r.data, status: r.status }))
-        // mantém pedidos que chegaram em tempo real enquanto a lista carregava
-        setOrders(prev => {
-          const ids = new Set(loaded.map(o => o.id))
-          return [...prev.filter(o => !ids.has(o.id)), ...loaded]
-        })
+    // Busca inicial + atualização periódica como fallback caso o Realtime do Supabase
+    // não esteja habilitado/configurado na publicação.
+    const refreshOrders = async () => {
+      const { data, error } = await supabase
+        .from('orders')
+        .select('data, status')
+        .eq('store_id', sid)
+        .order('created_at', { ascending: false })
+      if (cancelled) return
+      if (error) {
+        logError('atualizar pedidos automaticamente', error)
+        return
+      }
+      const loaded = (data || []).map(r => ({ ...(r.data || {}), status: r.status }))
+      setOrders(prev => {
+        const ids = new Set(loaded.map(o => o.id))
+        return [...prev.filter(o => !ids.has(o.id)), ...loaded]
       })
-    return () => { cancelled = true; supabase.removeChannel(channel) }
+    }
+    void refreshOrders()
+    const refreshTimer = window.setInterval(() => { void refreshOrders() }, 8000)
+    return () => {
+      cancelled = true
+      window.clearInterval(refreshTimer)
+      supabase.removeChannel(channel)
+    }
   }, [isAdmin, sid])
 
   const setConfig = async (c: StoreConfig): Promise<boolean> => {
