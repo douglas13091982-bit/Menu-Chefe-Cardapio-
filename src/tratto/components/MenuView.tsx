@@ -1966,6 +1966,8 @@ function ProductCard({ product, quantity, onAdd, onRemove, onClick, isMobile }: 
   onClick: () => void
   isMobile: boolean
 }) {
+  // ProductCard é um componente separado: precisa ler as cores do cardápio direto do contexto
+  const { config } = useStore()
   const fallbackImage = getProductFallbackImage(product.categoryId)
   return (
     <article
