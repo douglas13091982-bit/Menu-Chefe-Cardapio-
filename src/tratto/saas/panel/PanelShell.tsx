@@ -8,7 +8,8 @@ import { PayBox } from "./Billing";
 export function PanelShell({ store, status, isSuper, contact, plan, onLogout }) {
   const [copied, setCopied] = useState(false);
   const [payOpen, setPayOpen] = useState(false);
-  const link = `${window.location.origin}/${store.slug}`;
+  const publicSlug = store.slug === 'teste' ? 'ferreira-sourdough' : store.slug;
+  const link = `${window.location.origin}/${publicSlug}`;
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(link);
@@ -42,7 +43,7 @@ export function PanelShell({ store, status, isSuper, contact, plan, onLogout }) 
             </button>
           )}
           <a
-            href={`/${store.slug}`}
+            href={`/${publicSlug}`}
             target="_blank"
             rel="noreferrer"
             className="px-2.5 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 whitespace-nowrap"
