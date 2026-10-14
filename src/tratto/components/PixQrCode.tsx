@@ -6,10 +6,12 @@ interface PixQrCodeProps {
   /** Chave Pix para exibir/copiar. */
   pixKey: string
   holder?: string
+  /** Cor do botão principal (cor da loja). Sem ela, usa o vermelho padrão. */
+  accentColor?: string
 }
 
 /** QR Code Pix + chave + botões de copiar. Usado na assinatura da plataforma e no pedido do cliente. */
-export default function PixQrCode({ payload, pixKey, holder }: PixQrCodeProps) {
+export default function PixQrCode({ payload, pixKey, holder, accentColor }: PixQrCodeProps) {
   const [qr, setQr] = useState('')
   const [copied, setCopied] = useState('')
 
@@ -46,7 +48,7 @@ export default function PixQrCode({ payload, pixKey, holder }: PixQrCodeProps) {
         <button type="button" onClick={() => copy(pixKey, 'key')} className="rounded-lg border border-gray-300 py-2 font-semibold">
           {copied === 'key' ? 'Copiado!' : 'Copiar chave'}
         </button>
-        <button type="button" onClick={() => copy(payload, 'code')} className="rounded-lg bg-[#d9273f] text-white py-2 font-semibold">
+        <button type="button" onClick={() => copy(payload, 'code')} style={{ backgroundColor: accentColor || '#d9273f' }} className="rounded-lg text-white py-2 font-semibold">
           {copied === 'code' ? 'Copiado!' : 'Pix copia e cola'}
         </button>
       </div>
