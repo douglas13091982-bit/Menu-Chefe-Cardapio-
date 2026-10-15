@@ -1,5 +1,6 @@
 // Configurações de marketing no banco: Pixel ID em store_settings (público) e token em store_secrets (só admin)
 import { supabase } from '@/integrations/supabase/client'
+import { errorPt } from '@/lib/errors-pt'
 import { getCurrentStoreId } from './tenant'
 
 export interface MarketingConfig {
@@ -34,9 +35,9 @@ export async function loadMarketing(): Promise<MarketingConfig> {
 export async function saveMarketing(data: MarketingConfig): Promise<string | null> {
   const now = new Date().toISOString()
   const a = await supabase.from('store_settings').upsert({ store_id: getCurrentStoreId(), marketing_pixel_id: data.pixelId || null, updated_at: now })
-  if (a.error) return a.error.message
+  if (a.error) return errorPt(a.error)
   const b = await supabase.from('store_secrets').upsert({ store_id: getCurrentStoreId(), facebook_access_token: data.accessToken || null, facebook_test_event_code: data.testEventCode || null, updated_at: now })
-  if (b.error) return b.error.message
+  if (b.error) return errorPt(b.error)
   return null
 }
 

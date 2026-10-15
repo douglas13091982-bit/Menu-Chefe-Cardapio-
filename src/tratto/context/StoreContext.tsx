@@ -1,5 +1,6 @@
 // @ts-nocheck -- código original migrado sem alterações de lógica
 import { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react'
+import { errorPt } from '@/lib/errors-pt'
 import { Product, Category, Order, StoreConfig, DeliveryZone } from '../types'
 import { supabase } from '@/integrations/supabase/client'
 import { setDbMapboxToken } from '../mapboxToken'
@@ -86,7 +87,7 @@ export function StoreProvider({ children, slug, storeId: storeIdProp, isAdmin = 
     if (!error) return
     console.error(`Erro ao ${action}:`, error)
     const denied = error.code === '42501' || /row-level security|permission denied/i.test(error.message || '')
-    const detail = typeof error?.message === 'string' ? error.message.trim() : ''
+    const detail = errorPt(error, '').trim()
     setSaveError(denied
       ? `Não foi possível ${action}: sem permissão ou assinatura da loja inativa.${detail ? ' Detalhe: ' + detail : ''}`
       : `Não foi possível ${action}.${detail ? ' Detalhe: ' + detail : ' Verifique a conexão e tente novamente.'}`)

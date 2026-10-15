@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { useEffect, useState } from "react";
+import { errorPt } from "@/lib/errors-pt";
 import { Trash2, UserPlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useStore } from "../../context/StoreContext";
@@ -15,7 +16,7 @@ async function call(body) {
   try {
     return await teamAction({ data: body, headers: { Authorization: `Bearer ${token}` } });
   } catch (e) {
-    throw new Error(e?.message || "Não foi possível concluir agora.");
+    throw new Error(errorPt(e, "Não foi possível concluir agora."));
   }
 }
 

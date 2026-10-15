@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { useEffect, useMemo, useState, useCallback } from 'react'
+import { errorPt } from '@/lib/errors-pt'
 import { supabase } from '@/integrations/supabase/client'
 import LoginForm from './LoginForm'
 import { BRAND } from './brand'
@@ -37,7 +38,7 @@ function PaymentModal({ store, plat, onClose, onDone }) {
     setBusy(true); setErr('')
     const { error } = await supabase.rpc('admin_register_payment', { _store: store.id, _amount_cents: cents, _months: Number(months), _note: note || null })
     setBusy(false)
-    if (error) return setErr(error.message)
+    if (error) return setErr(errorPt(error))
     onDone()
   }
   return (
@@ -78,7 +79,7 @@ function EditModal({ store, plat, onClose, onDone }) {
     }
     if (patch.price_cents != null && Number.isNaN(patch.price_cents)) return setErr('Preço inválido.')
     const { error } = await supabase.from('stores').update(patch).eq('id', store.id)
-    if (error) return setErr(error.message)
+    if (error) return setErr(errorPt(error))
     onDone()
   }
   return (
@@ -121,7 +122,7 @@ function StoresTab({ plat, reload, stores }) {
   const count = (st) => rows.filter(s => s.eff === st).length
   const mrr = rows.filter(s => s.eff === 'active').reduce((n, s) => n + (s.price_cents ?? plat.price_cents), 0)
 
-  const run = async (p) => { const { error } = await p; if (error) setMsg(error.message); else { setMsg(''); reload() } }
+  const run = async (p) => { const { error } = await p; if (error) setMsg(errorPt(error)); else { setMsg(''); reload() } }
   const suspend = (s) => run(supabase.from('stores').update({ status: 'suspended' }).eq('id', s.id))
   const reactivate = (s) => {
     const paid = s.paid_until && new Date(s.paid_until) > new Date()
@@ -571,7 +572,7 @@ export default function SuperAdmin() {
       supabase.rpc('admin_list_stores'),
       fetchPlatformSettingsAdmin(),
     ])
-    if (st.error) setError(st.error.message)
+    if (st.error) setError(errorPt(st.error))
     setStores(st.data || [])
     setPlat(pl || { plan_name: 'Plano', price_cents: 0, trial_days: 7, contact_whatsapp: '' })
     setPhase('ready')

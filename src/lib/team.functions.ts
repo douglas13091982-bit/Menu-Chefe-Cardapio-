@@ -1,4 +1,5 @@
 import { createServerFn } from '@tanstack/react-start'
+import { errorPt } from './errors-pt'
 import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware'
 
 // Equipe da loja: dono/admin cria e remove acessos. Usa a chave de serviço só no servidor.
@@ -49,7 +50,7 @@ export const teamAction = createServerFn({ method: 'POST' })
 
     if (data.action === 'list') {
       const { data: rows, error } = await admin.from('store_members').select('user_id, role').eq('store_id', data.storeId)
-      if (error) throw new Error(error.message)
+      if (error) throw new Error(errorPt(error))
       const out = []
       for (const r of rows || []) {
         const { data: u } = await admin.auth.admin.getUserById(r.user_id)
@@ -70,7 +71,7 @@ export const teamAction = createServerFn({ method: 'POST' })
       // procura usuário existente pelo e-mail
       for (let page = 1; page <= 20 && !userId; page++) {
         const { data: res, error } = await admin.auth.admin.listUsers({ page, perPage: 200 })
-        if (error) throw new Error(error.message)
+        if (error) throw new Error(errorPt(error))
         const hit = (res?.users || []).find((u: any) => String(u.email || '').toLowerCase() === data.email)
         if (hit) userId = hit.id
         if (!res?.users || res.users.length < 200) break
@@ -85,7 +86,7 @@ export const teamAction = createServerFn({ method: 'POST' })
         })
         if (error || !cu?.user) {
           const exists = /already|registered|exists/i.test(error?.message || '')
-          throw new Error(exists ? 'Esse e-mail já tem conta. Tente adicionar novamente.' : error?.message || 'Não foi possível criar o acesso.')
+          throw new Error(exists ? 'Esse e-mail já tem conta. Tente adicionar novamente.' : errorPt(error, 'Não foi possível criar o acesso.'))
         }
         userId = cu.user.id
         created = true
@@ -95,7 +96,7 @@ export const teamAction = createServerFn({ method: 'POST' })
         throw new Error(other[0].store_id === data.storeId ? 'Essa pessoa já tem acesso a esta loja.' : 'Esse e-mail já pertence a outra loja.')
       }
       const { error: ie } = await admin.from('store_members').insert({ store_id: data.storeId, user_id: userId, role: data.role })
-      if (ie) throw new Error(ie.message)
+      if (ie) throw new Error(errorPt(ie))
       return { ok: true, created }
     }
 
@@ -108,11 +109,11 @@ export const teamAction = createServerFn({ method: 'POST' })
 
     if (data.action === 'remove') {
       const { error } = await admin.from('store_members').delete().eq('store_id', data.storeId).eq('user_id', data.userId)
-      if (error) throw new Error(error.message)
+      if (error) throw new Error(errorPt(error))
       return { ok: true }
     }
     if (data.role === 'admin' && myRole === 'admin') throw new Error('Só o dono pode promover administradores.')
     const { error } = await admin.from('store_members').update({ role: data.role }).eq('store_id', data.storeId).eq('user_id', data.userId)
-    if (error) throw new Error(error.message)
+    if (error) throw new Error(errorPt(error))
     return { ok: true }
   })

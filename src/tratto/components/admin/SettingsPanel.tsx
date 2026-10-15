@@ -1,5 +1,6 @@
 // @ts-nocheck -- código original migrado sem alterações de lógica
 import { useState } from 'react'
+import { errorPt } from '@/lib/errors-pt'
 import { CheckCircle2, Store, Clock3, Truck, Eye, ShieldCheck, AlertTriangle, MapPin, Phone, Tag, Volume2, Play, Music, Printer } from 'lucide-react'
 import { useStore } from '../../context/StoreContext'
 import { supabase } from '@/integrations/supabase/client'
@@ -158,7 +159,7 @@ function SettingsPanel() {
       }
       const { error: updateError } = await supabase.auth.updateUser({ password: newPassword })
       if (updateError) {
-        setPasswordError('Não foi possível alterar a senha: ' + updateError.message)
+        setPasswordError('Não foi possível alterar a senha: ' + errorPt(updateError))
         return
       }
     } catch {
