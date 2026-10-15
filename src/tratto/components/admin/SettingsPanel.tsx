@@ -20,7 +20,15 @@ const TABS = [
   { id: 'seguranca', label: 'Segurança' },
 ]
 
+// Só monta o formulário depois que os dados da loja chegaram: o formulário parte da configuração carregada,
+// e montar antes mostraria campos vazios (e salvar assim apagaria o que já estava gravado).
 function SettingsPanel() {
+  const { dataReady } = useStore()
+  if (!dataReady) return <p className="p-6 text-sm text-gray-500">Carregando configurações…</p>
+  return <SettingsForm />
+}
+
+function SettingsForm() {
   const { config, setConfig } = useStore()
   const [formData, setFormData] = useState(config)
   const [saved, setSaved] = useState(false)

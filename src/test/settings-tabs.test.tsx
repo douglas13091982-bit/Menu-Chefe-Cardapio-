@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 
 vi.mock('../tratto/context/StoreContext', () => ({
-  useStore: () => ({ config: { name: 'Loja', phone: '', address: '', deliveryFee: 5, minOrder: 20, subtitle: '', openTime: '18:00', closeTime: '23:00', isOpen: true }, setConfig: async () => true }),
+  useStore: () => ({ dataReady: true, config: { name: 'Loja', phone: '', address: '', deliveryFee: 5, minOrder: 20, subtitle: '', openTime: '18:00', closeTime: '23:00', isOpen: true }, setConfig: async () => true }),
 }))
 vi.mock('../tratto/components/admin/MapboxIntegration', () => ({ default: () => <div>MAPBOX-INTEGRACAO</div> }))
 import SettingsPanel from '../tratto/components/admin/SettingsPanel'

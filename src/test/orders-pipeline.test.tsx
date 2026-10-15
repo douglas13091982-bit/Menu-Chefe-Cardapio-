@@ -5,7 +5,7 @@ const update = vi.fn()
 const del = vi.fn(async () => true)
 const mk = (id: string, status: string, number: number, extra = {}) => ({
   id, number, status, items: [{ product: { name: 'Pizza', price: 50 }, quantity: 1 }], total: 50, deliveryFee: 5,
-  customerName: 'Douglas ' + id, customerPhone: '4799', customerAddress: 'Rua A', createdAt: '2026-10-14T23:27:00Z', updatedAt: '', ...extra,
+  customerName: 'Douglas ' + id, customerPhone: '4799', customerAddress: 'Rua A', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), ...extra,
 })
 vi.mock('../tratto/context/StoreContext', () => ({
   useStore: () => ({
