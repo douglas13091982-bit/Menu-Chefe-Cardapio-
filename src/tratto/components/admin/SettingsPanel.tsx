@@ -7,6 +7,7 @@ import { DAY_LABELS, DAY_ORDER, getWeeklyHours, getStoreStatus } from '../../hou
 import MapboxIntegration from './MapboxIntegration'
 import { money } from '../../format'
 import { compressImageToWebP, isImageFile } from '@/lib/image-compress'
+import { buildStoreIcon } from '../../pwa'
 
 function SettingsPanel() {
   const { config, setConfig } = useStore()
@@ -100,7 +101,12 @@ function SettingsPanel() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSaved(false)
-    const ok = await setConfig({ ...formData, weeklyHours: getWeeklyHours(formData) })
+    // Ícone do app instalável da loja: logo centralizada num PNG quadrado (o servidor só entrega o arquivo pronto)
+    let pwaIcon = formData.pwaIcon
+    try {
+      pwaIcon = (await buildStoreIcon(512, { logoUrl: formData.logoUrl, accent: formData.menuButton || '#d9273f', name: formData.name })) || formData.pwaIcon
+    } catch { /* o ícone é um extra: nunca impede de salvar */ }
+    const ok = await setConfig({ ...formData, pwaIcon, weeklyHours: getWeeklyHours(formData) })
     if (ok) {
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)

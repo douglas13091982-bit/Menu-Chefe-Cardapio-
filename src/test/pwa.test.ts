@@ -1,12 +1,14 @@
 import { describe, it, expect } from 'vitest'
-import { buildManifest, pwaShortName, safeHex, readableOn, storeInitial } from '../tratto/pwa'
+import { buildManifest, pwaShortName, safeHex, readableOn, storeInitial, hashString } from '../tratto/pwa'
+import { decodePngDataUrl } from '../lib/pwa-store.server'
 
 describe('PWA por loja', () => {
   it('encurta o nome para o ícone da tela inicial', () => {
     expect(pwaShortName('Tratto')).toBe('Tratto')
     expect(pwaShortName('Ferreira Sourdough Padaria')).toBe('Ferreira')
     expect(pwaShortName('')).toBe('Cardápio')
-    expect(pwaShortName('Superdelicatessenmuito longo').length).toBeLessThanOrEqual(12)
+    // nunca corta palavra no meio: nome de uma palavra só fica inteiro (o Android abrevia com …)
+    expect(pwaShortName('ferreirasordough')).toBe('ferreirasordough')
   })
 
   it('valida cores hex e cai no padrão quando inválida', () => {
@@ -40,5 +42,21 @@ describe('PWA por loja', () => {
     expect(a.theme_color).toBe('#112233')
     expect(b.theme_color).toBe('#d9273f')
     expect(a.icons).toEqual(icons)
+  })
+
+  it('hash do ícone muda quando o ícone muda (para furar o cache)', () => {
+    expect(hashString('abc')).toBe(hashString('abc'))
+    expect(hashString('abc')).not.toBe(hashString('abd'))
+    expect(hashString('')).toBe(hashString(''))
+  })
+
+  it('só aceita PNG de verdade como ícone do servidor', () => {
+    const png = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='
+    const ok = decodePngDataUrl('data:image/png;base64,' + png)
+    expect(ok && ok[0]).toBe(0x89)
+    expect(decodePngDataUrl('data:image/webp;base64,' + png)).toBeNull()
+    expect(decodePngDataUrl('data:image/png;base64,AAAA')).toBeNull() // não tem a assinatura PNG
+    expect(decodePngDataUrl('')).toBeNull()
+    expect(decodePngDataUrl(undefined)).toBeNull()
   })
 })

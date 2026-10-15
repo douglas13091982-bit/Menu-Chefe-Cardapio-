@@ -4,10 +4,21 @@ import { lazy, Suspense } from "react";
 const MenuPage = lazy(() => import("../tratto/saas/MenuPage"));
 
 export const Route = createFileRoute("/$slug")({
-  head: () => ({
+  head: ({ params }) => ({
     meta: [
       { title: "Cardápio digital" },
       { name: "description", content: "Cardápio digital com pedidos pelo WhatsApp." },
+      { name: "mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+    ],
+    links: [
+      // PWA: cada loja tem o próprio manifest e ícone, com endereço real
+      { rel: "manifest", href: `/${encodeURIComponent(params.slug)}/manifest.webmanifest` },
+      { rel: "apple-touch-icon", sizes: "180x180", href: `/${encodeURIComponent(params.slug)}/pwa-icon.png` },
+    ],
+    // O Chrome dispara o evento de instalação logo no carregamento, antes do cardápio montar: guardamos aqui
+    scripts: [
+      { children: "window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();window.__pwaPrompt=e})" },
     ],
   }),
   component: StorePage,
