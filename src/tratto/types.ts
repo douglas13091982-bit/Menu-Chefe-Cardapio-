@@ -17,6 +17,8 @@ export interface Product {
   addOns?: ProductAddOn[]
   /** Dias permitidos para entrega/agendamento: 0=domingo ... 6=sábado. Vazio = sem restrição. */
   deliveryDays?: number[]
+  /** Só no cardápio público: a foto ainda está sendo baixada. */
+  imagePending?: boolean
 }
 
 export interface Category {
