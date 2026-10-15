@@ -13,6 +13,8 @@ function SettingsPanel() {
   const { config, setConfig } = useStore()
   const [formData, setFormData] = useState(config)
   const [saved, setSaved] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [saveFailed, setSaveFailed] = useState(false)
   const [showPasswordChange, setShowPasswordChange] = useState(false)
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -101,15 +103,21 @@ function SettingsPanel() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSaved(false)
+    setSaveFailed(false)
+    setSaving(true)
     // Ícone do app instalável da loja: logo centralizada num PNG quadrado (o servidor só entrega o arquivo pronto)
     let pwaIcon = formData.pwaIcon
     try {
       pwaIcon = (await buildStoreIcon(512, { logoUrl: formData.logoUrl, accent: formData.menuButton || '#d9273f', name: formData.name })) || formData.pwaIcon
     } catch { /* o ícone é um extra: nunca impede de salvar */ }
     const ok = await setConfig({ ...formData, pwaIcon, weeklyHours: getWeeklyHours(formData) })
+    setSaving(false)
     if (ok) {
       setSaved(true)
-      setTimeout(() => setSaved(false), 3000)
+      setTimeout(() => setSaved(false), 4000)
+    } else {
+      setSaveFailed(true)
+      setTimeout(() => setSaveFailed(false), 6000)
     }
   }
 
@@ -162,10 +170,14 @@ function SettingsPanel() {
         <p className="text-gray-500 text-sm">Configure as informações do seu restaurante</p>
       </div>
 
-      {saved && (
-        <div className="bg-green-50 border border-green-200 text-green-700 rounded-lg p-3 flex items-center gap-2">
-          <CheckCircle2 size={18} />
-          <span className="text-sm font-medium">Configurações salvas com sucesso!</span>
+      {/* Aviso fixo no rodapé da tela: aparece mesmo com a página rolada até o botão Salvar */}
+      {(saved || saveFailed) && (
+        <div
+          role="status"
+          className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold text-white shadow-lg ${saved ? 'bg-green-600' : 'bg-red-600'}`}
+        >
+          {saved ? <CheckCircle2 size={18} /> : null}
+          <span>{saved ? 'Configurações salvas com sucesso!' : 'Não foi possível salvar. Tente novamente.'}</span>
         </div>
       )}
 
@@ -615,9 +627,10 @@ function SettingsPanel() {
 
         <button
           type="submit"
-          className="w-full bg-red-500 hover:bg-red-600 text-white py-3 rounded-xl font-bold text-sm transition-all"
+          disabled={saving}
+          className={`w-full text-white py-3 rounded-xl font-bold text-sm transition-all disabled:opacity-70 ${saved ? 'bg-green-600 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600'}`}
         >
-          Salvar Configurações
+          {saving ? 'Salvando…' : saved ? '✓ Salvo!' : 'Salvar Configurações'}
         </button>
       </form>
 
