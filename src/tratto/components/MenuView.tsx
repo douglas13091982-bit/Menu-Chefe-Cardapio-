@@ -1234,7 +1234,7 @@ function MenuView() {
               <p style={{ fontSize: '13px', fontWeight: 600, color: '#374151', margin: '0 0 8px 0' }}>
                 Como deseja receber seu pedido? *
               </p>
-              <div style={{ display: 'grid', gridTemplateColumns: pickupEnabled ? '1fr 1fr' : '1fr', gap: '10px', marginBottom: '14px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: pickupEnabled ? '1fr 1fr' : '1fr', gap: '8px', marginBottom: '10px' }}>
                 {[
                   ...(pickupEnabled ? [{ value: 'pickup' as DeliveryType, title: 'Retirar no local', desc: config.address || 'No endereço da loja' }] : []),
                   { value: 'delivery' as DeliveryType, title: 'Entrega', desc: fixedEnabled && !mapboxEnabled ? 'Taxa por bairro' : (mapboxEnabled && perKm > 0 ? `${fmt(config.deliveryFee)} + ${fmt(perKm)}/km` : `${fmt(config.deliveryFee)} taxa`) },
@@ -1244,8 +1244,8 @@ function MenuView() {
                     type="button"
                     onClick={() => setDeliveryType(opt.value)}
                     style={{
-                      padding: '14px 10px',
-                      borderRadius: '12px',
+                      padding: '7px 8px',
+                      borderRadius: '10px',
                       border: deliveryType === opt.value ? `2px solid ${accent}` : '1px solid #e5e7eb',
                       backgroundColor: deliveryType === opt.value ? accentSoft : 'white',
                       cursor: 'pointer',
@@ -1253,8 +1253,8 @@ function MenuView() {
                     }}
                   >
                     
-                    <span style={{ fontWeight: 600, fontSize: '14px', color: config.menuTitle || '#1f2937', display: 'block' }}>{opt.title}</span>
-                    <span style={{ fontSize: '11px', color: config.menuDescription || '#6b7280' }}>{opt.desc}</span>
+                    <span style={{ fontWeight: 600, fontSize: '13px', color: config.menuTitle || '#1f2937', display: 'block' }}>{opt.title}</span>
+                    <span style={{ fontSize: '10px', lineHeight: 1.25, display: 'block', color: config.menuDescription || '#6b7280' }}>{opt.desc}</span>
                   </button>
                 ))}
               </div>
