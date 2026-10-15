@@ -4,6 +4,7 @@ import { Product, Category, Order, StoreConfig, DeliveryZone } from '../types'
 import { supabase } from '@/integrations/supabase/client'
 import { setDbMapboxToken } from '../mapboxToken'
 import { setCurrentStoreId } from '../tenant'
+import { createOrderAnnouncer, playOrderSound } from '../orderAlerts'
 
 interface StoreContextType {
   // Config
@@ -91,6 +92,7 @@ export function StoreProvider({ children, slug, storeId: storeIdProp, isAdmin = 
   }
   const soundUrlRef = useRef<string | undefined>(undefined)
   soundUrlRef.current = config.orderNotificationSoundUrl
+  const announcerRef = useRef(createOrderAnnouncer())
 
   // 1) Descobre a loja pelo endereço (cardápio público)
   useEffect(() => {
@@ -153,6 +155,12 @@ export function StoreProvider({ children, slug, storeId: storeIdProp, isAdmin = 
   useEffect(() => {
     if (!isAdmin || !sid) { setOrders([]); return }
     let cancelled = false
+    announcerRef.current.reset()
+    // anuncia (som + impressão automática) uma única vez por pedido, venha do Realtime ou da consulta periódica
+    const announce = (order: any) => {
+      playOrderSound(soundUrlRef.current)
+      setLastIncomingOrder(order)
+    }
     const channel = supabase
       .channel('orders-live-' + sid)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `store_id=eq.${sid}` }, payload => {
@@ -162,17 +170,8 @@ export function StoreProvider({ children, slug, storeId: storeIdProp, isAdmin = 
           setOrders(prev => prev.filter(order => order.id !== row.id))
           return
         }
-        if (payload.eventType === 'INSERT' && soundUrlRef.current && typeof window !== 'undefined' && window.localStorage.getItem('tratto_order_sound_enabled') === '1') {
-          try {
-            const notificationAudio = new Audio(soundUrlRef.current)
-            notificationAudio.volume = 1
-            void notificationAudio.play().catch(error => console.warn('Som de novo pedido bloqueado pelo navegador. Ative o som no painel e teste novamente.', error))
-          } catch (error) {
-            console.warn('Não foi possível reproduzir o som de novo pedido.', error)
-          }
-        }
         const order = { ...(row.data || {}), id: row.id, status: row.status }
-        if (payload.eventType === 'INSERT') setLastIncomingOrder(order)
+        if (payload.eventType === 'INSERT' && announcerRef.current.fromRealtime(order)) announce(order)
         setOrders(prev => {
           const exists = prev.some(item => item.id === order.id)
           return exists
@@ -186,7 +185,7 @@ export function StoreProvider({ children, slug, storeId: storeIdProp, isAdmin = 
     const refreshOrders = async () => {
       const { data, error } = await supabase
         .from('orders')
-        .select('data, status')
+        .select('id, data, status')
         .eq('store_id', sid)
         .order('created_at', { ascending: false })
       if (cancelled) return
@@ -194,7 +193,9 @@ export function StoreProvider({ children, slug, storeId: storeIdProp, isAdmin = 
         logError('atualizar pedidos automaticamente', error)
         return
       }
-      const loaded = (data || []).map(r => ({ ...(r.data || {}), status: r.status }))
+      const loaded = (data || []).map(r => ({ ...(r.data || {}), id: r.id, status: r.status }))
+      // Fallback do Realtime: pedidos novos descobertos aqui também tocam o som e disparam a impressão
+      announcerRef.current.fromPoll(loaded).forEach(announce)
       setOrders(prev => {
         const ids = new Set(loaded.map(o => o.id))
         return [...prev.filter(o => !ids.has(o.id)), ...loaded]
@@ -280,6 +281,7 @@ export function StoreProvider({ children, slug, storeId: storeIdProp, isAdmin = 
         }
       }),
     }
+    announcerRef.current.markKnown(o.id) // pedido criado aqui (ex.: lançamento manual) não deve tocar o alerta
     // Só confirma o pedido na interface depois que o banco aceitar a gravação.
     const { error } = await supabase.from('orders').insert({
       store_id: sid, id: o.id, data: persistedOrder, status: 'pending'
