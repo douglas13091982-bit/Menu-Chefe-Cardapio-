@@ -5,6 +5,7 @@ import { loadMarketing, saveMarketing } from '../../marketing'
 function MarketingPanel() {
   const [pixelId, setPixelId] = useState('')
   const [accessToken, setAccessToken] = useState('')
+  const [testEventCode, setTestEventCode] = useState('')
   const [savedPixelId, setSavedPixelId] = useState('')
   const [showToken, setShowToken] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -17,6 +18,7 @@ function MarketingPanel() {
       if (!active) return
       setPixelId(m.pixelId)
       setAccessToken(m.accessToken)
+      setTestEventCode(m.testEventCode)
       setSavedPixelId(m.pixelId)
       setLoaded(true)
     })
@@ -26,7 +28,7 @@ function MarketingPanel() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSaveError('')
-    const data = { pixelId: pixelId.trim(), accessToken: accessToken.trim() }
+    const data = { pixelId: pixelId.trim(), accessToken: accessToken.trim(), testEventCode: testEventCode.trim() }
     const err = await saveMarketing(data)
     if (err) {
       setSaveError('Não foi possível salvar: ' + err)
@@ -110,6 +112,27 @@ function MarketingPanel() {
                 No Gerenciador de Eventos, abra seu Pixel → "Configurações" → "API de Conversões" → "Gerar token de acesso".
               </p>
             </div>
+          </div>
+
+          <div className="mt-5 rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700">
+            <p className="font-semibold text-gray-800">Eventos enviados automaticamente</p>
+            <p className="mt-1 text-xs text-gray-600">
+              PageView (abrir o cardápio), ViewContent (ver um produto), AddToCart (adicionar à sacola), InitiateCheckout (abrir o checkout)
+              e <strong>Purchase (compra)</strong> com o valor total do pedido em R$. A compra também é enviada pelo servidor
+              (API de Conversões) quando o token está preenchido, sem contar em dobro.
+            </p>
+            <label className="mt-3 block text-sm font-medium text-gray-700 mb-1">Código de evento de teste (opcional)</label>
+            <input
+              type="text"
+              value={testEventCode}
+              onChange={e => setTestEventCode(e.target.value.replace(/[^A-Za-z0-9_-]/g, '').slice(0, 30))}
+              className="w-full max-w-xs border rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+              placeholder="Ex: TEST12345"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Para conferir: no Gerenciador de Eventos → "Testar eventos", copie o código, cole aqui e salve. Faça um pedido de teste e veja a compra
+              chegar. Depois de conferir, <strong>apague o código</strong> e salve de novo — com ele preenchido, os eventos do servidor não contam nos anúncios.
+            </p>
           </div>
         </div>
 

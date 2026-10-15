@@ -1,5 +1,6 @@
 // @ts-nocheck -- código original migrado sem alterações de lógica
 import { formatOrderNumber } from '../orderNumber'
+import { trackAddToCart, trackInitiateCheckout, trackViewContent, trackPurchase } from '../marketing'
 import { useState, useRef, useEffect } from 'react'
 import { validateCoupon } from '../coupons'
 import { useStore } from '../context/StoreContext'
@@ -184,6 +185,7 @@ function MenuView() {
   }, [])
 
   const addToCart = (product: Product, addOnIds: string[] = [], incQty = false) => {
+    trackAddToCart(product, 1)
     const chosenAddOns = (product.addOns || []).filter(a => addOnIds.includes(a.id))
     setCart(prev => {
       const keyOf = (item: CartItem) =>
@@ -373,6 +375,7 @@ function MenuView() {
 
   const canContinueCheckoutStep1 = scheduleOk && customerName.trim() !== '' && customerPhone.trim() !== '' && (deliveryType === 'pickup' || (addrStreet.trim() !== '' && customerNumber.trim() !== '' && (!fixedEnabled || !!addrNeighborhood.trim()))) && !(useDistanceFreight && (freight.status === 'idle' || freight.status === 'loading' || freight.status === 'out')) && !fixedOnlyNoMatch
   const openCheckout = () => {
+    trackInitiateCheckout(cart, totalPrice)
     setCheckoutStep(1)
     setShowCart(false)
     setShowCheckout(true)
@@ -417,6 +420,7 @@ function MenuView() {
       placingRef.current = false
       setPlacingOrder(false)
     }
+    void trackPurchase(order, Math.round((order.total + order.deliveryFee - (order.discount || 0)) * 100) / 100)
     setOrderPlaced(order)
     setShowCheckout(false)
     setCart([])
@@ -440,6 +444,7 @@ function MenuView() {
   }
 
   const openProductModal = (product: Product) => {
+    trackViewContent(product)
     setSelectedProduct(product)
     setSelectedAddOns([])
     setShowProductModal(true)
