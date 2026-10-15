@@ -1,3 +1,4 @@
+import { BRAND, BRAND_TAGLINE } from "../tratto/saas/brand";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
@@ -78,14 +79,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Tratto Hamburgueria" },
-      { name: "description", content: "Cardápio digital Tratto Hamburgueria" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Tratto Hamburgueria" },
-      { property: "og:description", content: "Cardápio digital Tratto Hamburgueria" },
+      { title: BRAND },
+      { name: "description", content: BRAND_TAGLINE },
+      { property: "og:title", content: BRAND },
+      { property: "og:description", content: BRAND_TAGLINE },
+      { property: "og:site_name", content: BRAND },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:card", content: "summary" },
     ],
     links: [
       {
