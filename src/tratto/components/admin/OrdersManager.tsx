@@ -1,5 +1,6 @@
 // @ts-nocheck -- código original migrado sem alterações de lógica
 import { formatOrderNumber } from '../../orderNumber'
+import { businessDayStart, isArchived } from '../../orderArchive'
 import { useEffect, useState } from 'react'
 import { Clock3, ChefHat, Truck, CheckCircle2, XCircle, X, Printer } from 'lucide-react'
 import { useStore } from '../../context/StoreContext'
@@ -9,6 +10,27 @@ import { money } from '../../format'
 function OrdersManager() {
   const { orders, updateOrderStatus, config } = useStore()
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [view, setView] = useState<'board' | 'history'>('board')
+  const [limits, setLimits] = useState<Record<string, number>>({})
+  const [query, setQuery] = useState('')
+  const [dateFilter, setDateFilter] = useState('')
+  const [page, setPage] = useState(1)
+  const [now, setNow] = useState(() => new Date())
+  useEffect(() => { const t = window.setInterval(() => setNow(new Date()), 60000); return () => window.clearInterval(t) }, [])
+  // dia da loja = 24 h corridas a partir do horário de abertura; encerrados mais antigos vão para o histórico
+  const dayStart = businessDayStart(config, now)
+  const boardOrders = orders.filter(o => !isArchived(o, dayStart))
+  const archivedOrders = orders.filter(o => isArchived(o, dayStart))
+  const COLUMN_LIMIT = 10
+  const PAGE_SIZE = 20
+  const q = query.trim().toLowerCase()
+  const historyOrders = archivedOrders.filter(o => {
+    if (dateFilter && new Date(o.createdAt).toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' }) !== dateFilter) return false
+    if (!q) return true
+    return [formatOrderNumber(o), o.id, o.customerName, o.customerPhone].some(v => String(v || '').toLowerCase().includes(q))
+  })
+  const pageCount = Math.max(1, Math.ceil(historyOrders.length / PAGE_SIZE))
+  const pageOrders = historyOrders.slice((Math.min(page, pageCount) - 1) * PAGE_SIZE, Math.min(page, pageCount) * PAGE_SIZE)
   const selectedOrder = orders.find(o => o.id === selectedId) || null
   const setSelectedOrder = (o: Order | null) => setSelectedId(o ? o.id : null)
   const pipelineStatuses: Order['status'][] = ['pending', 'preparing', 'delivering', 'completed', 'cancelled']
@@ -58,20 +80,27 @@ function OrdersManager() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-800">Pedidos</h1>
-        <p className="text-gray-500 text-sm">{orders.length} pedidos no total</p>
+        <p className="text-gray-500 text-sm">{boardOrders.length} no quadro · {archivedOrders.length} no histórico</p>
+      </div>
+
+      <div className="inline-flex rounded-lg bg-gray-100 p-1 text-sm font-medium">
+        <button onClick={() => setView('board')} className={`rounded-md px-4 py-1.5 ${view === 'board' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600'}`}>Quadro</button>
+        <button onClick={() => setView('history')} className={`rounded-md px-4 py-1.5 ${view === 'history' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600'}`}>Histórico ({archivedOrders.length})</button>
       </div>
 
       {/* Pipeline: uma coluna por etapa, cards pequenos; clique no card abre os detalhes */}
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-5 md:items-start">
+      {view === 'board' && <div className="grid grid-cols-1 gap-3 md:grid-cols-5 md:items-start">
         {pipelineStatuses.map(status => {
-          const colOrders = orders.filter(o => o.status === status)
+          const allColOrders = boardOrders.filter(o => o.status === status)
+          const limit = limits[status] || COLUMN_LIMIT
+          const colOrders = allColOrders.slice(0, limit)
           return (
             <div key={status} className="rounded-xl bg-gray-50 border border-gray-200 flex flex-col min-w-0">
               <div className="flex items-center justify-between gap-2 px-3 py-2.5 border-b border-gray-200">
                 <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2 py-0.5 text-xs font-semibold ${statusColors[status]}`}>
                   <StatusIcon icon={statusIcons[status]} size={14} /> {statusLabels[status]}
                 </span>
-                <span className="text-xs font-bold text-gray-500">{colOrders.length}</span>
+                <span className="text-xs font-bold text-gray-500">{allColOrders.length}</span>
               </div>
               <div className="space-y-2 p-2 min-h-[80px]">
                 {colOrders.map(order => {
@@ -113,12 +142,65 @@ function OrdersManager() {
                     </div>
                   )
                 })}
-                {colOrders.length === 0 && <p className="py-4 text-center text-xs text-gray-400">Nenhum pedido</p>}
+                {allColOrders.length > colOrders.length && (
+                  <button
+                    onClick={() => setLimits(prev => ({ ...prev, [status]: limit + COLUMN_LIMIT }))}
+                    className="w-full rounded-md border border-gray-200 bg-white py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100"
+                  >
+                    Ver mais ({allColOrders.length - colOrders.length})
+                  </button>
+                )}
+                {allColOrders.length === 0 && <p className="py-4 text-center text-xs text-gray-400">Nenhum pedido</p>}
               </div>
             </div>
           )
         })}
-      </div>
+      </div>}
+
+      {view === 'history' && (
+        <div className="rounded-xl border border-gray-200 bg-white p-4 space-y-3">
+          <p className="text-xs text-gray-500">Pedidos concluídos ou cancelados antes da última abertura da loja. Nada é apagado.</p>
+          <div className="flex flex-wrap gap-2">
+            <input
+              value={query}
+              onChange={e => { setQuery(e.target.value); setPage(1) }}
+              placeholder="Buscar por número, nome ou telefone"
+              className="min-w-[220px] flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm"
+            />
+            <input
+              type="date"
+              value={dateFilter}
+              onChange={e => { setDateFilter(e.target.value); setPage(1) }}
+              className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              aria-label="Filtrar por data"
+            />
+            {(query || dateFilter) && (
+              <button onClick={() => { setQuery(''); setDateFilter(''); setPage(1) }} className="rounded-lg bg-gray-100 px-3 py-2 text-sm text-gray-700">Limpar</button>
+            )}
+          </div>
+          <div className="divide-y divide-gray-100">
+            {pageOrders.map(order => (
+              <button key={order.id} onClick={() => setSelectedId(order.id)} className="flex w-full items-center gap-3 py-2.5 text-left hover:bg-gray-50">
+                <span className="w-16 shrink-0 text-sm font-bold text-gray-800">{formatOrderNumber(order)}</span>
+                <span className="min-w-0 flex-1 truncate text-sm text-gray-700">{order.customerName}</span>
+                <span className="hidden text-xs text-gray-400 sm:block">{new Date(order.createdAt).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</span>
+                <span className="text-sm font-bold text-green-700">{money(order.total + order.deliveryFee - (order.discount || 0))}</span>
+                <span className={`inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2 py-0.5 text-xs font-medium ${statusColors[order.status]}`}>
+                  <StatusIcon icon={statusIcons[order.status]} size={13} /> {statusLabels[order.status]}
+                </span>
+              </button>
+            ))}
+            {pageOrders.length === 0 && <p className="py-8 text-center text-sm text-gray-400">Nenhum pedido no histórico</p>}
+          </div>
+          {pageCount > 1 && (
+            <div className="flex items-center justify-between pt-2 text-sm">
+              <button disabled={page <= 1} onClick={() => setPage(page - 1)} className="rounded-lg bg-gray-100 px-3 py-1.5 disabled:opacity-40">← Anterior</button>
+              <span className="text-gray-500">Página {Math.min(page, pageCount)} de {pageCount}</span>
+              <button disabled={page >= pageCount} onClick={() => setPage(page + 1)} className="rounded-lg bg-gray-100 px-3 py-1.5 disabled:opacity-40">Próxima →</button>
+            </div>
+          )}
+        </div>
+      )}
 
       {printOrder && (
         <div id="order-receipt-print" className="hidden">
