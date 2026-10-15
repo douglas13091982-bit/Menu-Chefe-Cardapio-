@@ -74,14 +74,26 @@ export function PanelShell({ store, status, isSuper, contact, plan, onLogout }) 
       </header>
       <div className="pt-16">
         {(() => {
+          // Aviso no topo do painel a partir de 1 dia antes do vencimento (teste ou assinatura)
           const end = status === "trial" ? store.trial_ends_at : status === "active" ? store.paid_until : null;
-          if (!end || daysLeft(end) > 3) return null;
-          const d = Math.max(0, daysLeft(end));
+          if (!end) return null;
+          // diferença em dias de calendário (Brasília): véspera do vencimento já mostra o aviso
+          const dia = (d) => Date.parse(new Date(d).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" }));
+          const diff = Math.round((dia(end) - dia(new Date())) / 86400000);
+          if (diff > 1) return null;
+          const hoje = diff <= 0;
           return (
-            <div className="bg-amber-50 border-b border-amber-200 text-amber-800 text-sm px-4 py-2 text-center">
-              {status === "trial" ? "Seu teste termina" : "Sua assinatura vence"} em {d} dia(s).{" "}
-              <button type="button" className="underline font-semibold" onClick={() => setPayOpen(true)}>
-                {status === "trial" ? "Assinar agora" : "Renovar agora"}
+            <div role="alert" className="bg-amber-100 border-b border-amber-300 text-amber-900 px-4 py-2.5 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm">
+              <span className="font-medium">
+                ⚠️ {status === "trial" ? "Seu teste termina" : "Sua assinatura vence"} {hoje ? "hoje" : "amanhã"} ({fmtDate(end)}).
+                {" "}Pague para o cardápio não sair do ar.
+              </span>
+              <button
+                type="button"
+                onClick={() => setPayOpen(true)}
+                className="rounded-lg bg-[#d9273f] px-4 py-1.5 text-sm font-bold text-white shadow-sm hover:bg-[#b81f33] whitespace-nowrap"
+              >
+                Pagar agora
               </button>
             </div>
           );
