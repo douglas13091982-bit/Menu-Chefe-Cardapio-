@@ -8,7 +8,7 @@ import { Order } from '../../types'
 import { money } from '../../format'
 
 function OrdersManager() {
-  const { orders, updateOrderStatus, config } = useStore()
+  const { orders, updateOrderStatus, deleteOrder, config } = useStore()
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [view, setView] = useState<'board' | 'history'>('board')
   const [limits, setLimits] = useState<Record<string, number>>({})
@@ -21,6 +21,10 @@ function OrdersManager() {
   const dayStart = businessDayStart(config, now)
   const boardOrders = orders.filter(o => !isArchived(o, dayStart))
   const archivedOrders = orders.filter(o => isArchived(o, dayStart))
+  const removeOrder = async (order: Order) => {
+    if (!window.confirm(`Excluir o pedido ${formatOrderNumber(order)} de ${order.customerName || 'cliente'}? Essa ação não pode ser desfeita.`)) return
+    if (await deleteOrder(order.id)) setSelectedId(prev => (prev === order.id ? null : prev))
+  }
   const COLUMN_LIMIT = 10
   const PAGE_SIZE = 20
   const q = query.trim().toLowerCase()
@@ -117,7 +121,18 @@ function OrdersManager() {
                     >
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-sm font-bold text-gray-800">{formatOrderNumber(order)}</span>
-                        <span className="text-xs text-gray-400">{new Date(order.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+                        <span className="flex items-center gap-1.5">
+                          <span className="text-xs text-gray-400">{new Date(order.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+                          <button
+                            type="button"
+                            title="Excluir pedido"
+                            aria-label={`Excluir pedido ${formatOrderNumber(order)}`}
+                            onClick={e => { e.stopPropagation(); void removeOrder(order) }}
+                            className="flex h-5 w-5 items-center justify-center rounded-full text-gray-400 hover:bg-red-100 hover:text-red-600"
+                          >
+                            <X size={13} />
+                          </button>
+                        </span>
                       </div>
                       <p className="mt-1 truncate text-sm text-gray-700">{order.customerName}</p>
                       <div className="mt-1 flex items-center justify-between gap-2">
@@ -363,6 +378,12 @@ function OrdersManager() {
                   className="inline-flex items-center justify-center gap-1.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2.5 rounded-lg text-sm"
                 >
                   <Printer size={16} /> Imprimir
+                </button>
+                <button
+                  onClick={() => void removeOrder(selectedOrder)}
+                  className="bg-white border border-red-200 hover:bg-red-50 text-red-600 px-4 py-2.5 rounded-lg text-sm"
+                >
+                  Excluir
                 </button>
                 {selectedOrder.status !== 'completed' && selectedOrder.status !== 'cancelled' && (
                   <button

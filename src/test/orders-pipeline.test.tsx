@@ -2,13 +2,14 @@ import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 
 const update = vi.fn()
+const del = vi.fn(async () => true)
 const mk = (id: string, status: string, number: number, extra = {}) => ({
   id, number, status, items: [{ product: { name: 'Pizza', price: 50 }, quantity: 1 }], total: 50, deliveryFee: 5,
   customerName: 'Douglas ' + id, customerPhone: '4799', customerAddress: 'Rua A', createdAt: '2026-10-14T23:27:00Z', updatedAt: '', ...extra,
 })
 vi.mock('../tratto/context/StoreContext', () => ({
   useStore: () => ({
-    config: { name: 'Loja' }, updateOrderStatus: update,
+    config: { name: 'Loja' }, updateOrderStatus: update, deleteOrder: del,
     orders: [mk('a', 'pending', 1), mk('b', 'preparing', 2, { scheduledDate: '2026-10-15', scheduledTime: '18:30' }), mk('c', 'cancelled', 3), mk('old', 'completed', 9, { createdAt: '2020-01-01T12:00:00Z', updatedAt: '2020-01-01T13:00:00Z', customerName: 'Maria Antiga' }), mk('stuck', 'pending', 8, { createdAt: '2020-01-01T12:00:00Z', updatedAt: '2020-01-01T12:00:00Z' })],
   }),
 }))
@@ -42,5 +43,16 @@ describe('Pedidos em pipeline', () => {
     fireEvent.change(screen.getByPlaceholderText(/Buscar/), { target: { value: 'maria' } })
     fireEvent.click(screen.getByText('#0009'))
     expect(screen.getByText('Itens do pedido')).toBeTruthy()
+  })
+  it('o X do card exclui o pedido só depois de confirmar', () => {
+    const confirm = vi.spyOn(window, 'confirm')
+    render(<OrdersManager />)
+    confirm.mockReturnValueOnce(false)
+    fireEvent.click(screen.getByLabelText('Excluir pedido #0001'))
+    expect(del).not.toHaveBeenCalled()
+    confirm.mockReturnValueOnce(true)
+    fireEvent.click(screen.getByLabelText('Excluir pedido #0001'))
+    expect(del).toHaveBeenCalledWith('a')
+    expect(screen.queryByText('Itens do pedido')).toBeNull()
   })
 })

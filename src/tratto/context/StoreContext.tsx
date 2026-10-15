@@ -25,6 +25,7 @@ interface StoreContextType {
   lastIncomingOrder: Order | null
   addOrder: (order: Order) => Promise<boolean>
   updateOrderStatus: (id: string, status: Order['status']) => void
+  deleteOrder: (id: string) => Promise<boolean>
   // Delivery
   deliveryZones: DeliveryZone[]
   addDeliveryZone: (zone: DeliveryZone) => void
@@ -299,6 +300,18 @@ export function StoreProvider({ children, slug, storeId: storeIdProp, isAdmin = 
     setOrders(prev => (prev.some(x => x.id === o.id) ? prev.map(x => x.id === o.id ? { ...x, ...saved } : x) : [saved, ...prev]))
     return true
   }
+  // Exclui o pedido de vez (útil para pedidos de teste). Só some da tela depois que o banco confirmar.
+  const deleteOrder = async (id: string): Promise<boolean> => {
+    if (!sid) return false
+    const { data, error } = await supabase.from('orders').delete().eq('store_id', sid).eq('id', id).select('id')
+    if (error) { notifyError('excluir pedido', error); return false }
+    if (!data || data.length === 0) {
+      notifyError('excluir pedido', { code: '42501', message: 'apenas o responsável pela loja pode excluir pedidos' })
+      return false
+    }
+    setOrders(prev => prev.filter(o => o.id !== id))
+    return true
+  }
   const updateOrderStatus = (id: string, status: Order['status']) => {
     const updatedAt = new Date().toISOString()
     let updated: Order | undefined
@@ -329,7 +342,7 @@ export function StoreProvider({ children, slug, storeId: storeIdProp, isAdmin = 
       config, setConfig,
       products, addProduct, updateProduct, deleteProduct,
       categories, addCategory, updateCategory, deleteCategory,
-      orders, lastIncomingOrder, addOrder, updateOrderStatus,
+      orders, lastIncomingOrder, addOrder, updateOrderStatus, deleteOrder,
       deliveryZones, addDeliveryZone, updateDeliveryZone, deleteDeliveryZone,
       storeId: sid, storeName: storeName || config.name, storeState, dataReady
     }}>
