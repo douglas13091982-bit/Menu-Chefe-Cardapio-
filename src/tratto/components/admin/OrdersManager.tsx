@@ -8,8 +8,10 @@ import { money } from '../../format'
 
 function OrdersManager() {
   const { orders, updateOrderStatus, config } = useStore()
-  const [filterStatus, setFilterStatus] = useState<string>('')
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const selectedOrder = orders.find(o => o.id === selectedId) || null
+  const setSelectedOrder = (o: Order | null) => setSelectedId(o ? o.id : null)
+  const pipelineStatuses: Order['status'][] = ['pending', 'preparing', 'delivering', 'completed', 'cancelled']
   const [printOrder, setPrintOrder] = useState<Order | null>(null)
 
   useEffect(() => {
@@ -19,8 +21,6 @@ function OrdersManager() {
     window.addEventListener('afterprint', afterPrint)
     return () => { window.clearTimeout(timer); window.removeEventListener('afterprint', afterPrint) }
   }, [printOrder])
-
-  const filteredOrders = orders.filter(o => !filterStatus || o.status === filterStatus)
 
   const statusFlow: Order['status'][] = ['pending', 'preparing', 'delivering', 'completed']
 
@@ -54,14 +54,6 @@ function OrdersManager() {
     cancelled: XCircle,
   }
 
-  const counts = {
-    pending: orders.filter(o => o.status === 'pending').length,
-    preparing: orders.filter(o => o.status === 'preparing').length,
-    delivering: orders.filter(o => o.status === 'delivering').length,
-    completed: orders.filter(o => o.status === 'completed').length,
-    cancelled: orders.filter(o => o.status === 'cancelled').length,
-  }
-
   return (
     <div className="space-y-6">
       <div>
@@ -69,141 +61,64 @@ function OrdersManager() {
         <p className="text-gray-500 text-sm">{orders.length} pedidos no total</p>
       </div>
 
-      {/* Status Summary */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        {Object.entries(counts).map(([status, count]) => (
-          <button
-            key={status}
-            onClick={() => setFilterStatus(filterStatus === status ? '' : status)}
-            className={`rounded-xl border p-3 text-center transition-all ${
-              filterStatus === status ? 'ring-2 ring-red-500 border-red-300' : 'border-gray-200'
-            } bg-white hover:shadow-sm`}
-          >
-            <span className="mx-auto mb-1 flex h-8 w-8 items-center justify-center rounded-lg bg-[#fff0f2] text-[#d9273f]"><StatusIcon icon={statusIcons[status]} /></span>
-            <p className="text-lg font-bold text-gray-800 mt-1">{count}</p>
-            <p className="text-xs text-gray-500">{statusLabels[status]}</p>
-          </button>
-        ))}
-      </div>
-
-      {/* Filter */}
-      <div className="flex gap-2 overflow-x-auto pb-1">
-        <button
-          onClick={() => setFilterStatus('')}
-          className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap ${
-            !filterStatus ? 'bg-red-500 text-white' : 'bg-gray-100 text-gray-700'
-          }`}
-        >
-          Todos
-        </button>
-        {Object.entries(statusLabels).map(([key, label]) => (
-          <button
-            key={key}
-            onClick={() => setFilterStatus(key)}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap ${
-              filterStatus === key ? 'bg-red-500 text-white' : 'bg-gray-100 text-gray-700'
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-
-      {/* Orders List */}
-      <div className="space-y-3">
-        {filteredOrders.map(order => (
-          <div key={order.id} className="bg-white rounded-xl shadow-sm p-4">
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-2">
-                  <span className="font-bold text-gray-800">{formatOrderNumber(order)}</span>
-                  {(order.source === 'manual' || order.orderType === 'balcao') && <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-semibold text-gray-600">Balcão</span>}
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${statusColors[order.status]}`}>
-                    <StatusIcon icon={statusIcons[order.status]} /> {statusLabels[order.status]}
-                  </span>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm">
-                  <div>
-                    <p className="text-gray-500 text-xs">Cliente</p>
-                    <p className="font-medium text-gray-800">{order.customerName}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500 text-xs">Telefone</p>
-                    <p className="font-medium text-gray-800">{order.customerPhone}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500 text-xs">Total</p>
-                    <p className="font-bold text-green-700">{money(order.total + order.deliveryFee - (order.discount || 0))}</p>
-                  </div>
-                </div>
-                {(order.deliveryType || order.paymentMethod) && (
-                  <div className="mt-2 flex flex-wrap gap-2 text-xs">
-                    {order.scheduledDate && (
-                      <span className="px-2 py-1 rounded-full font-bold bg-purple-100 text-purple-800">
-                        🗓️ Agendado: {order.scheduledDate.split('-').reverse().slice(0, 2).join('/')} {order.scheduledTime}
-                      </span>
-                    )}
-                    {order.deliveryType && (
-                      <span className={`px-2 py-1 rounded-full font-medium ${order.deliveryType === 'pickup' ? 'bg-blue-50 text-blue-700' : 'bg-amber-50 text-amber-700'}`}>
-                        {order.deliveryType === 'pickup' ? 'Retirada no local' : 'Entrega'}
-                      </span>
-                    )}
-                    {order.paymentMethod && (
-                      <span className="px-2 py-1 rounded-full font-medium bg-emerald-50 text-emerald-700">
-                        {order.paymentMethod === 'card' ? 'Cartão' : order.paymentMethod === 'pix' ? 'PIX' : 'Dinheiro'}
-                        {order.changeFor ? ` (troco p/ ${money(order.changeFor)})` : ''}
-                      </span>
-                    )}
-                  </div>
-                )}
-                <div className="mt-2">
-                  <p className="text-gray-500 text-xs">Itens: {order.items.map(i => `${i.quantity}x ${i.product.name}`).join(', ')}</p>
-                </div>
-                <p className="text-xs text-gray-400 mt-1">
-                  {new Date(order.createdAt).toLocaleString('pt-BR')}
-                </p>
+      {/* Pipeline: uma coluna por etapa, cards pequenos; clique no card abre os detalhes */}
+      <div className="flex gap-3 overflow-x-auto pb-2 md:grid md:grid-cols-5 md:overflow-visible">
+        {pipelineStatuses.map(status => {
+          const colOrders = orders.filter(o => o.status === status)
+          return (
+            <div key={status} className="min-w-[230px] flex-1 rounded-xl bg-gray-50 border border-gray-200 flex flex-col md:min-w-0">
+              <div className="flex items-center justify-between gap-2 px-3 py-2.5 border-b border-gray-200">
+                <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2 py-0.5 text-xs font-semibold ${statusColors[status]}`}>
+                  <StatusIcon icon={statusIcons[status]} size={14} /> {statusLabels[status]}
+                </span>
+                <span className="text-xs font-bold text-gray-500">{colOrders.length}</span>
               </div>
-              <div className="flex flex-col gap-2">
-                <button
-                  onClick={() => setPrintOrder(order)}
-                  className="inline-flex items-center justify-center gap-1.5 text-xs bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-3 py-1.5 rounded-lg"
-                >
-                  <Printer size={14} /> Imprimir
-                </button>
-                <button
-                  onClick={() => setSelectedOrder(order)}
-                  className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg"
-                >
-                  Detalhes
-                </button>
-                {getNextStatus(order.status) && (
-                  <button
-                    onClick={() => updateOrderStatus(order.id, getNextStatus(order.status)!)}
-                    className="text-xs bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded-lg font-medium"
-                  >
-                    Avançar →
-                  </button>
-                )}
-                {order.status !== 'completed' && order.status !== 'cancelled' && (
-                  <button
-                    onClick={() => updateOrderStatus(order.id, 'cancelled')}
-                    className="text-xs bg-red-50 hover:bg-red-100 text-red-600 px-3 py-1.5 rounded-lg"
-                  >
-                    Cancelar
-                  </button>
-                )}
+              <div className="space-y-2 p-2 overflow-y-auto max-h-[70vh] min-h-[80px]">
+                {colOrders.map(order => {
+                  const next = getNextStatus(order.status)
+                  const total = order.total + order.deliveryFee - (order.discount || 0)
+                  return (
+                    <div
+                      key={order.id}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => setSelectedId(order.id)}
+                      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedId(order.id) } }}
+                      className="cursor-pointer rounded-lg border border-gray-200 bg-white p-2.5 shadow-sm transition hover:border-red-300 hover:shadow"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-sm font-bold text-gray-800">{formatOrderNumber(order)}</span>
+                        <span className="text-xs text-gray-400">{new Date(order.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+                      </div>
+                      <p className="mt-1 truncate text-sm text-gray-700">{order.customerName}</p>
+                      <div className="mt-1 flex items-center justify-between gap-2">
+                        <span className="text-sm font-bold text-green-700">{money(total)}</span>
+                        <span className="text-[11px] text-gray-500 whitespace-nowrap">
+                          {order.deliveryType === 'pickup' ? 'Retirada' : order.deliveryType === 'delivery' ? 'Entrega' : ''}
+                        </span>
+                      </div>
+                      {order.scheduledDate && (
+                        <p className="mt-1.5 inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-purple-100 px-2 py-0.5 text-[11px] font-bold text-purple-800">
+                          🗓️ {order.scheduledDate.split('-').reverse().slice(0, 2).join('/')} {order.scheduledTime}
+                        </p>
+                      )}
+                      {next && (
+                        <button
+                          onClick={e => { e.stopPropagation(); updateOrderStatus(order.id, next) }}
+                          className="mt-2 w-full rounded-md bg-green-500 py-1 text-xs font-medium text-white hover:bg-green-600"
+                        >
+                          Avançar →
+                        </button>
+                      )}
+                    </div>
+                  )
+                })}
+                {colOrders.length === 0 && <p className="py-4 text-center text-xs text-gray-400">Nenhum pedido</p>}
               </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
-
-      {filteredOrders.length === 0 && (
-        <div className="text-center py-12 text-gray-400">
-          
-          <p>Nenhum pedido encontrado</p>
-        </div>
-      )}
 
       {printOrder && (
         <div id="order-receipt-print" className="hidden">
@@ -269,14 +184,14 @@ function OrdersManager() {
       {selectedOrder && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/50" onClick={() => setSelectedOrder(null)}></div>
-          <div className="relative bg-white rounded-2xl w-full max-w-md max-h-[80vh] overflow-y-auto">
+          <div className="relative bg-white rounded-2xl w-full max-w-md max-h-[92vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-xl font-bold text-gray-800">Pedido {formatOrderNumber(selectedOrder)}</h3>
-                <button onClick={() => setSelectedOrder(null)} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200"></button>
+                <button onClick={() => setSelectedOrder(null)} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200" aria-label="Fechar"><X size={16} /></button>
               </div>
 
-              <div className={`inline-block px-3 py-1 rounded-full text-sm font-medium border mb-4 ${statusColors[selectedOrder.status]}`}>
+              <div className={`inline-flex items-center gap-1.5 whitespace-nowrap px-3 py-1 rounded-full text-sm font-medium border mb-4 ${statusColors[selectedOrder.status]}`}>
                 <StatusIcon icon={statusIcons[selectedOrder.status]} /> {statusLabels[selectedOrder.status]}
               </div>
 
@@ -352,16 +267,27 @@ function OrdersManager() {
                 </div>
               </div>
 
-              <div className="flex gap-2 mt-4">
+              <div className="flex flex-wrap gap-2 mt-4">
                 {getNextStatus(selectedOrder.status) && (
                   <button
-                    onClick={() => {
-                      updateOrderStatus(selectedOrder.id, getNextStatus(selectedOrder.status)!)
-                      setSelectedOrder({ ...selectedOrder, status: getNextStatus(selectedOrder.status)! })
-                    }}
-                    className="flex-1 bg-green-500 hover:bg-green-600 text-white py-2.5 rounded-lg font-medium text-sm"
+                    onClick={() => updateOrderStatus(selectedOrder.id, getNextStatus(selectedOrder.status)!)}
+                    className="flex-1 min-w-[150px] bg-green-500 hover:bg-green-600 text-white py-2.5 rounded-lg font-medium text-sm"
                   >
                     Avançar para {statusLabels[getNextStatus(selectedOrder.status)!]}
+                  </button>
+                )}
+                <button
+                  onClick={() => setPrintOrder(selectedOrder)}
+                  className="inline-flex items-center justify-center gap-1.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2.5 rounded-lg text-sm"
+                >
+                  <Printer size={16} /> Imprimir
+                </button>
+                {selectedOrder.status !== 'completed' && selectedOrder.status !== 'cancelled' && (
+                  <button
+                    onClick={() => { if (window.confirm('Cancelar este pedido?')) updateOrderStatus(selectedOrder.id, 'cancelled') }}
+                    className="bg-red-50 hover:bg-red-100 text-red-600 px-4 py-2.5 rounded-lg text-sm"
+                  >
+                    Cancelar pedido
                   </button>
                 )}
               </div>
@@ -373,8 +299,8 @@ function OrdersManager() {
   )
 }
 
-function StatusIcon({ icon: Icon }: { icon: any }) {
-  return <Icon size={16} strokeWidth={1.9} aria-hidden="true" />
+function StatusIcon({ icon: Icon, size = 16 }: { icon: any; size?: number }) {
+  return <Icon size={size} strokeWidth={1.9} aria-hidden="true" className="shrink-0" />
 }
 
 export default OrdersManager
