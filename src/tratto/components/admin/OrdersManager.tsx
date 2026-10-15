@@ -62,18 +62,18 @@ function OrdersManager() {
       </div>
 
       {/* Pipeline: uma coluna por etapa, cards pequenos; clique no card abre os detalhes */}
-      <div className="flex gap-3 overflow-x-auto pb-2 md:grid md:grid-cols-5 md:overflow-visible">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-5 md:items-start">
         {pipelineStatuses.map(status => {
           const colOrders = orders.filter(o => o.status === status)
           return (
-            <div key={status} className="min-w-[230px] flex-1 rounded-xl bg-gray-50 border border-gray-200 flex flex-col md:min-w-0">
+            <div key={status} className="rounded-xl bg-gray-50 border border-gray-200 flex flex-col min-w-0">
               <div className="flex items-center justify-between gap-2 px-3 py-2.5 border-b border-gray-200">
                 <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2 py-0.5 text-xs font-semibold ${statusColors[status]}`}>
                   <StatusIcon icon={statusIcons[status]} size={14} /> {statusLabels[status]}
                 </span>
                 <span className="text-xs font-bold text-gray-500">{colOrders.length}</span>
               </div>
-              <div className="space-y-2 p-2 overflow-y-auto max-h-[70vh] min-h-[80px]">
+              <div className="space-y-2 p-2 min-h-[80px]">
                 {colOrders.map(order => {
                   const next = getNextStatus(order.status)
                   const total = order.total + order.deliveryFee - (order.discount || 0)
