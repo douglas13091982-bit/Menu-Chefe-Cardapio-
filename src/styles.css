@@ -2115,3 +2115,21 @@ main .rounded-2xl {
 #lovable-badge {
   display: none !important;
 }
+
+/* Caixas de seleção e botões de rádio sempre do mesmo tamanho (as regras de `main input` e dos modais
+   esticavam a largura/altura e o flex as encolhia). Os seletores "sr-only" (toggles) ficam de fora. */
+input[type="checkbox"]:not(.sr-only),
+input[type="radio"]:not(.sr-only),
+main input[type="checkbox"]:not(.sr-only),
+main input[type="radio"]:not(.sr-only),
+.fixed.inset-0.z-50 input[type="checkbox"]:not(.sr-only),
+.fixed.inset-0.z-50 input[type="radio"]:not(.sr-only) {
+  width: 1.1rem !important;
+  height: 1.1rem !important;
+  min-width: 1.1rem;
+  min-height: 0 !important;
+  flex: 0 0 auto;
+  padding: 0;
+  accent-color: #d9273f;
+  cursor: pointer;
+}
