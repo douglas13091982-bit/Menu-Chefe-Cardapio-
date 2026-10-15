@@ -88,6 +88,8 @@ export interface StoreConfig {
   schedulingSlotMinutes?: number
   schedulingLeadMinutes?: number
   coupons?: Coupon[]
+  /** Ícone do app da loja (PNG 512x512 em data URL), gerado no painel ao salvar as configurações. */
+  pwaIcon?: string
   isOpen: boolean
 }
 

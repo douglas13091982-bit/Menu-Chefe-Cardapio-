@@ -19,18 +19,12 @@ function Inner({ slug }) {
     if (dataReady && storeConfig.name) document.title = `${storeConfig.name} - Cardápio`
   }, [dataReady, storeConfig.name])
 
-  // PWA da loja: nome, logo e cores do painel viram o app instalável deste cardápio
+  // PWA da loja: cor da barra do celular e nome do app (manifest e ícone vêm do servidor)
   const pwaReady = storeState === 'ready' && dataReady
   useEffect(() => {
     if (!pwaReady || !slug) return
-    return applyStorePwa({
-      slug,
-      name: storeConfig.name || '',
-      logoUrl: storeConfig.logoUrl,
-      themeColor: storeConfig.menuButton,
-      backgroundColor: storeConfig.menuBackground,
-    })
-  }, [pwaReady, slug, storeConfig.name, storeConfig.logoUrl, storeConfig.menuButton, storeConfig.menuBackground])
+    return applyStorePwa({ slug, name: storeConfig.name || '', themeColor: storeConfig.menuButton })
+  }, [pwaReady, slug, storeConfig.name, storeConfig.menuButton])
 
   if (storeState === 'notfound') {
     return (

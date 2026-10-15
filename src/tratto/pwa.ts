@@ -8,12 +8,20 @@ export const DEFAULT_THEME = '#d9273f'
 
 // ---------- Funções puras (testáveis) ----------
 
-/** Nome curto para o ícone na tela inicial (o Android corta por volta de 12 caracteres). */
+/** Nome curto para o ícone da tela inicial. Nunca corta palavra no meio (o Android abrevia com "…" sozinho). */
 export function pwaShortName(name: string): string {
   const n = (name || '').trim() || 'Cardápio'
   if (n.length <= 12) return n
   const first = n.split(/\s+/)[0] || ''
-  return first.length >= 3 && first.length <= 12 ? first : n.slice(0, 12).trim()
+  // várias palavras: usa a primeira se couber; uma palavra só (ou longa demais): mantém o nome inteiro
+  return first.length >= 3 && first.length <= 12 ? first : n
+}
+
+/** Hash curto e estável de um texto (versiona o ícone na URL para furar o cache quando ele muda). */
+export function hashString(value: string): string {
+  let h = 5381
+  for (let i = 0; i < value.length; i++) h = ((h << 5) + h + value.charCodeAt(i)) | 0
+  return (h >>> 0).toString(36)
 }
 
 /** Aceita #rgb ou #rrggbb; qualquer outra coisa vira o padrão. */
@@ -44,8 +52,8 @@ export interface ManifestInput {
   slug: string
   name: string
   origin: string
-  themeColor?: string
-  backgroundColor?: string
+  themeColor?: string | undefined
+  backgroundColor?: string | undefined
   icons: ManifestIcon[]
 }
 
@@ -145,59 +153,21 @@ function meta(name: string, content: string) {
 export interface StorePwaInput {
   slug: string
   name: string
-  logoUrl?: string
   themeColor?: string
-  backgroundColor?: string
 }
 
-/** Liga o PWA da loja na página atual. Retorna a função que desfaz tudo (ao sair do cardápio). */
+/**
+ * Ajusta o <head> do cardápio da loja: cor da barra do celular e nome do app no iPhone.
+ * O manifest e o ícone vêm do servidor (/slug/manifest.webmanifest e /slug/pwa-icon.png),
+ * porque o Android só instala como app de verdade quando eles têm endereço real.
+ * Retorna a função que desfaz tudo (ao sair do cardápio).
+ */
 export function applyStorePwa(input: StorePwaInput): () => void {
   if (typeof document === 'undefined') return () => {}
-  let cancelled = false
-  let blobUrl = ''
-  const theme = safeHex(input.themeColor)
-  const shortName = pwaShortName(input.name)
-
-  meta('theme-color', theme)
-  meta('mobile-web-app-capable', 'yes')
-  meta('apple-mobile-web-app-capable', 'yes')
-  meta('apple-mobile-web-app-title', shortName)
-  meta('apple-mobile-web-app-status-bar-style', 'default')
-
-  ;(async () => {
-    const [i180, i192, i512] = await Promise.all(
-      [180, 192, 512].map(size => buildStoreIcon(size, { logoUrl: input.logoUrl, accent: theme, name: input.name })),
-    )
-    if (cancelled || !i192 || !i512) return
-    if (i180) {
-      const apple = document.createElement('link')
-      apple.rel = 'apple-touch-icon'
-      apple.setAttribute('sizes', '180x180')
-      apple.href = i180
-      setTag(apple)
-    }
-    const manifest = buildManifest({
-      slug: input.slug,
-      name: input.name,
-      origin: window.location.origin,
-      themeColor: theme,
-      backgroundColor: input.backgroundColor,
-      icons: [
-        { src: i192, sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
-        { src: i512, sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
-      ],
-    })
-    blobUrl = URL.createObjectURL(new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' }))
-    const link = document.createElement('link')
-    link.rel = 'manifest'
-    link.href = blobUrl
-    setTag(link)
-  })().catch(() => { /* PWA é um extra: nunca pode quebrar o cardápio */ })
-
+  meta('theme-color', safeHex(input.themeColor))
+  meta('apple-mobile-web-app-title', pwaShortName(input.name))
   return () => {
-    cancelled = true
     document.head.querySelectorAll(`[${TAG}]`).forEach(el => el.remove())
-    if (blobUrl) URL.revokeObjectURL(blobUrl)
   }
 }
 
@@ -205,7 +175,10 @@ export function applyStorePwa(input: StorePwaInput): () => void {
 
 type InstallPromptEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> }
 
-let deferredPrompt: InstallPromptEvent | null = null
+// O Chrome dispara 'beforeinstallprompt' logo após carregar a página, possivelmente antes deste módulo existir.
+// O <head> da rota guarda o evento em window.__pwaPrompt; aqui pegamos esse e escutamos os próximos.
+let deferredPrompt: InstallPromptEvent | null =
+  typeof window !== 'undefined' ? ((window as any).__pwaPrompt as InstallPromptEvent | undefined) ?? null : null
 let installed = false
 const listeners = new Set<() => void>()
 const notify = () => listeners.forEach(fn => fn())
@@ -219,6 +192,7 @@ if (typeof window !== 'undefined') {
   window.addEventListener('appinstalled', () => {
     installed = true
     deferredPrompt = null
+    ;(window as any).__pwaPrompt = null
     notify()
   })
 }
