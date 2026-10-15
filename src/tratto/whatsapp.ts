@@ -1,4 +1,5 @@
 // Envio do pedido para o WhatsApp da loja (link wa.me com a mensagem pronta)
+import { formatOrderNumber } from './orderNumber'
 import type { Order, StoreConfig, CartItem, PaymentMethod } from './types'
 import { money } from './format'
 
@@ -22,7 +23,7 @@ export function storeWhatsAppNumber(phone: string): string {
 
 export function buildOrderMessage(order: Order, config: StoreConfig): string {
   const lines: string[] = []
-  lines.push(`*Novo pedido ${order.id}* - ${config.name}`)
+  lines.push(`*Novo pedido ${formatOrderNumber(order)}* - ${config.name}`)
   lines.push('')
   lines.push(`*Cliente:* ${order.customerName}`)
   lines.push(`*Telefone:* ${order.customerPhone}`)

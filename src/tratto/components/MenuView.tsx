@@ -1,4 +1,5 @@
 // @ts-nocheck -- código original migrado sem alterações de lógica
+import { formatOrderNumber } from '../orderNumber'
 import { useState, useRef, useEffect } from 'react'
 import { validateCoupon } from '../coupons'
 import { useStore } from '../context/StoreContext'
@@ -1601,7 +1602,7 @@ function MenuView() {
               Pedido enviado!
             </h3>
             <p style={{ color: config.menuDescription || '#6b7280', fontSize: '14px', margin: '0 0 16px' }}>
-              Seu pedido <strong>{orderPlaced.id}</strong> foi registrado.
+              Seu pedido <strong>{formatOrderNumber(orderPlaced)}</strong> foi registrado.
               {whatsappUrl ? ' Toque no botão abaixo para enviá-lo à loja pelo WhatsApp.' : ''}
             </p>
             <div style={{ backgroundColor: '#f9fafb', borderRadius: '12px', padding: '14px', textAlign: 'left', marginBottom: '18px' }}>

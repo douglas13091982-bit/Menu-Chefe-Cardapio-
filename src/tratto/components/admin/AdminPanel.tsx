@@ -1,4 +1,5 @@
 // @ts-nocheck -- código original migrado sem alterações de lógica
+import { formatOrderNumber } from '../../orderNumber'
 import { useEffect, useRef, useState } from "react";
 import {
   LayoutDashboard,
@@ -195,7 +196,7 @@ function AdminPanel() {
             {config.phone && <div>Telefone: {config.phone}</div>}
             <div className="auto-receipt-line" />
             <strong>COMPROVANTE DE VENDA</strong>
-            <div>Pedido: {autoPrintOrder.id}</div>
+            <div>Pedido: {formatOrderNumber(autoPrintOrder)}</div>
             <div>{new Date(autoPrintOrder.createdAt || Date.now()).toLocaleString("pt-BR")}</div>
           </div>
           <div className="auto-receipt-line" />

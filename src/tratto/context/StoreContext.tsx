@@ -23,7 +23,7 @@ interface StoreContextType {
   // Orders
   orders: Order[]
   lastIncomingOrder: Order | null
-  addOrder: (order: Order) => void
+  addOrder: (order: Order) => Promise<boolean>
   updateOrderStatus: (id: string, status: Order['status']) => void
   // Delivery
   deliveryZones: DeliveryZone[]
@@ -290,7 +290,13 @@ export function StoreProvider({ children, slug, storeId: storeIdProp, isAdmin = 
       notifyError('enviar pedido', error)
       return false
     }
-    setOrders(prev => (prev.some(x => x.id === o.id) ? prev : [o, ...prev]))
+    // O banco dá o número sequencial ao gravar; busca para mostrar ao cliente/painel.
+    try {
+      const { data: num } = await supabase.rpc('get_order_number', { _store_id: sid, _order_id: o.id })
+      if (typeof num === 'number' && num > 0) o.number = num
+    } catch { /* sem número: mostra o código antigo */ }
+    const saved = o.number ? { ...o, number: o.number } : o
+    setOrders(prev => (prev.some(x => x.id === o.id) ? prev.map(x => x.id === o.id ? { ...x, ...saved } : x) : [saved, ...prev]))
     return true
   }
   const updateOrderStatus = (id: string, status: Order['status']) => {

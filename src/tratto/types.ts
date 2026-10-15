@@ -38,6 +38,8 @@ export type PaymentMethod = 'card' | 'pix' | 'cash'
 
 export interface Order {
   id: string
+  /** Número sequencial da loja, dado pelo banco ao gravar (#0001). */
+  number?: number
   items: CartItem[]
   total: number
   deliveryFee: number
