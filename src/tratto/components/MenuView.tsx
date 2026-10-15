@@ -1174,11 +1174,11 @@ function MenuView() {
           <div style={{
             position: 'relative', backgroundColor: 'white',
             borderRadius: isMobile ? '20px 20px 0 0' : '20px',
-            width: '100%', maxWidth: '540px', maxHeight: '94vh', overflow: 'hidden',
+            width: '100%', maxWidth: '540px', maxHeight: isMobile ? '98dvh' : '94vh', height: isMobile ? '98dvh' : undefined, overflow: 'hidden',
             display: 'flex', flexDirection: 'column', animation: 'slideUp .25s ease-out'
           }}>
-            {isMobile && <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 2px' }}><div style={{ width: '40px', height: '4px', backgroundColor: '#e5e7eb', borderRadius: '2px' }} /></div>}
-            <div style={{ padding: isMobile ? '12px 16px' : '20px 24px 16px', borderBottom: '1px solid #f3f4f6' }}>
+            {isMobile && <div style={{ display: 'flex', justifyContent: 'center', padding: '6px 0 0' }}><div style={{ width: '40px', height: '4px', backgroundColor: '#e5e7eb', borderRadius: '2px' }} /></div>}
+            <div style={{ padding: isMobile ? '8px 16px 10px' : '20px 24px 16px', borderBottom: '1px solid #f3f4f6' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
                 <div>
                   <h3 style={{ fontSize: '19px', fontWeight: 800, color: config.menuTitle || '#1f2937', margin: 0 }}>Finalizar pedido</h3>
@@ -1186,16 +1186,16 @@ function MenuView() {
                 </div>
                 <button onClick={() => setShowCheckout(false)} aria-label="Fechar finalização" style={{ width: '34px', height: '34px', borderRadius: '10px', background: '#f3f4f6', color: '#4b5563', border: 'none', cursor: 'pointer', fontSize: '18px' }}>×</button>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '8px', marginTop: '18px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '8px', marginTop: isMobile ? '8px' : '18px' }}>
                 {[
                   { number: 1, title: 'Seus dados', subtitle: 'Contato e entrega' },
                   { number: 2, title: 'Pagamento', subtitle: 'Como vai pagar' },
                   { number: 3, title: 'Revisão', subtitle: 'Confira o pedido' },
                 ].map(step => (
                   <div key={step.number} style={{ minWidth: 0 }}>
-                    <div style={{ height: '4px', borderRadius: '99px', background: checkoutStep >= step.number ? (config.menuButton || '#d9273f') : '#e5e7eb', marginBottom: '8px' }} />
+                    <div style={{ height: '4px', borderRadius: '99px', background: checkoutStep >= step.number ? (config.menuButton || '#d9273f') : '#e5e7eb', marginBottom: isMobile ? '4px' : '8px' }} />
                     <div style={{ fontSize: '12px', fontWeight: 750, color: checkoutStep === step.number ? (config.menuButton || '#d9273f') : checkoutStep > step.number ? '#374151' : '#9ca3af' }}>{step.number}. {step.title}</div>
-                    <div style={{ fontSize: '10px', color: '#9ca3af', marginTop: '2px' }}>{step.subtitle}</div>
+                    {!isMobile && <div style={{ fontSize: '10px', color: '#9ca3af', marginTop: '2px' }}>{step.subtitle}</div>}
                   </div>
                 ))}
               </div>
@@ -1540,7 +1540,8 @@ function MenuView() {
                 </div>
               )}
             </div>
-            <div style={{ padding: isMobile ? '14px 16px 18px' : '16px 24px 22px', borderTop: '1px solid #f3f4f6', background: '#fafafa' }}>
+            <div style={{ padding: isMobile ? '10px 16px 14px' : '16px 24px 22px', borderTop: '1px solid #f3f4f6', background: '#fafafa' }}>
+              {checkoutStep === 3 && <>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '13px', color: config.menuDescription || '#6b7280' }}>
                 <span>Subtotal</span><strong style={{ color: '#374151' }}>{fmt(totalPrice)}</strong>
               </div>
@@ -1548,7 +1549,8 @@ function MenuView() {
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', fontSize: '13px', color: config.menuDescription || '#6b7280' }}>
                 <span>{deliveryType === 'delivery' ? 'Taxa de entrega' : 'Retirada no local'}</span><strong style={{ color: '#374151' }}>{deliveryType === 'delivery' ? deliveryFeeLabel : 'Grátis'}</strong>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '10px', borderTop: '1px solid #e5e7eb', marginBottom: '12px' }}>
+              </>}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: checkoutStep === 3 ? '10px' : 0, borderTop: checkoutStep === 3 ? '1px solid #e5e7eb' : 'none', marginBottom: '10px' }}>
                 <span style={{ fontSize: '16px', fontWeight: 800, color: config.menuTitle || '#1f2937' }}>Total do pedido</span>
                 <span style={{ fontSize: '20px', fontWeight: 850, color: config.menuPrice || '#d9273f' }}>{fmt(checkoutTotal)}</span>
               </div>
