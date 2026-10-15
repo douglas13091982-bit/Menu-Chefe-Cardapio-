@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { useState } from "react";
+import { errorPt } from "@/lib/errors-pt";
 import { supabase } from "@/integrations/supabase/client";
 import { BRAND } from "../brand";
 import { slugify } from "../format";
@@ -23,7 +24,7 @@ export function Shell({ children }) {
 
 export async function createStore(name, slug) {
   const { error } = await supabase.rpc("create_store", { _name: name, _slug: slug });
-  return error ? error.message : null;
+  return error ? errorPt(error) : null;
 }
 
 function StoreFields({ name, setName, slug, setSlug, touched, setTouched }) {
@@ -87,9 +88,9 @@ export function SignupForm({ onCreated, onSwitch }) {
     if (err) {
       setLoading(false);
       return setError(
-        err.message.includes("registered")
+        errorPt(err) === "Este e-mail já tem cadastro."
           ? 'Este e-mail já tem conta. Use "Entrar".'
-          : "Não foi possível criar a conta: " + err.message,
+          : "Não foi possível criar a conta: " + errorPt(err),
       );
     }
     if (data.session) {
@@ -157,7 +158,7 @@ export function NewPassword({ onDone }) {
     setError("");
     const { error: err } = await supabase.auth.updateUser({ password: pw });
     setLoading(false);
-    if (err) return setError("Não foi possível salvar a nova senha: " + err.message);
+    if (err) return setError("Não foi possível salvar a nova senha: " + errorPt(err));
     onDone();
   };
   return (

@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { useState } from 'react'
+import { errorPt } from '@/lib/errors-pt'
 import { supabase } from '@/integrations/supabase/client'
 
 export default function LoginForm({ onDone, title, subtitle }) {
@@ -14,14 +15,14 @@ export default function LoginForm({ onDone, title, subtitle }) {
     setLoading(true); setError('')
     const { error: err } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
     setLoading(false)
-    if (err) return setError('E-mail ou senha incorretos.')
+    if (err) return setError(err.code === 'email_not_confirmed' || /not confirmed/i.test(err.message || '') ? errorPt(err) : 'E-mail ou senha incorretos.')
     onDone && onDone()
   }
   const reset = async () => {
     if (!email.trim()) return setError('Digite seu e-mail para receber o link de redefinição.')
     setError('')
     const { error: err } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo: window.location.origin + '/painel' })
-    if (err) return setError('Não foi possível enviar o e-mail agora.')
+    if (err) return setError(errorPt(err, 'Não foi possível enviar o e-mail agora.'))
     setResetSent(true)
   }
   const cls = 'auth-input'

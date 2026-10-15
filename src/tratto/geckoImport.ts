@@ -1,5 +1,6 @@
 // Importação de catálogo via GeckoAPI (https://geckoapi.com.br/docs/) — fonte pede.ai
 import type { Product, Category } from './types'
+import { errorPt } from '@/lib/errors-pt'
 
 import { supabase } from '@/integrations/supabase/client'
 
@@ -28,7 +29,7 @@ async function call(body: any) {
     const { geckoExtract } = await import('@/lib/catalog-import.functions')
     return await geckoExtract({ data: body, headers: { Authorization: `Bearer ${token}` } })
   } catch (e: any) {
-    throw new Error(e?.message || 'Não foi possível importar agora.')
+    throw new Error(errorPt(e, 'Não foi possível importar agora.'))
   }
 }
 
