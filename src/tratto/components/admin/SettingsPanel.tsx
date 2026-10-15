@@ -9,10 +9,22 @@ import { money } from '../../format'
 import { compressImageToWebP, isImageFile } from '@/lib/image-compress'
 import { buildStoreIcon } from '../../pwa'
 
+const FORM_TABS = ['aparencia', 'loja', 'horarios', 'entrega', 'pedidos']
+const TABS = [
+  { id: 'aparencia', label: 'Aparência' },
+  { id: 'loja', label: 'Loja' },
+  { id: 'horarios', label: 'Horários' },
+  { id: 'entrega', label: 'Entrega' },
+  { id: 'pedidos', label: 'Pedidos' },
+  { id: 'integracoes', label: 'Integrações' },
+  { id: 'seguranca', label: 'Segurança' },
+]
+
 function SettingsPanel() {
   const { config, setConfig } = useStore()
   const [formData, setFormData] = useState(config)
   const [saved, setSaved] = useState(false)
+  const [tab, setTab] = useState('aparencia')
   const [saving, setSaving] = useState(false)
   const [saveFailed, setSaveFailed] = useState(false)
   const [showPasswordChange, setShowPasswordChange] = useState(false)
@@ -181,8 +193,24 @@ function SettingsPanel() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Personalização visual do cardápio */}
+      <div role="tablist" aria-label="Seções das configurações" className="flex gap-1 overflow-x-auto rounded-xl bg-gray-100 p-1">
+        {TABS.map(t => (
+          <button
+            key={t.id}
+            type="button"
+            role="tab"
+            aria-selected={tab === t.id}
+            onClick={() => setTab(t.id)}
+            className={`whitespace-nowrap rounded-lg px-4 py-2 text-sm font-medium transition ${tab === t.id ? 'bg-white text-[#d9273f] shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      <form onSubmit={handleSubmit} className={`space-y-6 ${FORM_TABS.includes(tab) ? '' : 'hidden'}`}>
+        <div className={tab === 'aparencia' ? 'space-y-6' : 'hidden'}>
+{/* Personalização visual do cardápio */}
         <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
           <div className="mb-4">
             <h3 className="text-base font-bold text-gray-800">Identidade visual do cardápio</h3>
@@ -222,7 +250,10 @@ function SettingsPanel() {
           </div>
           <button type="button" onClick={() => setFormData(prev => ({ ...prev, menuBackground: '#f3f4f6', menuButton: '#d9273f', menuPrice: '#d9273f', menuCategory: '#d9273f', menuTitle: '#30231e', menuDescription: '#776960' }))} className="mt-3 text-sm font-semibold text-gray-600 underline underline-offset-2">Restaurar cores padrão</button>
         </section>
-        {/* Store Info */}
+        </div>
+
+        <div className={tab === 'loja' ? 'space-y-6' : 'hidden'}>
+{/* Store Info */}
         <div className="bg-white rounded-xl shadow-sm p-6">
           <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
             <Store size={18} className="text-[#d9273f]" /> Informações da Loja
@@ -344,7 +375,10 @@ function SettingsPanel() {
           </div>
         </div>
 
-        {/* Operating Hours */}
+        </div>
+
+        <div className={tab === 'horarios' ? 'space-y-6' : 'hidden'}>
+{/* Operating Hours */}
         <div className="bg-white rounded-xl shadow-sm p-6">
           <h3 className="font-bold text-gray-800 mb-1 flex items-center gap-2">
             <Clock3 size={18} className="text-[#d9273f]" /> Horário de Funcionamento
@@ -476,7 +510,10 @@ function SettingsPanel() {
           </div>
         </div>
 
-        {/* Delivery Settings */}
+        </div>
+
+        <div className={tab === 'entrega' ? 'space-y-6' : 'hidden'}>
+{/* Delivery Settings */}
         <div className="bg-white rounded-xl shadow-sm p-6">
           <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
             <Truck size={18} className="text-[#d9273f]" /> Configurações de Entrega
@@ -532,7 +569,10 @@ function SettingsPanel() {
           </p>
         </div>
 
-        {/* Som de novo pedido */}
+        </div>
+
+        <div className={tab === 'pedidos' ? 'space-y-6' : 'hidden'}>
+{/* Som de novo pedido */}
         <div className="bg-white rounded-xl shadow-sm p-6">
           <h3 className="font-bold text-gray-800 mb-2 flex items-center gap-2">
             <Volume2 size={18} className="text-[#d9273f]" /> Notificação sonora de pedidos
@@ -588,7 +628,10 @@ function SettingsPanel() {
           </p>
         </div>
 
-        {/* Preview */}
+        </div>
+
+        <div className={tab === 'loja' ? 'space-y-6' : 'hidden'}>
+{/* Preview */}
         <div className="bg-white rounded-xl shadow-sm p-6">
           <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
             <Eye size={18} className="text-[#d9273f]" /> Pré-visualização
@@ -625,6 +668,8 @@ function SettingsPanel() {
           </div>
         </div>
 
+        </div>
+
         <button
           type="submit"
           disabled={saving}
@@ -635,10 +680,10 @@ function SettingsPanel() {
       </form>
 
       {/* Integrações */}
-      <MapboxIntegration />
+      {tab === 'integracoes' && <MapboxIntegration />}
 
       {/* Security Section */}
-      <div className="bg-white rounded-xl shadow-sm p-6">
+      {tab === 'seguranca' && <div className="bg-white rounded-xl shadow-sm p-6">
         <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
           <ShieldCheck size={18} className="text-[#d9273f]" /> Segurança - Senha de Acesso
         </h3>
@@ -718,7 +763,7 @@ function SettingsPanel() {
             </div>
           </form>
         )}
-      </div>
+      </div>}
     </div>
   )
 }
