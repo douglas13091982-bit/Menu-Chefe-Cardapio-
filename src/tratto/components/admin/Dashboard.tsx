@@ -1,4 +1,5 @@
 // @ts-nocheck -- código original migrado sem alterações de lógica
+import { formatOrderNumber } from '../../orderNumber'
 import { useStore } from "../../context/StoreContext";
 import {
   BarChart,
@@ -256,7 +257,7 @@ function Dashboard() {
             <tbody>
               {orders.slice(0, 5).map((order) => (
                 <tr key={order.id} className="border-b last:border-0">
-                  <td className="py-3 font-medium">{order.id}</td>
+                  <td className="py-3 font-medium">{formatOrderNumber(order)}</td>
                   <td className="py-3">{order.customerName}</td>
                   <td className="py-3 text-green-700 font-medium">
                     {money(order.total)}

@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { formatOrderNumber } from '../../orderNumber'
 import { useMemo, useState } from 'react'
 import { Minus, Plus, Search, ShoppingBag, UserRound, Phone, CreditCard, CheckCircle2 } from 'lucide-react'
 import { useStore } from '../../context/StoreContext'
@@ -68,13 +69,14 @@ function ManualOrder() {
         orderType: 'balcao',
         notes: notes.trim()
       }
-      addOrder(order)
+      const ok = await addOrder(order)
+      if (!ok) { setError('Não foi possível registrar o pedido. Tente novamente.'); return }
       setCart({})
       setCustomerName('')
       setCustomerPhone('')
       setNotes('')
       setSearch('')
-      setSuccess('Pedido de balcão ' + orderId + ' registrado e enviado para a lista de pedidos.')
+      setSuccess('Pedido de balcão ' + formatOrderNumber(order) + ' registrado e enviado para a lista de pedidos.')
     } catch (e) {
       setError('Não foi possível registrar o pedido. Tente novamente.')
     } finally {

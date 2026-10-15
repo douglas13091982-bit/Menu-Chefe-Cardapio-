@@ -1,4 +1,5 @@
 // @ts-nocheck -- código original migrado sem alterações de lógica
+import { formatOrderNumber } from '../../orderNumber'
 import { useEffect, useState } from 'react'
 import { Clock3, ChefHat, Truck, CheckCircle2, XCircle, X, Printer } from 'lucide-react'
 import { useStore } from '../../context/StoreContext'
@@ -115,7 +116,7 @@ function OrdersManager() {
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-2">
-                  <span className="font-bold text-gray-800">{order.id}</span>
+                  <span className="font-bold text-gray-800">{formatOrderNumber(order)}</span>
                   {(order.source === 'manual' || order.orderType === 'balcao') && <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-semibold text-gray-600">Balcão</span>}
                   <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${statusColors[order.status]}`}>
                     <StatusIcon icon={statusIcons[order.status]} /> {statusLabels[order.status]}
@@ -228,7 +229,7 @@ function OrdersManager() {
             {config.phone && <div>Telefone: {config.phone}</div>}
             <div className="receipt-line" />
             <strong>COMPROVANTE DE VENDA</strong>
-            <div>Pedido: {printOrder.id}</div>
+            <div>Pedido: {formatOrderNumber(printOrder)}</div>
             <div>{new Date(printOrder.createdAt).toLocaleString('pt-BR')}</div>
           </div>
           <div className="receipt-line" />
@@ -271,7 +272,7 @@ function OrdersManager() {
           <div className="relative bg-white rounded-2xl w-full max-w-md max-h-[80vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-bold text-gray-800">Pedido {selectedOrder.id}</h3>
+                <h3 className="text-xl font-bold text-gray-800">Pedido {formatOrderNumber(selectedOrder)}</h3>
                 <button onClick={() => setSelectedOrder(null)} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200"></button>
               </div>
 
