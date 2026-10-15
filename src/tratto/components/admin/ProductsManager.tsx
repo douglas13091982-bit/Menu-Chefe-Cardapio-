@@ -74,10 +74,10 @@ function ProductsManager() {
     }
     setUploadingImage(true)
     try {
-      // Produtos: max 1200px, qualidade 0.8 → leve no cardápio mobile
+      // Produtos: max 700px, qualidade 0.8 → leve no cardápio mobile
       const result = await compressImageToWebP(file, {
-        maxWidth: 1200,
-        maxHeight: 1200,
+        maxWidth: 700,
+        maxHeight: 700,
         quality: 0.8,
       })
       setFormData(prev => ({ ...prev, image: result.dataUrl! }))
