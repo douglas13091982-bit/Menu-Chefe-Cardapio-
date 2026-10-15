@@ -1962,6 +1962,8 @@ function getProductFallbackImage(categoryId: string) {
 // Compatibilidade visual para produtos de demonstração antigos que usavam
 // imagens genéricas repetidas. Fotos enviadas pelo estabelecimento são preservadas.
 function getProductDisplayImage(product: Product) {
+  // foto ainda chegando: não mostra a foto genérica no lugar (evita "piscar" e downloads à toa)
+  if (product.imagePending) return 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
   const legacyPhotos: Record<string, string> = {
     'Tratto Duplo Cheddar': 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=900&q=85',
     'Smash Bacon Crispy': 'https://images.unsplash.com/photo-1553979459-d2229ba7433a?auto=format&fit=crop&w=900&q=85',

@@ -122,20 +122,41 @@ export function StoreProvider({ children, slug, storeId: storeIdProp, isAdmin = 
       try {
         // Prioriza os dados que permitem mostrar o cardápio; zonas de entrega
         // são carregadas em seguida para não bloquear a primeira renderização.
+        // Cliente (cardápio público): versão leve — produtos sem as fotos embutidas (vêm em seguida, aos poucos)
+        // e configurações sem o MP3 de aviso nem o ícone do app. O painel continua lendo tudo de uma vez.
+        const lite = !isAdmin
         const [settingsRes, catRes, prodRes] = await Promise.all([
-          supabase.from('store_settings').select('config, mapbox_public_token').eq('store_id', sid).maybeSingle(),
+          lite
+            ? supabase.rpc('get_menu_settings', { _store_id: sid }).then(r => ({ data: Array.isArray(r.data) ? r.data[0] : r.data, error: r.error }))
+            : supabase.from('store_settings').select('config, mapbox_public_token').eq('store_id', sid).maybeSingle(),
           supabase.from('categories').select('data, sort_order').eq('store_id', sid).order('sort_order'),
-          supabase.from('products').select('data, sort_order').eq('store_id', sid).order('sort_order'),
+          lite
+            ? supabase.rpc('get_menu_products', { _store_id: sid })
+            : supabase.from('products').select('data, sort_order').eq('store_id', sid).order('sort_order'),
         ])
         if (cancelled) return
         const cfg = settingsRes.data?.config || {}
         setConfigState({ ...defaultConfig, ...(storeName ? { name: storeName } : {}), ...cfg })
         setDbMapboxToken(settingsRes.data?.mapbox_public_token || '')
         setCategories((catRes.data || []).map(r => r.data))
-        setProducts((prodRes.data || []).map(r => r.data))
+        setProducts((prodRes.data || []).map((r: any) => (lite && r.has_image ? { ...r.data, imagePending: true } : r.data)))
         ;[settingsRes, catRes, prodRes].forEach(r => logError('carregar dados do cardápio', r.error))
         // O cardápio pode aparecer sem esperar por esta consulta secundária.
         setDataReady(true)
+        if (lite) {
+          // fotos em lotes pequenos: o cardápio já está na tela e cada foto aparece assim que chega
+          const ids: string[] = (prodRes.data || []).filter((r: any) => r.has_image).map((r: any) => r.data.id)
+          void (async () => {
+            for (let i = 0; i < ids.length && !cancelled; i += 8) {
+              const { data: imgs, error } = await supabase.rpc('get_product_images', { _store_id: sid, _ids: ids.slice(i, i + 8) })
+              if (cancelled) return
+              if (error) { logError('carregar fotos do cardápio', error); continue }
+              const byId = new Map((imgs || []).map((x: any) => [x.id, x.image]))
+              setProducts(prev => prev.map(p => (byId.has(p.id) ? { ...p, image: byId.get(p.id), imagePending: false } : p)))
+            }
+            if (!cancelled) setProducts(prev => prev.map(p => (p.imagePending ? { ...p, imagePending: false } : p)))
+          })()
+        }
         supabase.from('delivery_zones').select('data').eq('store_id', sid).then(({ data, error }) => {
           if (cancelled) return
           if (error) logError('carregar zonas de entrega', error)
@@ -149,7 +170,7 @@ export function StoreProvider({ children, slug, storeId: storeIdProp, isAdmin = 
     }
     load()
     return () => { cancelled = true }
-  }, [sid, storeState])
+  }, [sid, storeState, isAdmin])
 
   // 3) Painel: pedidos em tempo real
   useEffect(() => {
