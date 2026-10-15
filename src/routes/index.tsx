@@ -4,9 +4,9 @@ import { HomePage } from "../tratto/components/HomePage";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Tratto Digital Menu | Cardápio digital para seu restaurante" },
+      { title: "MenuChef | Cardápio digital para seu restaurante" },
       { name: "description", content: "Crie um cardápio digital profissional, organize pedidos e compartilhe um link exclusivo para sua loja." },
-      { property: "og:title", content: "Tratto Digital Menu" },
+      { property: "og:title", content: "MenuChef | Cardápio digital para seu restaurante" },
       { property: "og:description", content: "Cardápios digitais e pedidos para restaurantes e lanchonetes." },
       { property: "og:type", content: "website" },
     ],

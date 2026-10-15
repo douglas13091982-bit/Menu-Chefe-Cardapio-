@@ -1,13 +1,36 @@
 import { createFileRoute, ClientOnly } from "@tanstack/react-router";
 import { lazy, Suspense } from "react";
 
+import { getStoreHead } from "../lib/store-head.functions";
+
 const MenuPage = lazy(() => import("../tratto/saas/MenuPage"));
 
 export const Route = createFileRoute("/$slug")({
-  head: ({ params }) => ({
+  // Nome da loja no servidor: a prévia do link (WhatsApp etc.) mostra a loja, não a plataforma
+  loader: async ({ params }) => {
+    try {
+      return await getStoreHead({ data: params.slug });
+    } catch {
+      return { name: "", origin: "" };
+    }
+  },
+  head: ({ params, loaderData }) => {
+    const name = (loaderData?.name || "").trim();
+    const title = name || "Cardápio digital";
+    const description = name
+      ? `Cardápio digital de ${name}. Veja os produtos e faça seu pedido.`
+      : "Cardápio digital com pedidos pelo WhatsApp.";
+    const image = loaderData?.origin ? `${loaderData.origin}/${encodeURIComponent(params.slug)}/pwa-icon.png` : "";
+    return {
     meta: [
-      { title: "Cardápio digital" },
-      { name: "description", content: "Cardápio digital com pedidos pelo WhatsApp." },
+      { title },
+      { name: "description", content: description },
+      { property: "og:title", content: title },
+      { property: "og:description", content: description },
+      { property: "og:type", content: "website" },
+      ...(name ? [{ property: "og:site_name", content: name }] : []),
+      ...(image ? [{ property: "og:image", content: image }, { property: "og:image:width", content: "512" }, { property: "og:image:height", content: "512" }] : []),
+      { name: "twitter:card", content: "summary" },
       { name: "mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
     ],
@@ -20,7 +43,8 @@ export const Route = createFileRoute("/$slug")({
     scripts: [
       { children: "window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();window.__pwaPrompt=e})" },
     ],
-  }),
+    };
+  },
   component: StorePage,
 });
 
