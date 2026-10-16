@@ -22,6 +22,7 @@ const BY_CODE: Record<string, string> = {
 const BY_TEXT: Array<[RegExp, (m: RegExpMatchArray) => string]> = [
   [/password is known to be weak|weak password|easy to guess|pwned/i, () => BY_CODE.weak_password],
   [/password should be at least (\d+) characters?/i, m => `A senha precisa ter pelo menos ${m[1]} caracteres.`],
+  [/current password required|current_password/i, () => 'Informe a senha atual para trocar a senha.'],
   [/new password should be different/i, () => BY_CODE.same_password],
   [/invalid login credentials/i, () => BY_CODE.invalid_credentials],
   [/email not confirmed/i, () => BY_CODE.email_not_confirmed],

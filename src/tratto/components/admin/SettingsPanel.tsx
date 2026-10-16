@@ -157,7 +157,7 @@ function SettingsPanel() {
         setPasswordError('Senha atual incorreta')
         return
       }
-      const { error: updateError } = await supabase.auth.updateUser({ password: newPassword })
+      const { error: updateError } = await supabase.auth.updateUser({ password: newPassword, current_password: currentPassword })
       if (updateError) {
         setPasswordError('Não foi possível alterar a senha: ' + errorPt(updateError))
         return
