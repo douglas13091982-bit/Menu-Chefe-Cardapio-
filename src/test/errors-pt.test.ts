@@ -12,6 +12,7 @@ describe('errorPt', () => {
     expect(errorPt({ message: 'User already registered' })).toBe('Este e-mail já tem cadastro.')
     expect(errorPt({ message: 'new row violates row-level security policy for table "orders"' })).toMatch(/Sem permissão/)
     expect(errorPt({ message: 'Failed to fetch' })).toMatch(/Sem conexão/)
+    expect(errorPt({ message: 'Current password required when setting new password.' })).toBe('Informe a senha atual para trocar a senha.')
     expect(errorPt({ message: 'email rate limit exceeded' })).toMatch(/Aguarde/)
   })
   it('mantém mensagens que já estão em português e usa o texto padrão quando não há mensagem', () => {
