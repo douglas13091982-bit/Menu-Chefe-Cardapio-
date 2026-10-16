@@ -1,5 +1,6 @@
 // @ts-nocheck -- código original migrado sem alterações de lógica
 import { useState } from 'react'
+import PasswordInput from '../PasswordInput'
 import { errorPt } from '@/lib/errors-pt'
 import { CheckCircle2, Store, Clock3, Truck, Eye, ShieldCheck, AlertTriangle, MapPin, Phone, Tag, Volume2, Play, Music, Printer } from 'lucide-react'
 import { useStore } from '../../context/StoreContext'
@@ -716,8 +717,7 @@ function SettingsPanel() {
             )}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Senha Atual</label>
-              <input
-                type="password"
+              <PasswordInput
                 required
                 value={currentPassword}
                 onChange={e => setCurrentPassword(e.target.value)}
@@ -727,8 +727,7 @@ function SettingsPanel() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Nova Senha</label>
-              <input
-                type="password"
+              <PasswordInput
                 required
                 value={newPassword}
                 onChange={e => setNewPassword(e.target.value)}
@@ -738,8 +737,7 @@ function SettingsPanel() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Confirmar Nova Senha</label>
-              <input
-                type="password"
+              <PasswordInput
                 required
                 value={confirmPassword}
                 onChange={e => setConfirmPassword(e.target.value)}

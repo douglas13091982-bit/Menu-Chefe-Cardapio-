@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { useState } from "react";
+import PasswordInput from "../../components/PasswordInput";
 import { errorPt } from "@/lib/errors-pt";
 import { supabase } from "@/integrations/supabase/client";
 import { BRAND } from "../brand";
@@ -123,10 +124,10 @@ export function SignupForm({ onCreated, onSwitch }) {
       </label>
       <label className="auth-label block text-sm font-medium">
         Senha
-        <input
-          type="password"
+        <PasswordInput
           required
           minLength={6}
+          autoComplete="new-password"
           className={cls}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
@@ -166,7 +167,7 @@ export function NewPassword({ onDone }) {
       <h1 className="auth-title text-xl font-bold">Definir nova senha</h1>
       <label className="auth-label block text-sm font-medium">
         Nova senha
-        <input type="password" required minLength={6} autoComplete="new-password" className={cls} value={pw} onChange={(e) => setPw(e.target.value)} />
+        <PasswordInput required minLength={6} autoComplete="new-password" className={cls} value={pw} onChange={(e) => setPw(e.target.value)} />
       </label>
       {error && <p className="auth-error text-sm">{error}</p>}
       <button disabled={loading} className="auth-primary w-full disabled:opacity-60 font-semibold rounded-lg py-2.5 text-sm">
