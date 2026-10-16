@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { useState } from 'react'
+import PasswordInput from '../components/PasswordInput'
 import { errorPt } from '@/lib/errors-pt'
 import { supabase } from '@/integrations/supabase/client'
 
@@ -34,7 +35,7 @@ export default function LoginForm({ onDone, title, subtitle }) {
         <input type="email" required autoComplete="email" className={cls} value={email} onChange={e => setEmail(e.target.value)} />
       </label>
       <label className="auth-label block text-sm font-medium">Senha
-        <input type="password" required autoComplete="current-password" className={cls} value={password} onChange={e => setPassword(e.target.value)} />
+        <PasswordInput required autoComplete="current-password" className={cls} value={password} onChange={e => setPassword(e.target.value)} />
       </label>
       {error && <p className="auth-error text-sm">{error}</p>}
       {resetSent && <p className="auth-success text-sm">Enviamos o link de redefinição para o seu e-mail.</p>}
