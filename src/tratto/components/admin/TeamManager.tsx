@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { useEffect, useState } from "react";
 import { errorPt } from "@/lib/errors-pt";
-import { Trash2, UserPlus } from "lucide-react";
+import { KeyRound, Trash2, UserPlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useStore } from "../../context/StoreContext";
 
@@ -45,6 +45,12 @@ export default function TeamManager() {
     if (storeId) load();
   }, [storeId]);
 
+  const resetPassword = async (m) => {
+    const pw = (window.prompt(`Nova senha para ${m.email} (mínimo 6 caracteres):`) || "").trim();
+    if (!pw) return;
+    await run({ action: "password", userId: m.userId, password: pw }, `Senha de ${m.email} alterada. Passe a nova senha para a pessoa e peça para trocá-la em Configurações.`);
+  };
+
   const run = async (body, ok) => {
     setBusy(true);
     setErr("");
@@ -64,7 +70,12 @@ export default function TeamManager() {
 
   const add = async (e) => {
     e.preventDefault();
-    const ok = await run({ action: "add", ...f }, "Acesso criado. Passe o e-mail e a senha para a pessoa entrar em /painel.");
+    const ok = await run(
+      { action: "add", ...f },
+      f.password
+        ? `Acesso criado para ${f.email} com a senha "${f.password}". Anote e passe para a pessoa entrar em /painel.`
+        : `Acesso adicionado para ${f.email}. Se a pessoa já tinha conta, ela entra com a senha que já usa.`,
+    );
     if (ok) setF({ name: "", email: "", password: "", role: "staff" });
   };
 
@@ -81,8 +92,8 @@ export default function TeamManager() {
         <h3 className="font-semibold flex items-center gap-2"><UserPlus size={18} /> Novo acesso</h3>
         <div className="grid sm:grid-cols-2 gap-3">
           <input className={input} placeholder="Nome" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />
-          <input className={input} type="email" required placeholder="E-mail" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} />
-          <input className={input} type="text" placeholder="Senha (mín. 6 — só para quem ainda não tem conta)" value={f.password} onChange={(e) => setF({ ...f, password: e.target.value })} />
+          <input className={input} type="email" name="email-equipe" autoComplete="off" autoCapitalize="off" required placeholder="E-mail" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value.trim() })} />
+          <input className={input} type="text" name="nova-senha-equipe" autoComplete="off" autoCapitalize="off" autoCorrect="off" spellCheck={false} placeholder="Senha (mín. 6 — só para quem ainda não tem conta)" value={f.password} onChange={(e) => setF({ ...f, password: e.target.value.replace(/\s/g, "") })} />
           <select className={input} value={f.role} onChange={(e) => setF({ ...f, role: e.target.value })}>
             <option value="staff">Colaborador — pedidos e pedido manual</option>
             <option value="admin">Administrador — acesso total</option>
@@ -116,6 +127,15 @@ export default function TeamManager() {
                   <option value="staff">Colaborador</option>
                   <option value="admin">Administrador</option>
                 </select>
+                <button
+                  disabled={busy}
+                  onClick={() => resetPassword(m)}
+                  className="text-gray-600 hover:bg-gray-100 rounded-lg p-2"
+                  aria-label="Definir nova senha"
+                  title="Definir nova senha"
+                >
+                  <KeyRound size={17} />
+                </button>
                 <button
                   disabled={busy}
                   onClick={() => confirm(`Remover o acesso de ${m.email}?`) && run({ action: "remove", userId: m.userId }, "Acesso removido.")}

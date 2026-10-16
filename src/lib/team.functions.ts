@@ -4,7 +4,7 @@ import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware'
 
 // Equipe da loja: dono/admin cria e remove acessos. Usa a chave de serviço só no servidor.
 type Input = {
-  action: 'list' | 'add' | 'remove' | 'role'
+  action: 'list' | 'add' | 'remove' | 'role' | 'password'
   storeId: string
   email?: string
   password?: string
@@ -15,7 +15,7 @@ type Input = {
 
 function validate(raw: any): Input {
   const d = raw || {}
-  if (!['list', 'add', 'remove', 'role'].includes(d.action)) throw new Error('Ação inválida.')
+  if (!['list', 'add', 'remove', 'role', 'password'].includes(d.action)) throw new Error('Ação inválida.')
   if (!/^[0-9a-f-]{36}$/i.test(String(d.storeId || ''))) throw new Error('Loja inválida.')
   const out: Input = { action: d.action, storeId: String(d.storeId) }
   if (d.role !== undefined) {
@@ -26,9 +26,15 @@ function validate(raw: any): Input {
   if (d.action === 'add') {
     out.email = String(d.email || '').trim().toLowerCase()
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(out.email)) throw new Error('E-mail inválido.')
-    if (d.password) out.password = String(d.password)
+    if (d.password) out.password = String(d.password).trim()
     out.name = String(d.name || '').slice(0, 80)
     if (!out.role) out.role = 'staff'
+  }
+  if (d.action === 'password') {
+    if (!d.userId) throw new Error('Usuário não informado.')
+    out.userId = String(d.userId)
+    out.password = String(d.password || '').trim()
+    if (out.password.length < 6) throw new Error('A senha precisa ter pelo menos 6 caracteres.')
   }
   if ((d.action === 'remove' || d.action === 'role') && !out.userId) throw new Error('Usuário não informado.')
   if (d.action === 'role' && !out.role) throw new Error('Perfil não informado.')
@@ -107,6 +113,12 @@ export const teamAction = createServerFn({ method: 'POST' })
     if (data.userId === context.userId) throw new Error('Você não pode alterar o próprio acesso.')
     if (target.role === 'admin' && myRole === 'admin') throw new Error('Só o dono pode alterar outros administradores.')
 
+    if (data.action === 'password') {
+      // dono/admin define uma nova senha para alguém da equipe (a pessoa troca depois, em Configurações)
+      const { error } = await admin.auth.admin.updateUserById(data.userId, { password: data.password })
+      if (error) throw new Error(errorPt(error))
+      return { ok: true }
+    }
     if (data.action === 'remove') {
       const { error } = await admin.from('store_members').delete().eq('store_id', data.storeId).eq('user_id', data.userId)
       if (error) throw new Error(errorPt(error))
